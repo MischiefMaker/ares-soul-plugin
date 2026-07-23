@@ -101,7 +101,7 @@ Use for pending-roll abort and expiry (staff/system actions on a character's sta
 11. **Cron wiring:** `Soul.get_event_handler("CronEvent")` can only return one handler class per the real `AresMUSH::Dispatcher` (confirmed in earlier phases — see `plugin/soul.rb`). Do not try to register a second handler for the same event name; it won't be called. Instead, add the expiry sweep as an additional call inside the *existing* `plugin/events/soul_xp_cron_handler.rb`'s `on_event`, alongside (not replacing) its current weekly-XP-award logic — call something like `SoulRollApi.expire_stale_pending_rolls(event.time)` unconditionally on every tick (the method itself should be cheap — a query filtered by `expires_at < now` and `status == "awaiting_selection"` — so it doesn't need its own `Cron.is_cron_match?` gate the way the weekly award does).
 12. **Boolean-like model attributes are plain `"true"`/`"false"` strings**, matching every existing model in this codebase — not `DataType::Boolean`. Apply this to any new boolean-shaped field (e.g. `gm_assisted`, `extraordinary`).
 13. **Events fire via `Global.dispatcher.queue_event`, classes flat under `module AresMUSH`** (not nested under `Soul::`) — same convention as `plugin/public/soul_events.rb`'s existing `SoulBnbTransitionedEvent`/`SoulCulminationApprovedEvent`. Add `SoulRollResolvedEvent` there, matching the field list already documented in `docs/architecture/API_and_Hooks.md` (`character_id, roll_id, skill_key, final_result, degree_of_success, extraordinary, gm_assisted, resolved_at`).
-14. **Never trust client-supplied identifiers or permissions** (REQ-002) — `SoulRollApi` methods that take a `pending_roll_id` must verify the pending roll actually belongs to the character/player making the call before mutating it. This matters even though no command layer exists yet, because Phase 6's commands will call these methods directly with user-supplied IDs.
+14. **Never trust client-supplied identifiers or permissions** (REQ-002) — every `SoulRollApi` method that takes a `pending_roll_id` also takes the caller's `character` as an explicit argument (see `select_entries` and `resolve_pending` in §6) and must verify `pending_roll.character == character` before doing anything else, returning `{ error: }` on a mismatch rather than proceeding. `abort_pending` does the same via its `actor` argument. This matters even though no command layer exists yet, because Phase 6's commands will call these methods directly with whatever character the authenticated enactor resolves to — the method itself, not the not-yet-built command layer, is what has to refuse a mismatched caller. `expire_stale_pending_rolls` is the one exception — it's a system/cron-initiated sweep with no caller identity to check.
 
 ## 6. Method Signatures to Implement
 
@@ -135,8 +135,20 @@ SoulRollApi.select_entries(pending_roll_id, character, tags: [], suggested: fals
   # Revalidates ownership/duplicates each call (REQ-028 step 6).
   # => { error: "..." } or { success: true, pending_roll: <PendingRoll> }
 
-SoulRollApi.resolve_pending(pending_roll_id)
-  # 1. Load pending roll, verify status == "awaiting_selection".
+SoulRollApi.resolve_pending(pending_roll_id, character)
+  # character is the caller's identity, exactly like select_entries's second
+  # positional argument - NOT optional, and not inferred from the pending
+  # roll's own stored character. Load the pending roll, then verify
+  # pending_roll.character == character before doing anything else; a
+  # mismatch is an error (REQ-002 - the caller's claimed identity must match
+  # who the pending roll actually belongs to, the same ownership check
+  # select_entries already performs). This is what makes the method safe to
+  # expose to a future command/web layer that passes whatever character the
+  # authenticated enactor resolves to - it cannot resolve or mutate a pending
+  # roll belonging to someone else.
+  #
+  # 1. Load pending roll, verify status == "awaiting_selection" AND
+  #    pending_roll.character == character (ownership check, see above).
   # 2. Combine accepted entries (selected system-suggested + manually-identified).
   # 3. net_modifier = sum of signed level_modifier per §5.6.
   # 4. effective_base = SoulCharacterApi.get_effective_base(character, skill_key).
@@ -177,6 +189,7 @@ SoulRollApi.get_roll_history(character, limit: 50)
 - `Roll` and `PendingRoll` models exist with every field listed in the current `docs/architecture/Data_Model.md` "Rolls" section, using the same attribute-typing conventions as every other model in this codebase (plain string booleans, `DataType::Array`/`DataType::Hash` where a structured value is stored, `reference`/`collection` for Character associations).
 - `character.rolls` and `character.pending_rolls` collections work (added to `character_soul_fields.rb`).
 - `SoulRollApi.resolve_pending` never calls any randomness itself — the only call into `SoulDiceEngine.roll` happens exactly once per resolution, and `success_probability` is computed from the same `net_modifier` and `required_dice_total` that `.roll` effectively resolves against.
+- `resolve_pending(pending_roll_id, character)` (and `select_entries`) reject with `{ error: }` when `character` does not match the pending roll's stored owner — verified by an explicit test (§8), not just asserted in prose.
 - A roll with `net_modifier` derived from an unconfigured Epic-level entry (`level_modifier` returns `nil`) fails cleanly with an error rather than raising or silently treating the modifier as 0.
 - The pending-roll limit is enforced before a new pending roll is created; exceeding it returns `{ error: }`, not a silently-truncated success.
 - `expire_stale_pending_rolls` never creates a `Roll` record and never touches a pending roll that isn't `awaiting_selection` and past its `expires_at`.
@@ -186,7 +199,7 @@ SoulRollApi.get_roll_history(character, limit: 50)
 
 ## 8. Testing Requirements
 
-- `plugin/spec/soul_roll_api_spec.rb`: cover `start_roll` (success, unknown skill, pending-limit exceeded), `select_entries` (all three REQ-026 forms, ownership rejection, duplicate rejection), `resolve_pending` (a full success path asserting the stored `Roll` fields are internally consistent — e.g. `final_result == dice_total + effective_base`, `degree_of_success` matches the margin thresholds, `extraordinary` only set when the relevant probability is below threshold), `abort_pending`, `expire_stale_pending_rolls` (sweeps exactly the expired ones, leaves others untouched), `get_roll_history`.
+- `plugin/spec/soul_roll_api_spec.rb`: cover `start_roll` (success, unknown skill, pending-limit exceeded), `select_entries` (all three REQ-026 forms, ownership rejection, duplicate rejection), `resolve_pending` (a full success path asserting the stored `Roll` fields are internally consistent — e.g. `final_result == dice_total + effective_base`, `degree_of_success` matches the margin thresholds, `extraordinary` only set when the relevant probability is below threshold; **plus a rejection test calling it with a character who does not own the pending roll**, asserting `{ error: }` and that no `Roll` record was created), `abort_pending`, `expire_stale_pending_rolls` (sweeps exactly the expired ones, leaves others untouched), `get_roll_history`.
 - At least one spec asserting the "no candidates found" case (`system_suggested_entries` empty) still produces a normal `awaiting_selection` pending roll that `select_entries` with `tags:` can complete via manual identification.
 - At least one spec asserting a Boon-only roll (`net_modifier > 0`) and a Bane-only roll (`net_modifier < 0`) both resolve without error and produce plausible `final_result` values (don't need to assert exact numbers given the RNG — assert the modifier direction affected `net_modifier` correctly and that `dice_result`/`segments` round-trip through the stored `Roll`).
 - Run `ruby -c` on every new/modified file and confirm `bundle exec rspec plugin/spec/soul_roll_api_spec.rb` (or however this repo's suite is invoked — check `docs/development/Testing.md`) passes before reporting completion, and note in your summary if the suite couldn't actually be run (e.g. missing `spec_helper.rb` harness — a pre-existing gap noted in the Phase 1-3 Implementation Notes; report the same issue again here rather than working around it silently).

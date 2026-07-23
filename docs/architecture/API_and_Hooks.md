@@ -134,7 +134,7 @@ SoulRollApi.start_roll(character, skill_key, context: {})
 SoulRollApi.select_entries(pending_roll_id, character, tags: [], suggested: false, none: false)
   # REQ-026's three selection forms (+roll <tag>, +roll suggested, +roll none)
 
-SoulRollApi.resolve_pending(pending_roll_id)
+SoulRollApi.resolve_pending(pending_roll_id, character)   # character required for ownership check (REQ-002)
   # Combines accepted entries -> net_modifier -> SoulDiceEngine -> degree of
   # success (Addendum §8.1) -> extraordinary flag (Addendum §9) -> Roll record
 
