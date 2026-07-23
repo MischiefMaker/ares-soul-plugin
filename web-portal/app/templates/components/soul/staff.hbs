@@ -7,7 +7,22 @@
   <details class="mb-3"><summary>Framework and configuration</summary>
     <button class="btn btn-secondary m-2" type="button" onclick={{action "loadFramework"}}>View Framework</button>
     <button class="btn btn-secondary m-2" type="button" onclick={{action "reloadConfig"}}>Validate Configuration</button>
-    {{#if framework}}<pre>{{framework}}</pre>{{/if}}
+    {{#if framework}}
+      <p>Valid Skill ratings: {{framework.min_rating}}–{{framework.max_rating}}</p>
+      {{#each framework.aspects as |aspect|}}
+        <div class="card card-body mb-2">
+          <h4>{{aspect.name}} [{{aspect.key}}]</h4>
+          {{#if aspect.description}}<p>{{aspect.description}}</p>{{/if}}
+          <ul>
+            {{#each framework.skills as |skill|}}
+              {{#if (eq skill.aspect_key aspect.key)}}
+                <li>{{skill.name}} [{{skill.key}}]</li>
+              {{/if}}
+            {{/each}}
+          </ul>
+        </div>
+      {{/each}}
+    {{/if}}
     {{#if reloadResult.errors}}<ul>{{#each reloadResult.errors as |error|}}<li>{{error}}</li>{{/each}}</ul>{{/if}}
   </details>
 
