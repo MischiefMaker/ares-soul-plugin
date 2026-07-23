@@ -556,12 +556,19 @@ If failure_probability < 0.5% AND roll fails:
 **Configuration:**
 ```yaml
 rolls:
-  extraordinary_luck:
-    enabled: true
-    probability_threshold: 0.005  # 0.5% = 0.005
-    good_luck_message: "In an extraordinary string of good luck, %{character} succeeds."
-    bad_luck_message: "In an extraordinary string of bad luck, %{character} fails."
+  extraordinary_result_threshold: 0.005    # Probability threshold (0.5%)
+  extraordinary_result_good: "In a shocking display of good luck"
+  extraordinary_result_bad: "In a fit of bad luck"
 ```
+
+**Message Format:**
+The configured prefix is used with the outcome appended:
+- Good luck: `"{prefix}, {character} succeeds."`
+- Bad luck: `"{prefix}, {character} fails."`
+
+**Examples with above config:**
+- Good outcome: "In a shocking display of good luck, Sarah succeeds."
+- Bad outcome: "In a fit of bad luck, Gandalf fails."
 
 ---
 
