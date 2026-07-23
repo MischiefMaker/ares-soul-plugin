@@ -81,6 +81,12 @@
     >
       Refresh
     </button>
+    <div class="mt-3">
+      <Input @value={{abortReason}} class="form-control mb-2" placeholder="Reason for aborting" />
+      <button type="button" class="btn btn-danger" onclick={{action "abortRoll" pendingRoll}}>
+        Abort This Roll
+      </button>
+    </div>
   {{else if (eq rollStage "selection")}}
     <h4>Choose Boons and Banes</h4>
     {{#if candidates}}
@@ -186,6 +192,27 @@
       Start Another Roll
     </button>
   {{/if}}
+
+  <hr>
+  <h4>Open Pending Rolls</h4>
+  {{#each pendingRolls as |pending|}}
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <button type="button" class="btn btn-link" onclick={{action "showPendingRoll" pending}}>
+        #{{pending.id}} {{pending.skill_key}} — {{pending.status}}
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-danger"
+        onclick={{action "abortRoll" pending}}>Abort</button>
+    </div>
+  {{/each}}
+  <Input @value={{abortReason}} class="form-control mb-3" placeholder="Required abort reason" />
+
+  <h4>Roll History</h4>
+  <ul class="list-group">
+    {{#each rollHistory as |roll|}}
+      <li class="list-group-item">#{{roll.id}} {{roll.skill_key}}:
+        {{roll.final_result}} — {{roll.degree_of_success}}</li>
+    {{/each}}
+  </ul>
 </BsModalSimple>
 
 {{#if canReview}}
@@ -201,6 +228,8 @@
     {{#if gmIsLoading}}
       <p>Loading pending rolls…</p>
     {{else if (eq gmReviewStage "list")}}
+      <Input @value={{forceAbortReason}} class="form-control mb-3"
+        placeholder="Required reason to force-abort a roll" />
       {{#if gmPendingRolls}}
         <div class="list-group">
           {{#each gmPendingRolls as |pending|}}
@@ -212,6 +241,8 @@
               Roll #{{pending.id}} — {{pending.character}} —
               {{pending.skill_key}}
             </button>
+            <button type="button" class="btn btn-sm btn-outline-danger ms-2"
+              onclick={{action "forceAbortRoll" pending}}>Force Abort</button>
           {{/each}}
         </div>
       {{else}}
