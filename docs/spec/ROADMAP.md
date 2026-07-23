@@ -105,17 +105,16 @@ FS3 migration validation, full documentation currency pass, coverage targets, FI
 
 - `docs/handoffs/Phase_9_Automatic_XP_Award_Sources.md`, `docs/handoffs/Phase_9_Character_Generation_UI.md`, `docs/handoffs/Phase_10_Web_Command_Parity_Completion.md` — reviewed the full diff (28 files) before merging. **Found and fixed one critical bug**: the scene-share event handler read a `.scene_id` attribute that doesn't exist on the real `SceneSharedEvent` (only `.id` does) — every real scene share would have raised an exception and the automatic XP award feature would never have worked, but the handler's own spec used a loose test double that didn't catch the mismatch. Also found and fixed a pervasive UX gap in the two brand-new web components (`soul/chargen`, `soul/staff`): both silently swallowed every API error with no visible feedback; both now surface real error messages. See `docs/spec/IMPLEMENTATION_CHECKLIST.md`'s Phase 10 section for full review detail.
 
-## Milestone In Progress: Phase 11 — Command Parity Fixes and Repeat Audit
+## Milestone Complete: Phase 11 — Command Parity Fixes and Repeat Audit
 
-**Status:** 🔶 In progress (started 2026-07-24). Codex ran its own full MUSH/web command-parity audit after the Phase 9/10 merge instead of treating that merge as parity-complete, and found four substantive issues plus one secondary gating gap. All independently verified directly against the source before writing `docs/handoffs/Phase_11_Command_Parity_Fixes_and_Repeat_Audit.md`.
+**Status:** ✅ Complete (2026-07-24). Codex ran its own full MUSH/web command-parity audit after the Phase 9/10 merge instead of treating that merge as parity-complete, and found four substantive issues plus one secondary gating gap. All independently verified directly against the source before writing `docs/handoffs/Phase_11_Command_Parity_Fixes_and_Repeat_Audit.md`, then implemented by Codex and reviewed diff-first before merging (`fabcfc8`).
 
-- B&B web search (`soulBnbCatalogue`'s `query` path) is reachable by any player and exposes inactive catalogue entries `+bnb/search` (correctly staff-only on the MUSH) would never show.
-- Web force-abort only reaches rolls in the narrower `awaiting_gm` list, unlike `+roll/forceabort`, which can target any authorized open roll by id.
-- The staff Framework view renders `<pre>{{framework}}</pre>` — Ember stringifies the object rather than displaying its actual Aspect/Skill data.
-- Staff action feedback: partially already fixed directly (a generic error/success banner exists as of `89ea8ab`) — what remains is action-specific success messages and auto-refreshing affected read views.
-- Secondary: the scene participant-sheet control's visibility doesn't check scene participation the way the roll widget's own gating does (not a security issue; server-side authorization is unaffected).
-
-This handoff also requires Codex to re-run the full bidirectional parity audit after fixing these and repeat until a pass finds nothing, rather than a one-shot fix.
+- B&B web search (`soulBnbCatalogue`'s `query` path) is now gated behind `Soul.can_manage_soul?`, matching `+bnb/search`'s staff-only real permission; plain catalogue browsing is unaffected.
+- Web force-abort now has an explicit "Force-Abort Any Open Roll" form (roll ID + reason), reaching any authorized open roll the same way `+roll/forceabort` does, not just the `awaiting_gm` list.
+- The staff Framework view now renders actual Aspects nested with their Skills and the rating range, instead of `<pre>{{framework}}</pre>`.
+- Staff action feedback is now action-specific (e.g. "Awarded 5 XP to Jane"), and the audit log view auto-refreshes after a mutation if currently displayed.
+- The scene participant-sheet control now checks scene participation the same way the roll widget's `updateReviewPermission` does.
+- Codex's required repeat audit found and fixed three more discrepancies: web scene-XP awards reported success even when a recipient's award failed; manage-only (non-playing) staff could search B&B on the MUSH but not the web; web B&B grants didn't default to `minor` like the MUSH command. The final bidirectional audit passed clean.
 
 ## Stretch Goals (Deferred — FINAL Appendix E)
 
@@ -140,4 +139,4 @@ FINAL explicitly defers these; they require owner approval/an ADR before any imp
 
 **Last Updated:** 2026-07-24
 
-**Next Review:** Phase 11 (command parity fixes and repeat audit) is in progress, with one handoff awaiting Codex implementation and a required repeat audit before it can close. Once Phase 11 closes, future work is project-owner-directed: Stretch Goals above (each requires owner approval/an ADR per FINAL Appendix E), the separately-flagged `soul.yml` `enabled`-key decision (see `IMPLEMENTATION_CHECKLIST.md` Phase 9), or live deployment/pilot feedback.
+**Next Review:** Phase 11 (command parity fixes and repeat audit) is complete; the final bidirectional parity audit passed clean. Future work is now project-owner-directed: Stretch Goals above (each requires owner approval/an ADR per FINAL Appendix E), the separately-flagged `soul.yml` `enabled`-key decision (see `IMPLEMENTATION_CHECKLIST.md` Phase 9), or live deployment/pilot feedback.
