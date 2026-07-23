@@ -360,6 +360,14 @@ export default Component.extend({
       return this.abortRoll(pending, true);
     },
 
+    forceAbortById() {
+      if (!this.forceAbortRollId) {
+        this.flashMessages.danger('A pending roll ID is required.');
+        return;
+      }
+      return this.abortRoll({ id: this.forceAbortRollId }, true);
+    },
+
     newRoll() {
       this.setProperties({
         rollStage: 'setup',
