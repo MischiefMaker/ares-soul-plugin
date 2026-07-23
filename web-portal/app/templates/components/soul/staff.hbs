@@ -1,6 +1,8 @@
 <section class="soul-staff card card-body mt-4">
   <h3>SOUL Staff Administration</h3>
   {{#if isLoading}}<p class="text-muted">Working…</p>{{/if}}
+  {{#if error}}<div class="alert alert-danger">{{error}}</div>{{/if}}
+  {{#if successMessage}}<div class="alert alert-success">{{successMessage}}</div>{{/if}}
 
   <details class="mb-3"><summary>Framework and configuration</summary>
     <button class="btn btn-secondary m-2" type="button" onclick={{action "loadFramework"}}>View Framework</button>

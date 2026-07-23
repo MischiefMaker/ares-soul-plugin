@@ -87,9 +87,9 @@ FS3 migration validation, full documentation currency pass, coverage targets, FI
 - Resonance's approval Narrative History entry, Phase 6's staff XP commands, Phase 6's B&B search commands, and Phase 6's `+roll` GM-review family were all already implemented; their checklist entries just never got flipped from earlier phases' "deferred" notes.
 - The roll-modifier contribution hook and `SoulXpAwardedEvent`/`SoulSkillAdvancedEvent` are resolved as intentionally out of scope (no real core dispatch mechanism exists for the former; no concrete consumer exists for either) rather than left as open TODOs — see `IMPLEMENTATION_CHECKLIST.md`'s Phase 3 section for the full reasoning.
 
-## Milestone In Progress: Phase 10 — Web Command Parity Completion
+## Milestone: Phase 10 — Web Command Parity Completion
 
-**Status:** 🔶 In progress (started 2026-07-24). Codex's own review of the merged Phase 9 web work audited MUSH/web parity across the whole plugin rather than stopping at the handoffs it was implementing — every finding was independently verified against the source before this phase was opened. Confirms `docs/reference/Commands.md`'s prior claim that "no workflow requires switching interfaces" was false: every major command family has a working web operation, but many have no Ember UI that ever calls them.
+**Status:** ✅ Complete (2026-07-24). Codex's own review of the merged Phase 9 web work audited MUSH/web parity across the whole plugin rather than stopping at the handoffs it was implementing — every finding was independently verified against the source before this phase was opened. Confirmed `docs/reference/Commands.md`'s prior claim that "no workflow requires switching interfaces" was false. All three resulting handoffs (this phase's own, plus Phase 9's two carried-forward items) are implemented and merged (`469995b`).
 
 ### Fixed directly (small, mechanical, no design ambiguity)
 
@@ -97,14 +97,13 @@ FS3 migration validation, full documentation currency pass, coverage targets, FI
 - `+bnb/here <tag>` had no web operation at all (not just no UI). Added `soulBnbHere`, mirroring the MUSH command's scene-participant-gated, public-safe lookup exactly.
 - Corrected `Commands.md`'s inaccurate parity claim.
 
-### Carried forward from Phase 9, still open
+### Character Generation UI: Codex paused on three real gaps, all resolved
 
-- `docs/handoffs/Phase_9_Automatic_XP_Award_Sources.md` — REQ-013's scene-sharer/participant and forum XP award sources were never actually automatic.
-- `docs/handoffs/Phase_9_Character_Generation_UI.md` — REQ-011's chargen-time Resonance/Skill/B&B selection has no command/web surface. **Revised after Codex correctly paused on three real gaps**: no chargen B&B removal API existed (fixed directly, along with a deeper Narrative-History-timing bug it exposed in `SoulBnbApi.grant`); no canonical MUSH syntax was specified (resolved: new `+chargen` command family; also removed Aspect allocation from scope, since FINAL's canonical chargen flow never actually calls for it); the web mounting mechanism wasn't identified (resolved: real `chargen-custom-tabs.hbs`/`chargen-custom.hbs` snippet pair for the tab, dedicated `soulChargen*` operations for the data, not the generic chargen-save mechanism, which doesn't fit SOUL's structured data).
+- `docs/handoffs/Phase_9_Character_Generation_UI.md` — no chargen B&B removal API existed (fixed directly, along with a deeper Narrative-History-timing bug it exposed in `SoulBnbApi.grant`); no canonical MUSH syntax was specified (resolved: new `+chargen` command family; also removed Aspect allocation from scope, since FINAL's canonical chargen flow never actually calls for it); the web mounting mechanism wasn't identified (resolved: real `chargen-custom-tabs.hbs`/`chargen-custom.hbs` snippet pair for the tab, dedicated `soulChargen*` operations for the data).
 
-### Handed to Codex, new
+### All three handoffs implemented by Codex and merged (`469995b`)
 
-- `docs/handoffs/Phase_10_Web_Command_Parity_Completion.md` — a staff SOUL administration surface (Framework/Resonance/Reload/Audit/XP-staff-actions/Culmination-staff-actions/B&B-staff-management — all currently web-API-only); roll modal additions (abort/force-abort/pending-list/history); B&B detail/search/scene-lookup UI; and a scene-scoped scene-GM sheet-viewing affordance. Design resolved directly: reuse the existing `can_manage_soul`/`soul_can_review_rolls` custom-field flags for all new gating, matching the discipline already established in Phase 9's roll widget, rather than inventing new mechanisms or probe calls.
+- `docs/handoffs/Phase_9_Automatic_XP_Award_Sources.md`, `docs/handoffs/Phase_9_Character_Generation_UI.md`, `docs/handoffs/Phase_10_Web_Command_Parity_Completion.md` — reviewed the full diff (28 files) before merging. **Found and fixed one critical bug**: the scene-share event handler read a `.scene_id` attribute that doesn't exist on the real `SceneSharedEvent` (only `.id` does) — every real scene share would have raised an exception and the automatic XP award feature would never have worked, but the handler's own spec used a loose test double that didn't catch the mismatch. Also found and fixed a pervasive UX gap in the two brand-new web components (`soul/chargen`, `soul/staff`): both silently swallowed every API error with no visible feedback; both now surface real error messages. See `docs/spec/IMPLEMENTATION_CHECKLIST.md`'s Phase 10 section for full review detail.
 
 ## Stretch Goals (Deferred — FINAL Appendix E)
 
@@ -129,4 +128,4 @@ FINAL explicitly defers these; they require owner approval/an ADR before any imp
 
 **Last Updated:** 2026-07-24
 
-**Next Review:** All eight planned implementation phases (FINAL Appendix D) are complete; Phase 10 (web command parity completion, absorbing Phase 9's two remaining handoffs) is in progress with three handoffs awaiting Codex implementation. Once Phase 10 closes, future work is project-owner-directed: Stretch Goals above (each requires owner approval/an ADR per FINAL Appendix E), the separately-flagged `soul.yml` `enabled`-key decision (see `IMPLEMENTATION_CHECKLIST.md` Phase 9), or live deployment/pilot feedback.
+**Next Review:** All ten phases to date (the original eight per FINAL Appendix D, plus Phase 9's checklist-review follow-up and Phase 10's web command parity completion) are complete. Future work is project-owner-directed: Stretch Goals above (each requires owner approval/an ADR per FINAL Appendix E), the separately-flagged `soul.yml` `enabled`-key decision (see `IMPLEMENTATION_CHECKLIST.md` Phase 9), or live deployment/pilot feedback.

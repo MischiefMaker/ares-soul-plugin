@@ -2,7 +2,10 @@ module AresMUSH
   module Soul
     class SceneSharedEventHandler
       def on_event(event)
-        scene = Scene[event.scene_id]
+        # SceneSharedEvent's only real attribute is .id (the scene's id) -
+        # see plugins/scenes/public/scene_events.rb in the real AresMUSH
+        # engine. There is no .scene_id.
+        scene = Scene[event.id]
         return unless scene
 
         approved_ids = Chargen.approved_chars.map { |character| character.id.to_s }

@@ -1,6 +1,7 @@
 <section class="soul-chargen">
   <h3>SOUL Character Framework</h3>
   {{#if isLoading}}<p class="text-muted">Saving…</p>{{/if}}
+  {{#if error}}<div class="alert alert-danger">{{error}}</div>{{/if}}
   {{#if status}}
     {{#if status.resonance_enabled}}
       <div class="card card-body mb-3">

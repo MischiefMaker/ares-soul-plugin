@@ -12,7 +12,9 @@ module AresMUSH
       allow(Global).to receive(:read_config).with("soul", "xp", "scene_participant_award").and_return(1)
       allow(SoulXpApi).to receive(:award)
 
-      subject.on_event(double(scene_id: 12))
+      # SceneSharedEvent's only real attribute is .id, not .scene_id - see
+      # plugins/scenes/public/scene_events.rb in the real AresMUSH engine.
+      subject.on_event(double(id: 12))
 
       expect(SoulXpApi).to have_received(:award).with(
         owner, 2, source: "scene_sharer:12",
@@ -30,7 +32,9 @@ module AresMUSH
       allow(Scene).to receive(:[]).and_return(scene)
       allow(Chargen).to receive(:approved_chars).and_return([])
       allow(SoulXpApi).to receive(:award)
-      subject.on_event(double(scene_id: 12))
+      # SceneSharedEvent's only real attribute is .id, not .scene_id - see
+      # plugins/scenes/public/scene_events.rb in the real AresMUSH engine.
+      subject.on_event(double(id: 12))
       expect(SoulXpApi).not_to have_received(:award)
     end
   end

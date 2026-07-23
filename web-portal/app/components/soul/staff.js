@@ -10,7 +10,11 @@ export default Component.extend({
     this.set('isLoading', true);
     try {
       let result = await this.api.requestOne(cmd, args || {});
-      if (!result.error && resultProperty) {
+      this.setProperties({
+        error: result.error || null,
+        successMessage: result.error ? null : 'Done.'
+      });
+      if (resultProperty) {
         this.set(resultProperty, result);
       }
       return result;

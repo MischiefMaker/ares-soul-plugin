@@ -8,23 +8,35 @@ export default Component.extend({
 
   didInsertElement() {
     this._super(...arguments);
-    this.loadStatus();
+    this.refreshStatus();
+  },
+
+  async refreshStatus() {
+    let result = await this.api.requestOne('soulChargenStatus', {});
+    if (!result.error) {
+      this.set('status', result);
+    }
   },
 
   async request(cmd, args) {
     this.set('isLoading', true);
     try {
       let result = await this.api.requestOne(cmd, args || {});
-      if (!result.error) {
-        this.setProperties({ status: result, selectedCatalogue: null, explanation: null });
+      if (result.error) {
+        // Reload from the server so a rejected Skill/Resonance/B&B change
+        // (e.g. over budget) doesn't leave a stale, never-actually-saved
+        // value showing in a two-way-bound input - but keep the error
+        // message visible, which a plain reload would otherwise clear.
+        this.set('error', result.error);
+        await this.refreshStatus();
+      } else {
+        this.setProperties({
+          status: result, error: null, selectedCatalogue: null, explanation: null
+        });
       }
     } finally {
       this.set('isLoading', false);
     }
-  },
-
-  loadStatus() {
-    return this.request('soulChargenStatus', {});
   },
 
   actions: {
