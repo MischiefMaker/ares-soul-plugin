@@ -1,9 +1,11 @@
 <section class="soul-bnb">
   <h3>Boons &amp; Banes</h3>
-  <div class="input-group mb-3">
-    <Input @value={{query}} class="form-control" placeholder="Search by name or tag" />
-    <button type="button" class="btn btn-secondary" onclick={{action "search"}}>Search</button>
-  </div>
+  {{#if canManage}}
+    <div class="input-group mb-3">
+      <Input @value={{query}} class="form-control" placeholder="Staff search by name or tag" />
+      <button type="button" class="btn btn-secondary" onclick={{action "search"}}>Search</button>
+    </div>
+  {{/if}}
   {{#if isLoading}}
     <div class="text-muted">Loading catalogue…</div>
   {{else}}
