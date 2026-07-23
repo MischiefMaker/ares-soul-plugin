@@ -30,5 +30,18 @@ module AresMUSH
       allow(Soul).to receive(:can_manage_soul?).with(character).and_return(false)
       expect(subject.handle(request)[:error]).to be_present
     end
+
+    it "actually validates configuration on reload instead of an unconditional success" do
+      staff = Fabricate(:character)
+      request = double(cmd: "soulReload", enactor: staff, args: {})
+      allow(Website).to receive(:check_login).and_return(nil)
+      allow(Soul).to receive(:can_manage_soul?).and_return(true)
+
+      allow(Soul).to receive(:check_config).and_return([])
+      expect(subject.handle(request)).to eq(success: true, live_read: true, errors: [])
+
+      allow(Soul).to receive(:check_config).and_return(["bad setting"])
+      expect(subject.handle(request)).to eq(success: false, live_read: true, errors: ["bad setting"])
+    end
   end
 end

@@ -137,4 +137,4 @@ Staff tools SHALL NOT require direct database manipulation (REQ-036). `+soul/aud
 
 - All player commands are permission-gated via `game/config/soul.yml` (see `docs/reference/Permissions.md`).
 - Rolls automatically surface matching B&Bs — no manual +/- modifier entry (CI-03 conversational roll flow).
-- Web portal SHALL provide equivalent capability for every command family above (REQ-032, CP-05) — MUSH is the authoritative feature list, but no workflow requires switching interfaces.
+- Web portal SHALL provide equivalent capability for every command family above (REQ-032, CP-05) — MUSH is the authoritative feature list. **As of 2026-07-24, this is not yet true in practice**: most staff workflows (B&B catalogue management, XP awards/corrections, Culmination approval, Resonance correction, Framework/Audit viewing) and several player workflows (B&B detail/search/scene lookup, roll abort/pending-list/history) have a working web *operation* but no Ember UI that invokes it, so they currently require MUSH commands. See `docs/handoffs/Phase_10_Web_Command_Parity_Completion.md` and `docs/spec/IMPLEMENTATION_CHECKLIST.md`'s Phase 10 section for the itemized gap list.

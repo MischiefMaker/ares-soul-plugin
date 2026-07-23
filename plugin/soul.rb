@@ -89,7 +89,7 @@ module AresMUSH
       case request.cmd
       when "soulSheet"
         SoulSheetWebHandler
-      when "soulBnb", "soulBnbCatalogue", "soulBnbCreate", "soulBnbGrant",
+      when "soulBnb", "soulBnbHere", "soulBnbCatalogue", "soulBnbCreate", "soulBnbGrant",
            "soulBnbProgress", "soulBnbDelete", "soulBnbResolve", "soulBnbRestore"
         SoulBnbWebHandler
       when "soulXp", "soulXpSpend", "soulXpAward", "soulXpScene", "soulXpCorrect"

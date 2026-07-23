@@ -45,7 +45,12 @@ module AresMUSH
             emit_result SoulResonanceApi.correct(character, self.value, actor: enactor, reason: self.reason)
           end
         when "reload"
-          client.emit_success t('soul.config_live')
+          errors = Soul.check_config
+          if errors.empty?
+            client.emit_success t('soul.config_live')
+          else
+            client.emit_failure t('soul.config_invalid', errors: errors.join("%r"))
+          end
         when "audit"
           ClassTargetFinder.with_a_character(self.name, client, enactor) do |character|
             lines = SoulAuditApi.get_audit(character, enactor).map do |entry|

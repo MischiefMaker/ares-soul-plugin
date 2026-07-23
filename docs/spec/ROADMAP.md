@@ -68,19 +68,14 @@ The Inklings validate/apply hook, and Grimoire's read-only Skill/Aspect/Resonanc
 
 FS3 migration validation, full documentation currency pass, coverage targets, FINAL Appendix C acceptance criteria, and the release checklist. All eight planned implementation phases (FINAL Appendix D) are now complete.
 
-## Milestone In Progress: Phase 9 — Checklist Review Follow-Up
+## Milestone: Phase 9 — Checklist Review Follow-Up
 
-**Status:** 🔶 In progress (started 2026-07-24). A full review of `IMPLEMENTATION_CHECKLIST.md`'s accumulated "deferred/incomplete" items, cross-checked directly against shipped code rather than each phase's own self-reported status. Several previously-flagged items turned out to be stale (already done in a later phase but never checked off); two genuinely real command-surface bugs were found and fixed directly; two genuinely real feature gaps remain and have been handed to Codex.
+**Status:** ✅ Mostly closed (2026-07-24) — its two remaining open items are carried forward into Phase 10 below rather than tracked twice. A full review of `IMPLEMENTATION_CHECKLIST.md`'s accumulated "deferred/incomplete" items, cross-checked directly against shipped code rather than each phase's own self-reported status. Several previously-flagged items turned out to be stale (already done in a later phase but never checked off); two genuinely real command-surface bugs were found and fixed directly.
 
 ### Fixed directly (small, mechanical, exact precedent already established elsewhere in the codebase)
 
 - `SoulBnbApi.resolve`/`.restore` (REQ-020, built in Phase 3) had no command or web surface at all. Added `+bnb/resolve`/`+bnb/restore` and matching web operations.
 - `SoulCulminationApi.deny`/`.revoke`/`.correct` (REQ-023, built in Phase 3) had no command or web surface at all — only `propose`/`approve` were ever wired. Added `+culmination/deny`/`/revoke`/`/correct` and matching web operations.
-
-### Handed to Codex, still open
-
-- `docs/handoffs/Phase_9_Automatic_XP_Award_Sources.md` — REQ-013's scene-sharer/participant and forum XP award sources were never actually automatic; `+xp/scene` is a manual staff command, not the event-driven award REQ-013 specifies, and no forum award path exists at all. Design resolved (real `SceneSharedEvent` + `Scene#owner` as sharer; forum via idempotent reconciliation, since no core forum-post event exists).
-- `docs/handoffs/Phase_9_Character_Generation_UI.md` — REQ-011's chargen-time Resonance selection, Skill/Aspect allocation, and B&B selection were deferred since Phase 2 and never scheduled a home phase. Underlying service APIs already do the right thing; only the command/web/chargen-stage integration layer is missing.
 
 ### Handed to Codex, implemented and merged (`60721d1`)
 
@@ -91,6 +86,25 @@ FS3 migration validation, full documentation currency pass, coverage targets, FI
 
 - Resonance's approval Narrative History entry, Phase 6's staff XP commands, Phase 6's B&B search commands, and Phase 6's `+roll` GM-review family were all already implemented; their checklist entries just never got flipped from earlier phases' "deferred" notes.
 - The roll-modifier contribution hook and `SoulXpAwardedEvent`/`SoulSkillAdvancedEvent` are resolved as intentionally out of scope (no real core dispatch mechanism exists for the former; no concrete consumer exists for either) rather than left as open TODOs — see `IMPLEMENTATION_CHECKLIST.md`'s Phase 3 section for the full reasoning.
+
+## Milestone In Progress: Phase 10 — Web Command Parity Completion
+
+**Status:** 🔶 In progress (started 2026-07-24). Codex's own review of the merged Phase 9 web work audited MUSH/web parity across the whole plugin rather than stopping at the handoffs it was implementing — every finding was independently verified against the source before this phase was opened. Confirms `docs/reference/Commands.md`'s prior claim that "no workflow requires switching interfaces" was false: every major command family has a working web operation, but many have no Ember UI that ever calls them.
+
+### Fixed directly (small, mechanical, no design ambiguity)
+
+- `+soul/reload`/`soulReload` were pure no-ops that always reported success. Both now call the real, pre-existing `Soul.check_config` and report actual validation errors.
+- `+bnb/here <tag>` had no web operation at all (not just no UI). Added `soulBnbHere`, mirroring the MUSH command's scene-participant-gated, public-safe lookup exactly.
+- Corrected `Commands.md`'s inaccurate parity claim.
+
+### Carried forward from Phase 9, still open
+
+- `docs/handoffs/Phase_9_Automatic_XP_Award_Sources.md` — REQ-013's scene-sharer/participant and forum XP award sources were never actually automatic.
+- `docs/handoffs/Phase_9_Character_Generation_UI.md` — REQ-011's chargen-time Resonance/Skill/B&B selection has no command/web surface.
+
+### Handed to Codex, new
+
+- `docs/handoffs/Phase_10_Web_Command_Parity_Completion.md` — a staff SOUL administration surface (Framework/Resonance/Reload/Audit/XP-staff-actions/Culmination-staff-actions/B&B-staff-management — all currently web-API-only); roll modal additions (abort/force-abort/pending-list/history); B&B detail/search/scene-lookup UI; and a scene-scoped scene-GM sheet-viewing affordance. Design resolved directly: reuse the existing `can_manage_soul`/`soul_can_review_rolls` custom-field flags for all new gating, matching the discipline already established in Phase 9's roll widget, rather than inventing new mechanisms or probe calls.
 
 ## Stretch Goals (Deferred — FINAL Appendix E)
 
@@ -115,4 +129,4 @@ FINAL explicitly defers these; they require owner approval/an ADR before any imp
 
 **Last Updated:** 2026-07-24
 
-**Next Review:** All eight planned implementation phases (FINAL Appendix D) are complete; Phase 9 (checklist review follow-up) is in progress with two handoffs awaiting Codex implementation. Once Phase 9 closes, future work is project-owner-directed: Stretch Goals above (each requires owner approval/an ADR per FINAL Appendix E), Ember/web-portal component work for the Roll subsystem (Phase 6 built the Ruby web handlers; frontend components for rolls specifically remain, following the pattern in `web-portal/app/components/soul/` from Phases 1-3), or live deployment/pilot feedback.
+**Next Review:** All eight planned implementation phases (FINAL Appendix D) are complete; Phase 10 (web command parity completion, absorbing Phase 9's two remaining handoffs) is in progress with three handoffs awaiting Codex implementation. Once Phase 10 closes, future work is project-owner-directed: Stretch Goals above (each requires owner approval/an ADR per FINAL Appendix E), the separately-flagged `soul.yml` `enabled`-key decision (see `IMPLEMENTATION_CHECKLIST.md` Phase 9), or live deployment/pilot feedback.

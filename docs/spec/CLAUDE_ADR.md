@@ -39,6 +39,26 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 
 ## Recent Changes
 
+### Phase 10 Opened: Web Command Parity Completion (2026-07-24)
+
+Codex's own review of the merged Phase 9 web work (profile tab, XP-spend form, scene roll widget) went further than the specific handoffs it was implementing and audited MUSH/web parity across the whole plugin: B&B (catalogue browsing only — no detail lookup, scene lookup, search, or any staff management form), XP (player-side complete, but zero staff-action UI), Culminations (viewing only, zero staff-action UI), Rolls (Phase 9's widget covers the core workflow but never calls abort/force-abort/pending-list/history), general staff commands (Framework/Resonance/Reload/Audit all web-API-only, no component), and a Sheet scene-GM viewing hole (the backend already supports it via `scene_id`; the mounted profile component never sends one, and being profile-scoped rather than scene-scoped, has no scene context to send).
+
+Verified every finding directly before acting on it (grep/read the actual source, not just trusting the report) — all six confirmed accurate:
+- `bnb.js` really does call only `soulBnbCatalogue`.
+- `+bnb/here` really has zero backend web operation, not just zero UI — confirmed no `soulBnbHere` (or equivalent) existed anywhere in `soul.rb`'s routing.
+- `xp.js`/`culmination.js` really only ever call their respective read operations; the five staff web operations for each subsystem are real and correct but uninvoked anywhere in `web-portal/`.
+- `roll.js` really never calls `soulRollAbort`/`soulRollForceAbort`/`soulRollPending`/`soulRollHistory`.
+- No `soul/staff` component exists at all.
+- `sheet.js` really only ever sends `character`, confirmed against `soul_sheet_web_handler.rb`'s `can_view?`, which requires `scene_id` for the scene-GM branch.
+- `+soul/reload`/`soulReload` really are unconditional no-ops — confirmed `soul_staff_cmd.rb`'s `"reload"` case just emits a canned message, and `soul_staff_web_handler.rb`'s `"soulReload"` case returns a hardcoded `{ success: true, live_read: true }` regardless of actual config state.
+- `docs/reference/Commands.md`'s "no workflow requires switching interfaces" claim really is currently false given the above.
+
+**Fixed two of these directly** (small, mechanical, no design ambiguity — matching the precedent already established for this kind of gap in Phase 9): `+soul/reload`/`soulReload` now call the real, pre-existing `Soul.check_config` (already used at plugin load, never previously invoked on demand) and report actual validation errors instead of an unconditional success — genuinely useful now instead of misleadingly named. Added the missing `soulBnbHere` web operation, mirroring `soul_bnb_cmd.rb`'s `show_here` method exactly (scene-participant gated, public-safe matches only). Both have specs. Corrected `Commands.md`'s inaccurate parity claim to describe the actual current state.
+
+The remaining Ember work (a staff administration surface; roll modal additions; B&B detail/search/scene-lookup; scene-GM sheet viewing) is legitimately Codex's remit — sized and organized the same way Codex's own review grouped it, in `docs/handoffs/Phase_10_Web_Command_Parity_Completion.md`. Folded Phase 9's two still-open handoffs (Automatic XP Award Sources, Character Generation UI) into this new phase rather than tracking them in two places, since Phase 9 itself is otherwise closed.
+
+**Next:** await Codex's implementation of Phase 10's three open handoffs; review and merge per the established discipline.
+
 ### Phase 9: Checklist Review Follow-Up, In Progress (2026-07-24)
 
 User asked to review `IMPLEMENTATION_CHECKLIST.md` for every remaining deferred/incomplete item and act on each rather than leave them as stale notes. Applied the same discipline Phase 8 applied to documentation currency — cross-checked each checklist claim directly against the shipped code instead of trusting the checklist's own self-reported status.

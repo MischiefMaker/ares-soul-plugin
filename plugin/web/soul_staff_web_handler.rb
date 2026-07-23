@@ -18,7 +18,8 @@ module AresMUSH
         SoulResonanceApi.correct(character, request.args['value'], actor: request.enactor,
           reason: request.args['reason'])
       when "soulReload"
-        { success: true, live_read: true }
+        errors = Soul.check_config
+        { success: errors.empty?, live_read: true, errors: errors }
       when "soulAudit"
         character = Character.find_one_by_name(request.args['character'])
         return { error: t('soul.character_not_found') } unless character

@@ -15,6 +15,8 @@ module AresMUSH
       case request.cmd
       when "soulBnb"
         lookup(request)
+      when "soulBnbHere"
+        here(request)
       when "soulBnbCatalogue"
         entries = request.args['query'].blank? ? SoulBnbApi.get_catalogue : SoulBnbApi.search(request.args['query'])
         { entries: entries.map { |entry| serialize_catalogue(entry) } }
@@ -49,6 +51,20 @@ module AresMUSH
         result = SoulBnbApi.restore(request.args['entry_id'], enactor: enactor)
         result[:error] ? result : { success: true, entry: serialize_character_entry(result[:entry], true) }
       end
+    end
+
+    def here(request)
+      scene = Scene[request.args['scene_id']]
+      return { error: t('soul.no_active_scene') } unless scene && scene.participants.include?(request.enactor)
+
+      catalogue = SoulBnbApi.get_catalogue_entry(request.args['reference'])
+      matches = scene.participants.map do |character|
+        entry = SoulBnbApi.get_character_entries(character).find { |e| e.catalogue_entry == catalogue }
+        next unless entry
+        public_entry = SoulBnbApi.get_character_entry_public(character, entry.id)
+        { character: character.name, name: public_entry[:name], level_state: public_entry[:level_state] }
+      end.compact
+      { matches: matches }
     end
 
     def lookup(request)
