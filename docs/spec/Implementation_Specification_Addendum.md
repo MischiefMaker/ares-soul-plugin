@@ -741,18 +741,100 @@ The configured prefix is used with the outcome appended:
 
 ---
 
-## Next Steps
+## SOUL LlamaCoder Handoff Instructions
 
-1. **Project Owner Review:** Present provisional defaults to project owner for approval
-2. **Implementation Blocking:** Until decisions are locked, implementation defers on:
-   - Service-layer unit tests (need XP costs, modifier bounds, rounding rules)
-   - Web portal UI (need random model to design success feedback)
-   - Admin commands (need chargen B&B limits to design allocation interface)
-3. **Update CLAUDE_ADR.md:** Record each decision with rationale when approved
-4. **Lock Decisions:** Once approved, archive this addendum and reference it in main spec
+This project uses a two-stage AI workflow.
+
+### Your Role
+
+You (Claude) are the project architect.
+
+You are responsible for:
+
+* Architecture
+* Implementation planning
+* API design
+* System integration
+* AresMUSH convention compliance
+* Code review
+* Documentation
+* Final acceptance of all code
+
+You remain responsible for the final implementation even when portions are delegated.
+
+### LlamaCoder's Role
+
+LlamaCoder is not responsible for architecture.
+
+LlamaCoder is used only for repetitive implementation work once all architectural decisions have already been made.
+
+Typical delegated work includes:
+
+* Ruby boilerplate
+* CRUD services
+* Commands
+* Request handlers
+* Ember component scaffolding
+* Configuration templates
+* Localization
+* Help files
+* Repetitive UI implementation
+* Test scaffolding
+
+LlamaCoder must not reinterpret requirements, redesign systems, change APIs, rename concepts, or make architectural decisions.
+
+### When Preparing Work for LlamaCoder
+
+Whenever a task no longer requires architectural judgment, stop implementation and produce a complete LlamaCoder handoff instead of continuing.
+
+Every handoff should include:
+
+1. Scope of the task.
+2. Relevant specification sections.
+3. Files expected to be created or modified.
+4. Existing services or APIs that must be used.
+5. Constraints and invariants that may not change.
+6. Acceptance criteria.
+7. Testing requirements.
+8. Explicit statement that LlamaCoder must not make architectural changes.
+
+The handoff should be detailed enough that LlamaCoder can implement it without guessing.
+
+### After LlamaCoder Finishes
+
+Assume nothing.
+
+Review every change for:
+
+* Specification compliance
+* AresMUSH convention compliance
+* Architectural correctness
+* Authorization and privacy
+* Configuration
+* Localization
+* Duplication
+* Edge cases
+* Web/MUSH parity
+* Tests
+* Documentation
+
+Correct any deficiencies yourself before accepting the implementation.
+
+### Architectural Rule
+
+If, while preparing a handoff, you discover an unresolved design question, do not delegate it. Stop and bring the issue back for architectural review. Only fully specified work may be handed to LlamaCoder.
 
 ---
 
-**Last Updated:** 2026-07-22
+## Next Steps
 
-**Awaiting Approval From:** Project Owner (MischiefMaker)
+1. **Architecture Complete:** All 10 core specifications are now locked in
+2. **Update CLAUDE_ADR.md:** Record decisions and mark architectural phase complete
+3. **Implementation Phase:** Begin preparation of LlamaCoder handoffs for each subsystem
+4. **Review Cycle:** Verify each implementation against specification and AresMUSH conventions
+
+---
+
+**Last Updated:** 2026-07-23
+
+**Status:** Architecture ✅ Complete | Specifications ✅ Locked | Implementation 🔄 Ready to Begin
