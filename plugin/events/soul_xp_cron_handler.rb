@@ -12,6 +12,8 @@ module AresMUSH
     # recalculation cron - see the comment on SoulXpApi.catchup_eligible?.
     class XpCronHandler
       def on_event(event)
+        SoulRollApi.expire_stale_pending_rolls(event.time)
+
         config = Global.read_config("soul", "xp", "weekly_award_cron")
         return unless Cron.is_cron_match?(config, event.time)
 
