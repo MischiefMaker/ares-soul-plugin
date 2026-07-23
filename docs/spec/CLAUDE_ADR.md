@@ -39,6 +39,20 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 
 ## Recent Changes
 
+### Phase 11 Opened: Command Parity Fixes and Repeat Audit (2026-07-24)
+
+Codex ran its own full MUSH/web command-parity audit after the Phase 9/10 merge rather than treating that merge as parity-complete — exactly the kind of follow-through this project has tried to establish as the default (verify, don't assume, even against your own prior work). Found four substantive issues plus one secondary gating gap; user asked for a handoff rather than a direct fix this time, plus an explicit instruction that Codex repeat the audit after fixing until it comes back clean. Verified every finding directly before writing the handoff:
+
+1. **B&B web search exposes staff-only and inactive-catalogue data to players.** Confirmed: `+bnb/search` is staff-only (`soul_bnb_cmd.rb`), but `soulBnbCatalogue`'s web handler branches to the unfiltered `SoulBnbApi.search` whenever any player supplies a `query` arg — that operation was never added to the web handler's `staff_commands` list, and `.search` itself has no `active == "true"` filter unlike `.get_catalogue`. A real, confirmed data-exposure bug, not a hypothetical.
+2. **Web force-abort can't reach every roll the MUSH command can.** Confirmed: the web button only appears next to `gmPendingRolls` (`awaiting_gm` status only), while `+roll/forceabort <id>=<reason>` can target any authorized open roll by id regardless of status.
+3. **Staff Framework view renders `<pre>{{framework}}</pre>`** — confirmed Ember stringifies the object; the real `aspects`/`skills`/`min_rating`/`max_rating` shape is never actually displayed.
+4. **Staff action feedback** — confirmed this is now only a *partial* gap: the direct `89ea8ab` fix already added a generic error/success banner earlier the same day, so the audit's "zero feedback" framing is stale on that specific point. What's genuinely still missing: success messages are a single constant `"Done."` rather than reflecting what actually happened, and no currently-displayed read view (audit log, framework) refreshes after a related mutation.
+5. **Secondary: scene participant-sheet control's gating doesn't check scene participation**, unlike `roll.js`'s own `updateReviewPermission` — not a security issue (server-side `can_view?` is unaffected), but reintroduces the exact permission-denied-click UX the Phase 9 roll widget design was built to avoid.
+
+Wrote `docs/handoffs/Phase_11_Command_Parity_Fixes_and_Repeat_Audit.md` with resolution direction for each (e.g., for #1: match `+bnb/search`'s real staff-only permission rather than inventing a new player-search capability FINAL never specified) and an explicit repeat-audit requirement: after fixing, Codex must re-run the full bidirectional parity audit and repeat until a pass finds nothing, not treat one fix-pass as sufficient. No files modified — this turn was handoff-writing only, per the user's explicit instruction not to fix directly this time.
+
+**Next:** await Codex's fixes and repeat-audit result; review the diff and the audit's final clean pass before considering Phase 11 (and command parity generally) closed.
+
 ### Phases 9 and 10 Closed: All Three Remaining Handoffs Implemented and Merged (2026-07-24)
 
 Codex implemented all three outstanding handoffs (Automatic XP Award Sources, the now-unblocked Character Generation UI, and Web Command Parity Completion) in one commit and pushed to `Codex` (`469995b`). Reviewed the full diff (28 files, ~900 lines) before merging — not just the completion summary.
