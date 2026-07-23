@@ -59,6 +59,8 @@ module AresMUSH
       case event_name
       when "CronEvent"
         return XpCronHandler
+      when "SceneSharedEvent"
+        return SceneSharedEventHandler
       end
       nil
     end
@@ -82,6 +84,8 @@ module AresMUSH
         SoulCulminationCmd
       when "roll"
         SoulRollCmd
+      when "chargen"
+        SoulChargenCmd
       end
     end
 
@@ -106,6 +110,9 @@ module AresMUSH
            "soulRollHistory", "soulRollReview", "soulRollMark",
            "soulRollCandidates", "soulRollDifficulties"
         SoulRollWebHandler
+      when "soulChargenStatus", "soulChargenResonance", "soulChargenSkill",
+           "soulChargenBnb", "soulChargenDrop"
+        SoulChargenWebHandler
       end
     end
   end
