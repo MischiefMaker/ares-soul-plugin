@@ -242,89 +242,174 @@ Individual B&B effects SHALL NOT exceed ±5. If a B&B grants +3, and a character
 
 ## 5. Boon & Bane Chargen Limits
 
-**Status:** Pending Decision
+**Status:** ✅ Approved
 
-**Question:**
-How many unspent Skill advancement points remain after chargen approval, and what happens to Boons/Banes awarded during chargen?
+**Decision:**
+Characters can acquire Boons and Banes during chargen based on their Resonance level (R-level). A universal 2:1 ratio constrains Boons (never more than 2 Boons per Bane), while Banes have no count limit. Both are constrained by available level ratings at chargen.
 
-**Specification Requirement (REQ-011):**
-"Unspent Skill points SHALL be forfeited when chargen is approved."
+### 5.1 Universal Boon-to-Bane Ratio
 
-**Clarifications Needed:**
+**Rule:** For every 2 Boons a character has, they must have at least 1 Bane.
 
-### 5.1 Skill Advancement Point Forfeiture
-**Current Spec Language:** "Unspent Skill points SHALL be forfeited when chargen is approved" (REQ-011, Invariant).
+```
+min_banes_required = floor(boon_count / 2)
+```
 
-**Interpretation:**
-- During chargen, characters may distribute a fixed pool of "chargen points" across Skills (e.g., 10 points total)
-- Any points not spent before approval are lost permanently
-- Characters must spend all points or lose them; no banking for later advancement
+**Examples:**
+- 0–1 Boon → 0 Banes required
+- 2 Boons → 1 Bane required
+- 3 Boons → 1 Bane required (3/2 = 1.5 → 1)
+- 4 Boons → 2 Banes required
+- 5 Boons → 2 Banes required
+
+**Intent:** This ratio applies continuously (in chargen and post-chargen). It prevents runaway Boon accumulation and encourages narrative balance. Players can always take *fewer* Banes than required, but cannot exceed the Boon count imposed by this ratio.
+
+### 5.2 Boon Chargen Limits (by Resonance Level)
+
+**General Pattern:**
+- Each Resonance level adds capacity (at negative R-levels, capacity decreases)
+- Level distributions show *maximum* allowed at each level; players may choose lower levels
+- Level 3 is the chargen maximum for Boons
+
+| R-Level | Max Count | Max at Level 2 | Max at Level 3 |
+|---------|-----------|----------------|----------------|
+| R-3 | 0 | 0 | — |
+| R-2 | 0 | 0 | — |
+| R-1 | 1 | 0 | — |
+| R0 | 2 | 1 | — |
+| R1 | 3 | 2 | — |
+| R2 | 3 | 3 | 1 |
+| R3 | 4 | 3 | 2 |
+
+**Interpretation Examples:**
+- **R0, 2 Boons:** Could be [2, 1], [1, 1] (up to 1 can be level 2; rest are level 1)
+- **R1, 3 Boons:** Could be [2, 2, 1] or [2, 1, 1] or [1, 1, 1] (up to 2 can be level 2; rest are level 1)
+- **R2, 3 Boons:** Could be [3, 2, 1] or [2, 2, 2] or [1, 1, 1] (up to 3 at level 2 or 1 at level 3; rest lower)
+- **R3, 4 Boons:** Could be [3, 3, 2, 1] or [3, 2, 2, 1] (up to 2 at level 3; rest level 2 or below)
+
+### 5.3 Bane Chargen Limits (by Resonance Level)
+
+**General Pattern:**
+- Banes have *no count limit* (unlimited)
+- Only the maximum level rating is constrained by R-level
+- Players may take any number of Banes, subject only to the Boon-to-Bane ratio
+
+| R-Level | Max Count | Max at Level 2 | Max at Level 3 |
+|---------|-----------|----------------|----------------|
+| R-3 | Unlimited | 3 | 3 |
+| R-2 | Unlimited | 2 | 2 |
+| R-1 | Unlimited | 2 | 1 |
+| R0 | Unlimited | 1 | 0 |
+| R1 | Unlimited | 2 | 1 |
+| R2 | Unlimited | 3 | 2 |
+| R3 | Unlimited | 3 | 3 |
+
+**Interpretation Examples:**
+- **R0, 1 Bane:** Can be level 1 or 2 (level 3 not available)
+- **R0, 3 Banes:** Could be [2, 1, 1] (only 1 can be level 2 since level 3 unavailable)
+- **R1, 5 Banes:** Could be [3, 2, 2, 1, 1] or [3, 3, 2, 1, 1] (up to 1 can be level 3, up to 2 level 2)
+- **R3, unlimited Banes:** Can include [3, 3, 3, 3, 2, 2, 1] (up to 3 at level 3)
+
+**Persistence:** All chargen B&Bs persist post-approval and cannot be forfeited or removed.
 
 **Configuration:**
+
 ```yaml
 chargen:
-  skill_points_total: 10
-  skill_points_max_per_skill: 5
-  forfeiture_on_approval: true  # Invariant: non-negotiable per spec
-```
-
-**Rationale:**
-- Prevents characters from starting with unbalanced advantages
-- Encourages deliberate chargen choices
-- XP-earned advancement remains the post-chargen progression path
-
-### 5.2 Boons & Banes Awarded During Chargen
-
-**Question:** Can characters be granted Boons/Banes during chargen? If so, how many, and do they persist post-approval?
-
-**Options Under Consideration:**
-
-### Option A: Boons/Banes Pre-Allocated by Setting
-- **Rule:** Characters receive 0-2 Boons/Banes as part of chargen based on archetype or player narrative
-- **Persistence:** All chargen B&Bs persist post-approval; no forfeiture
-- **Configuration:**
-  ```yaml
-  chargen:
-    boons_per_character: 1
-    banes_per_character: 1
-  ```
-- **Rationale:** B&Bs are narrative-driven; tying them to chargen anchors characters in their origin story
-- **Concern:** Unequal if some characters choose zero B&Bs while others maximize
-
-### Option B: No Chargen B&Bs
-- **Rule:** Characters start with no Boons/Banes; all B&Bs are earned post-chargen via Inklings, GM awards, or scene events
-- **Persistence:** N/A
-- **Rationale:** Clean slate; B&Bs reflect earned achievements
-- **Concern:** Characters feel less defined at start of play
-
-### Option C: Optional Chargen B&Bs (Traded for XP)
-- **Rule:** Characters may allocate chargen points toward Boons/Banes, forfeiting Skill points for B&B purchasing power
-- **Configuration:**
-  ```yaml
-  chargen:
-    skill_points_total: 10
-    boon_point_cost: 3    # 1 Boon costs 3 points
-    bane_point_cost: 2    # 1 Bane costs 2 points (counts toward max)
-    max_boons_chargen: 2
-    max_banes_chargen: 2
-  ```
-- **Rationale:** Trade-off system rewards deliberate choice; players weigh narrative flavor against mechanical power
-- **Concern:** Complex UI in chargen; may confuse new players
-
-**Recommendation:**
-*Awaiting project-owner decision.* Implementation will use **Option A (Pre-Allocated)** as default, granting each character 1 Boon and 1 Bane based on archetype, with persistence post-approval.
-
-**Provisional Configuration:**
-```yaml
-chargen:
-  skill_points_total: 10
-  skill_points_max_per_skill: 5
-  forfeiture_on_approval: true
+  boon_bane_ratio: 2
+  ratio_rounding: "floor"
   
-  boons_per_character: 1
-  banes_per_character: 1
-  persist_post_chargen: true
+  resonance_levels:
+    r_minus_3:
+      boons:
+        max_count: 0
+        max_at_level_2: 0
+        max_at_level_3: 0
+      banes:
+        max_count: null          # Unlimited
+        max_at_level_2: 3
+        max_at_level_3: 3
+    
+    r_minus_2:
+      boons:
+        max_count: 0
+        max_at_level_2: 0
+        max_at_level_3: 0
+      banes:
+        max_count: null          # Unlimited
+        max_at_level_2: 2
+        max_at_level_3: 2
+    
+    r_minus_1:
+      boons:
+        max_count: 1
+        max_at_level_2: 0
+        max_at_level_3: 0
+      banes:
+        max_count: null          # Unlimited
+        max_at_level_2: 2
+        max_at_level_3: 1
+    
+    r_0:
+      boons:
+        max_count: 2
+        max_at_level_2: 1
+        max_at_level_3: 0
+      banes:
+        max_count: null          # Unlimited
+        max_at_level_2: 1
+        max_at_level_3: 0
+    
+    r_1:
+      boons:
+        max_count: 3
+        max_at_level_2: 2
+        max_at_level_3: 0
+      banes:
+        max_count: null          # Unlimited
+        max_at_level_2: 2
+        max_at_level_3: 1
+    
+    r_2:
+      boons:
+        max_count: 3
+        max_at_level_2: 3
+        max_at_level_3: 1
+      banes:
+        max_count: null          # Unlimited
+        max_at_level_2: 3
+        max_at_level_3: 2
+    
+    r_3:
+      boons:
+        max_count: 4
+        max_at_level_2: 3
+        max_at_level_3: 2
+      banes:
+        max_count: null          # Unlimited
+        max_at_level_2: 3
+        max_at_level_3: 3
 ```
+
+**Design Rationale:**
+
+1. **Flexible Boon cap:** R-level determines maximum Boons, but 2:1 ratio creates meaningful Bane investment decisions
+2. **Progressive level unlock:** R-1 to R1 keep Boons at level 2; R2+ unlock level 3, allowing powerful boons
+3. **Bane freedom:** No count limit encourages narrative depth and character complexity
+4. **Player agency:** Level distributions are maximums; players choose their distribution within constraints
+5. **Continuous enforcement:** The 2:1 ratio applies throughout the character's life, not just chargen
+
+**Examples:**
+
+**Example 1: R0 Character**
+- Max 2 Boons (up to 1 at level 2), subject to 2:1 ratio (needs 1 Bane)
+- Unlimited Banes (no level 3 available at R0)
+- Could allocate: [Lucky (L2), Connected (L1)] + [Cursed (L2)]
+
+**Example 2: R3 Character (Post-Chargen)**
+- Max 4 Boons (up to 3 at level 2 OR 2 at level 3), subject to 2:1 ratio (needs 2 Banes)
+- Unlimited Banes (up to 3 at level 3)
+- Could allocate: [Inspired (L3), Resilient (L3), Sharp-Witted (L2), Skilled (L1)] + [Fragile (L3), Distracted (L3), Isolated (L2)]
 
 ---
 
@@ -688,11 +773,11 @@ The configured prefix is used with the outcome appended:
 |----------|--------|----------------|
 | Difficulty Scale | ✅ Approved | See Table in §1 |
 | Random Model | ✅ Approved | 2d10 open-ended (§2) |
+| XP Advancement Cost | ✅ Approved | Algebraic model (§3) |
 | Degrees of Success | ✅ Approved | Six degrees with GM-less/GM-led output (§8.1) |
 | Extraordinary Luck Messaging | ✅ Approved | Probability-based (<0.5%) (§9) |
-| XP Advancement Cost | ⏳ Pending | [10, 15, 20, 25, 30] (provisional) |
+| Chargen B&Bs | ✅ Approved | 2:1 Boon-to-Bane ratio, per-R-level config (§5) |
 | Modifier Bounds | ⏳ Pending | ±10 (provisional) |
-| Chargen B&Bs | ⏳ Pending | 1 Boon + 1 Bane (provisional) |
 | Pending Roll Expiry | ⏳ Pending | 24h auto-fail (provisional) |
 | Aspect Rounding | ⏳ Pending | Round Half-Up (provisional) |
 | Catch-Up Edge Cases | ⏳ Pending | 7d grace, 3-char minimum (provisional) |
