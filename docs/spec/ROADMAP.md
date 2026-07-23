@@ -52,21 +52,23 @@ Per-scene GM policy (Required/Optional/Unavailable), mandatory/optional B&B sele
 
 Every command family from `docs/reference/Commands.md` implemented equivalently on both interfaces (CP-05) — Sheet, B&B, Rolls, XP, History, and Staff UI. Rolls (`+roll`, `+roll/gm`, `+roll suggested`, `+roll <tag>`, `+roll none`, abort/force-abort) join the command surface already deferred from Phases 1-4.
 
-## Current Milestone: Implementation, Phase 7
+## Completed Milestone: Implementation, Phase 7
 
-**Status:** 🔶 In progress. Grimoire side complete (Claude, 2026-07-24 — read-only lookups already existed from Phase 2; only a branch-to-Skill config mapping was added). The Inklings validate/apply hook (`SoulInklingsHook`) handed to Codex (`docs/handoffs/Phase_7_Inklings_Hook_and_Grimoire_Mapping.md`), pending implementation and review.
+**Status:** ✅ Complete (2026-07-24). Grimoire side implemented directly (Claude — read-only lookups already existed from Phase 2; only a branch-to-Skill config mapping was added). `SoulInklingsHook` implemented by Codex against the handoff and reviewed/merged by Claude, including verifying the trickiest part (retry-safe idempotency ordering for Boon/Bane progressions) by reading the code directly rather than trusting the summary.
 
 ### Phase 7 — Inklings and Grimoire Integrations
 
-The Inklings validate/apply hook handoff, and Grimoire's read-only Skill/Aspect/Resonance access. Both remain fully optional — SOUL's core functionality never depends on either. A real idempotency gap in `SoulBnbApi.grant`/`.progress` (no protection against duplicate delivery) was found and resolved at the hook layer before the handoff was written — see the handoff §5.2.
+The Inklings validate/apply hook, and Grimoire's read-only Skill/Aspect/Resonance access. Both remain fully optional — SOUL's core functionality never depends on either. A real idempotency gap in `SoulBnbApi.grant`/`.progress` (no protection against duplicate delivery) was found and resolved at the hook layer before the handoff was written, and Codex independently surfaced and correctly resolved a second, subtler ordering issue: the idempotency check must run before the state-matches-current revalidation, or a successful retry looks like stale state.
 
-## Future Phases
+## Current Milestone: Implementation, Phase 8
+
+**Status:** Ready to begin
 
 ### Phase 8 — Migration, Documentation, Tests, and Release Review
 
 FS3 migration validation, full documentation currency pass, coverage targets, FINAL Appendix C acceptance criteria, and the release checklist.
 
-**Estimated scope for remaining phases:** 1-2 remaining implementation cycles, with Codex handling well-specified implementation work under Claude's architectural review (see the Codex Handoff Instructions in `Implementation_Specification_Addendum.md`).
+**Estimated scope for the remaining phase:** 1 remaining implementation cycle, with Codex handling well-specified implementation work under Claude's architectural review (see the Codex Handoff Instructions in `Implementation_Specification_Addendum.md`).
 
 ## Stretch Goals (Deferred — FINAL Appendix E)
 

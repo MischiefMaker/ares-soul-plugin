@@ -18,7 +18,7 @@ Claude's ongoing engineering notebook for SOUL implementation. Tracks current st
 
 **Branch:** `main`
 
-**Phase:** ✅ Phases 1-6 complete. 🔶 Phase 7 (Inklings and Grimoire Integrations) in progress — Grimoire side complete (Claude, directly); the Inklings hook (`SoulInklingsHook`) handed to Codex (`docs/handoffs/Phase_7_Inklings_Hook_and_Grimoire_Mapping.md`), pending implementation and review.
+**Phase:** ✅ Phases 1-7 complete. Ready to begin Phase 8 (Migration, Documentation, Tests, and Release Review) — the final planned phase.
 
 **Delegation model changed this session:** `Implementation_Specification_Addendum.md` was updated with a new, much broader Codex role (models, services, APIs, events, cron jobs, tests — not just command/web adapters as under the narrower LlamaCoder rules that preceded it). See the Addendum's "SOUL Codex Handoff Instructions" section. Claude's role is now consistently: architecture, mathematically/architecturally sensitive implementation, design-gap resolution, and review — with conventional CRUD/service implementation work delegated to Codex once the design is locked.
 
@@ -38,6 +38,16 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 **Lesson for future sessions:** Never write architecture/reference scaffolding without deriving it from the actual governing specification. If a specification file exists, read it fully before writing any supporting documentation — do not fill gaps with generic assumptions.
 
 ## Recent Changes
+
+### Phase 7 Review Findings (2026-07-24)
+
+Codex implemented `docs/handoffs/Phase_7_Inklings_Hook_and_Grimoire_Mapping.md` in full and pushed to the `Codex` branch (merge base matched `main`'s tip exactly — no staleness issue). Reviewed by reading `soul_inklings_hook.rb` directly, not by trusting the completion summary, since the two "handoff tensions" Codex flagged were exactly the kind of subtlety worth double-checking:
+
+**Retry-ordering issue, verified correct:** Codex flagged that idempotency detection must run before the "does `from` match current state" revalidation, or a successful first `apply_outcome` call (which changes the entry's level) makes its own retry look like stale state rather than an already-applied duplicate. Confirmed by reading `apply_outcome` line by line: `duplicate_bnb_result` is called and can short-circuit *before* `validate_current`'s state-matching logic ever runs. A dedicated spec ("applies a progression only once even though the first call changes current state") exercises precisely this scenario — entry created at `minor`, progressed to `major` by the first call, then a second call with the identical stored payload correctly returns `duplicate: true` rather than a false "state changed" error. A separate spec confirms a genuinely stale `from` (changed via an unrelated source) still correctly triggers the error. Both were checked to exist and to assert the right thing, not just assumed present from the description.
+
+**Case-insensitive level-key resolution, verified correct:** the publicly documented example (`from: "Minor", to: "Major"`) doesn't match `game/config/soul.yml`'s lowercase `bnb.level_definitions` keys, and `SoulBnbApi.grant`/`.progress` do an exact-match lookup (`definitions.key?(level_state.to_s)`) that would have rejected the mixed-case value outright. Codex's `configured_level_key` resolves case-insensitively against the real config keys and passes the canonical (correctly-cased) key through to the underlying API — confirmed this is actually wired in at both the `grant` and `progress` call sites, not just resolved and discarded.
+
+No corrections were needed. This closes out the planned implementation phases — Phase 8 (Migration, Documentation, Tests, and Release Review) is the last one on the roadmap.
 
 ### Phase 7 Begun: Grimoire Mapping (Claude) + Inklings Hook Handoff (2026-07-24)
 
