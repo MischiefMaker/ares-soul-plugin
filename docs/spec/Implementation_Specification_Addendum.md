@@ -481,58 +481,78 @@ aspects:
 
 ---
 
-## 8. Catch-Up XP Edge Cases
+## 8. Catch-Up XP Mechanism
 
-**Status:** Pending Decision
+**Status:** ✅ Approved
 
-**Question (from Review):**
-How are edge cases in catch-up XP calculation handled?
+**Decision:**
+Characters behind the group median earned XP automatically earn XP at a configurable multiplier from all sources except manual admin grants. Catch-up is calculated on a regular schedule (typically weekly) and continues until a character's total available XP meets or exceeds the group median.
 
-**Specification Reference:** REQ-014, REQ-015
+**Calculation:**
 
-**Scenario 1: New Character Grace Period**
-- A new character joins mid-game when the group median `xp_earned` is 100
-- Should the new character be included in the median calculation immediately?
-- If included, they fall far behind and auto-trigger catch-up
-- If excluded, they progress at normal rate until they're "caught up"
+1. **Schedule:** Run catch-up calculation periodically (configurable; default weekly via cron)
 
-**Options:**
-- **Included Immediately:** Catch-up XP applies to new characters from day 1 (generous)
-- **Grace Period (7 days):** New characters are excluded from median calculation for 7 days (moderate)
-- **Manual Approval:** Admins mark when a character "enters the group" and begins earning catch-up (control)
+2. **Median Calculation:**
+   - Calculate median of `earned_xp` from all approved characters
+   - Newly approved characters are included immediately (no grace period)
 
-### Scenario 2: Small Community (< 3 Characters)
-- Median is undefined with fewer than 3 characters
-- Should catch-up apply, or does it require a minimum cohort?
+3. **Catch-Up Eligibility:**
+   - For each character: `available_xp = earned_xp + catchup_xp`
+   - If `available_xp < median_earned_xp`, character qualifies for catch-up
 
-**Options:**
-- **Always Apply:** Assume a baseline median (e.g., 50 XP) if < 3 characters (generous)
-- **Minimum Cohort:** Catch-up only applies if ≥3 approved characters exist (strict)
-- **Average Instead:** Use average `xp_earned` instead of median (pragmatic)
+4. **Catch-Up Earning:**
+   - Qualifying characters earn XP at **2x multiplier** (configurable) from:
+     - Scene participation
+     - Inklings completion
+     - Boon/Bane awards
+     - Other automatic sources
+   - **Excludes:** Manual XP grants by admins (admins can boost without triggering catch-up)
 
-### Scenario 3: Tied Median
-- With even number of characters, median is (middle1 + middle2) / 2
-- Does tie-breaking favor the character (round down threshold) or not?
+5. **Duration:**
+   - Catch-up continues automatically until `available_xp >= median_earned_xp`
+   - At that point, character reverts to normal 1x XP earning
 
-**Options:**
-- **Round Down:** Threshold benefit goes to lower value (character-favorable)
-- **Round Up:** Threshold benefit goes to higher value (staff-favorable)
+**Rationale:**
 
-**Recommendation:**
-*Awaiting project-owner decision.* Implementation will use:
-- **Grace Period (7 days)** for new characters
-- **Minimum Cohort of 3**; if < 3, catch-up disabled
-- **Round Down** for tied median (character-favorable)
+- **No grace period:** New characters are included immediately; this encourages alt creation without penalizing new joiners
+- **Median-driven:** Simple, adaptive to group progression; no hardcoded thresholds
+- **Automatic:** No admin intervention needed; catches up happens transparently
+- **Exempt from manual grants:** Admins can award XP for events, makeup, etc. without triggering catch-up
+- **Multiplier is configurable:** Different games may want 1.5x, 2x, 3x, etc.
 
-**Provisional Configuration:**
+**Configuration:**
+
 ```yaml
 xp:
   catchup:
-    grace_period_days: 7
-    minimum_cohort_size: 3
-    median_tiebreak: "round_down"
-    baseline_median_if_insufficient: null  # null = disable catch-up if < cohort
+    enabled: true
+    schedule: "weekly"          # Cron-like: "weekly", "daily", etc. (configurable)
+    multiplier: 2               # Earned XP is multiplied by this when catching up
+    sources_excluded:
+      - manual_grant            # Admin-granted XP doesn't count toward catch-up
+    
+  # Scheduling (if using cron)
+  catchup_cron: "0 0 * * 1"     # Every Monday at midnight UTC (example)
 ```
+
+**Examples:**
+
+**Example 1: New Character**
+- Group median: 200 earned XP
+- New character: 0 earned XP, 0 catchup_xp
+- Available: 0 (< 200) → qualifies for catch-up
+- Player completes a scene earning 10 XP → gets 10 × 2 = 20 XP
+- After earning 100 total (50 scenes × 2x): available_xp = 100 (still < 200)
+- Catch-up continues until available_xp >= 200
+
+**Example 2: Established Character with Catch-Up**
+- Group median: 300 earned XP
+- Character: 200 earned XP, 0 catchup_xp
+- Available: 200 (< 300) → qualifies for catch-up
+- Earns 25 XP from Inkling → gets 25 × 2 = 50 XP catchup
+- After 2 Inklings (50 XP total): available_xp = 250 (still < 300)
+- Admin grants 50 XP for special event → does NOT trigger catch-up (manual grant exempt)
+- Available still at 250; catch-up continues until available_xp >= 300
 
 ---
 
@@ -715,9 +735,9 @@ The configured prefix is used with the outcome appended:
 | Chargen B&Bs | ✅ Approved | 2:1 Boon-to-Bane ratio, per-R-level config (§5) |
 | Pending Roll Expiry | ✅ Approved | ~30 days wall-clock (§6) |
 | Aspect Rounding | ✅ Approved | Round Nearest (§7) |
+| Catch-Up XP | ✅ Approved | Median-based 2x multiplier, weekly calculation (§8) |
 | Degrees of Success | ✅ Approved | Six degrees with GM-less/GM-led output (§8.1) |
 | Extraordinary Luck Messaging | ✅ Approved | Probability-based (<0.01%) (§9) |
-| Catch-Up Edge Cases | ⏳ Pending | 7d grace, 3-char minimum (provisional) |
 
 ---
 
