@@ -63,24 +63,31 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 
 ## Phase 4: Standard Rolls and Pending-Roll Flow
 
-**Status:** 🔶 In progress (2026-07-24) — dice/probability engine complete and Claude-implemented directly (see rationale below); models/service API handed off to Codex (`docs/handoffs/Phase_4_Roll_Service_and_Models.md`), pending implementation and review.
+**Status:** ✅ Core models and service API complete (2026-07-24) — dice/probability engine Claude-implemented directly; `Roll`/`PendingRoll` models and `SoulRollApi` implemented by Codex (`docs/handoffs/Phase_4_Roll_Service_and_Models.md`), reviewed and merged by Claude. Commands/UI deferred to Phase 6, consistent with Phases 1-3's precedent.
 
 - [x] 2d20 open-ended dice engine: explosion on double-20, implosion on double-1, chained (Addendum §2 Step 1) — `plugin/public/soul_dice_engine.rb`
 - [x] Boon/Bane die reroll mechanics applied to the full explosion chain (Addendum §2 Step 2) — same file
 - [x] Pre-roll probability calculation (Addendum §9) — exact analytical calculation (not Monte Carlo, to satisfy REQ-030's determinism requirement), validated against 200k-trial Monte Carlo simulation during implementation; see `plugin/spec/soul_dice_engine_spec.rb`
 - [x] Degrees-of-success table gap resolved: the original Addendum §8.1 table gave Failure and Catastrophic Failure the identical `margin < -10` condition with no boundary between them. Resolved by mirroring the Success/Exceptional Success split (`-20` boundary added); see the Addendum's 2026-07-24 implementation note and `game/config/soul.yml`'s `degrees_of_success` block.
-- [ ] Mechanical modifier application (Skill + Aspect + other), no cap (Addendum §2 Step 3, §4) — designed, handed to Codex
-- [ ] Difficulty comparison and margin calculation (Addendum §1) — designed, handed to Codex
-- [ ] Six degrees of success determination and GM-less/GM-led output formatting (Addendum §8.1) — degree calculation designed/handed to Codex; output *formatting* is Phase 6 (command layer)
-- [ ] Extraordinary-luck flagging (≤0.01%) using the dice engine's probability — designed, handed to Codex
-- [ ] Pending-roll state model: player/character, Skill/Aspect, context, suggested/selected entries by category (REQ-027) — designed, handed to Codex
-- [ ] Standard roll flow: validate → candidates → pending → suggestions → selection → resolve → history (REQ-028) — designed, handed to Codex
-- [ ] "No candidates found" manual-identification fallback (REQ-028) — designed (not a distinct status; empty `system_suggested_entries`), handed to Codex
-- [ ] Pending-roll limits: 1 standard (Phase 4) / 2 GM-assisted (Phase 5, CI-04) — standard limit designed, handed to Codex
-- [ ] Pending-roll expiry: 720 hours wall-clock, no auto-resolve (Addendum §6) — designed as a cron sweep extending the existing `XpCronHandler`, handed to Codex
-- [ ] Roll history and completed-roll record (REQ-031) — designed, handed to Codex
+- [x] Mechanical modifier application (Skill + Aspect + other), no cap (Addendum §2 Step 3, §4) — `SoulRollApi.build_applied_modifiers`/`.resolve_pending`
+- [x] Difficulty comparison and margin calculation (Addendum §1) — `SoulRollApi.resolve_difficulty`
+- [x] Six degrees of success determination (Addendum §8.1) — `SoulRollApi.degree_of_success`; GM-less/GM-led output *formatting* remains Phase 6 (command layer)
+- [x] Extraordinary-luck flagging (≤0.01%) using the dice engine's probability — `SoulRollApi.resolve_pending` (compares success or failure probability, whichever the outcome actually was, against `extraordinary_result_threshold`)
+- [x] Pending-roll state model: player/character, Skill/Aspect, context, suggested/selected entries by category (REQ-027) — `plugin/models/pending_roll.rb`
+- [x] Standard roll flow: validate → candidates → pending → suggestions → selection → resolve → history (REQ-028) — `SoulRollApi.start_roll`/`.select_entries`/`.resolve_pending`/`.get_roll_history`
+- [x] "No candidates found" manual-identification fallback (REQ-028) — empty `system_suggested_entries` is not a distinct status; `manually_identified_entries` remains available via `.select_entries`'s `tags:` form
+- [x] Pending-roll limits: 1 standard (Phase 4) — `SoulRollApi.get_open_pending_count`/`.start_roll`. GM-assisted limit (2, CI-04) is Phase 5, since nothing in Phase 4 sets `gm_assisted: true`
+- [x] Pending-roll expiry: 720 hours wall-clock, no auto-resolve (Addendum §6) — `SoulRollApi.expire_stale_pending_rolls`, called from the existing `XpCronHandler` on every tick (a second `CronEvent` handler can't be registered — the real `Dispatcher` supports only one per plugin per event name)
+- [x] Roll history and completed-roll record (REQ-031) — `plugin/models/roll.rb`, `SoulRollApi.get_roll_history`
 
 **Why the dice/probability engine was implemented directly rather than delegated:** exact analytical probability calculation for an open-ended, reroll-modified explosion/implosion chain requires correctly conditioning each chain segment's post-reroll contribution distribution on whether that segment's *original* (pre-reroll) dice triggered continuation — a subtlety easy to get silently wrong (e.g. naively treating trigger and post-reroll value as independent). This is squarely "architecture/design" work per the Addendum's Codex delegation rules, not well-defined implementation. The surrounding orchestration (models, candidate identification, pending-roll lifecycle, cron wiring) is conventional CRUD/service work matching Phase 1-3's precedent and was handed to Codex with the engine treated as a locked dependency.
+
+**Bug caught during review, fixed before merge:** the handoff's `resolve_pending(pending_roll_id)` signature had no caller-identity argument, making it impossible to verify the caller actually owns the pending roll being resolved (only internal consistency of the pending roll's own stored data could be checked). Caught and fixed in the handoff itself before Codex's implementation was reviewed; Codex had already built against the stale (pre-fix) signature, so the fix was reapplied directly to `SoulRollApi.resolve_pending` and its spec after merge, reusing the same `validate_owned_open_pending` ownership-check helper Codex had already written for `select_entries`/`abort_pending`. A new spec covers the rejection case explicitly.
+
+**Deferred to Later Phases:**
+- Roll MUSH commands (`+roll`, `+roll suggested`, `+roll <tag>`, `+roll none`, abort) and web handlers — Phase 6, same precedent as every other subsystem
+- GM-assisted rolls, scene GM policy, mandatory/optional B&B marking, force-abort — Phase 5
+- Roll-modifier contribution from other plugins — still no confirmed dispatch point; not attempted this phase
 
 ## Phase 5: GM-Assisted Rolls and Scene Integration
 

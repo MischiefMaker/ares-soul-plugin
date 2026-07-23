@@ -185,7 +185,7 @@ module AresMUSH
         boon = owned_entry("boon", kind: "boon")
         pending = pending_for(character, player_selected_entries: [boon.id.to_s])
 
-        result = SoulRollApi.resolve_pending(pending.id)
+        result = SoulRollApi.resolve_pending(pending.id, character)
         roll = result[:roll]
 
         expect(result[:success]).to be true
@@ -202,7 +202,7 @@ module AresMUSH
         bane = owned_entry("bane", kind: "bane")
         pending = pending_for(character, manually_identified_entries: [bane.id.to_s])
 
-        roll = SoulRollApi.resolve_pending(pending.id)[:roll]
+        roll = SoulRollApi.resolve_pending(pending.id, character)[:roll]
         expect(roll.net_modifier).to eq(-1)
         expect(roll.dice_result["segments"]).to eq([{ "d1" => 7, "d2" => 8 }])
       end
@@ -211,7 +211,7 @@ module AresMUSH
         epic = owned_entry("epic", level: "epic")
         pending = pending_for(character, player_selected_entries: [epic.id.to_s])
 
-        result = SoulRollApi.resolve_pending(pending.id)
+        result = SoulRollApi.resolve_pending(pending.id, character)
         expect(result[:error]).to match(/no configured modifier/i)
         expect(Roll.all.to_a).to be_empty
       end
@@ -219,8 +219,17 @@ module AresMUSH
       it "revalidates the stored difficulty tier before rolling" do
         pending = pending_for(character, context: { "difficulty" => "removed" })
 
-        result = SoulRollApi.resolve_pending(pending.id)
+        result = SoulRollApi.resolve_pending(pending.id, character)
         expect(result[:error]).to match(/unknown difficulty/i)
+        expect(Soul::SoulDiceEngine).not_to have_received(:roll)
+      end
+
+      it "rejects a character who does not own the pending roll" do
+        pending = pending_for(other_character)
+
+        result = SoulRollApi.resolve_pending(pending.id, character)
+        expect(result[:error]).to match(/does not belong/i)
+        expect(Roll.all.to_a).to be_empty
         expect(Soul::SoulDiceEngine).not_to have_received(:roll)
       end
 
@@ -231,14 +240,14 @@ module AresMUSH
         )
         pending = pending_for
 
-        roll = SoulRollApi.resolve_pending(pending.id)[:roll]
+        roll = SoulRollApi.resolve_pending(pending.id, character)[:roll]
         expect(roll.success_probability).to be_within(1e-10).of(0.00005)
         expect(roll.extraordinary).to eq("true")
       end
 
       it "fires the resolved event" do
         pending = pending_for
-        SoulRollApi.resolve_pending(pending.id)
+        SoulRollApi.resolve_pending(pending.id, character)
         expect(Global.dispatcher).to have_received(:queue_event).with(an_instance_of(SoulRollResolvedEvent))
       end
     end

@@ -28,19 +28,23 @@ The two-layer B&B catalogue/instance model, Culminations as story milestones, an
 
 Each phase was implemented only after verifying its design against real, current AresMUSH core source (FS3Skills for Phase 2, Achievements/Roles for Phase 3) rather than relying solely on the earlier documentation rebuild — see `docs/spec/CLAUDE_ADR.md`'s "Recent Changes" for the specific corrections each verification pass produced.
 
-## Current Milestone: Implementation, Phase 4
+## Completed Milestone: Implementation, Phase 4
 
-**Status:** 🔶 In progress. Dice/probability engine complete (`plugin/public/soul_dice_engine.rb`, Claude-implemented directly and validated against Monte Carlo simulation). Roll models and service API handed to Codex (`docs/handoffs/Phase_4_Roll_Service_and_Models.md`) under the project's broadened Codex delegation model — pending implementation and Claude's review before this phase is complete.
+**Status:** ✅ Complete (2026-07-24). Dice/probability engine Claude-implemented directly (`plugin/public/soul_dice_engine.rb`, validated against Monte Carlo simulation); `Roll`/`PendingRoll` models and `SoulRollApi` implemented by Codex against a written handoff (`docs/handoffs/Phase_4_Roll_Service_and_Models.md`) and reviewed/merged by Claude — one signature gap (missing caller-identity argument on `resolve_pending`) caught and fixed during review.
 
 ### Phase 4 — Standard Rolls and Pending-Roll Flow
 
 The 2d20 open-ended dice engine, Boon/Bane die rerolls, degrees of success, extraordinary luck detection, and the standard (non-GM) pending-roll workflow. Roll-modifier contribution from other plugins remains out of scope, still pending a design against a confirmed dispatch point — the previously-assumed `get_hooks` mechanism was found to have no basis in real core (see Phase 3 notes in `CLAUDE_ADR.md`); B&B modifiers are the only modifier source this phase implements.
 
-## Future Phases
+## Current Milestone: Implementation, Phase 5
+
+**Status:** Ready to begin
 
 ### Phase 5 — GM-Assisted Rolls and Scene Integration
 
-Per-scene GM policy (Required/Optional/Unavailable), mandatory/optional B&B selection, abort/force-abort.
+Per-scene GM policy (Required/Optional/Unavailable), mandatory/optional B&B selection, abort/force-abort. Builds on Phase 4's `PendingRoll` model, which already reserves the `gm_suggested_entries`/`gm_mandatory_entries`/`gm_assisted` fields for this phase.
+
+## Future Phases
 
 ### Phase 6 — Complete MUSH/Web UI Parity
 

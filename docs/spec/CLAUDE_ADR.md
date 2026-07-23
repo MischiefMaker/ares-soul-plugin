@@ -18,7 +18,7 @@ Claude's ongoing engineering notebook for SOUL implementation. Tracks current st
 
 **Branch:** `main`
 
-**Phase:** ✅ Phases 1-3 complete, including the command/web-handler layer (implemented by Codex, reviewed and merged by Claude — see below). 🔶 Phase 4 (Standard Rolls and Pending-Roll Flow) in progress: the dice/probability engine is complete (Claude-implemented directly); the surrounding models/service API has been handed to Codex (`docs/handoffs/Phase_4_Roll_Service_and_Models.md`), pending implementation and review.
+**Phase:** ✅ Phases 1-4 complete. Phase 4 (Standard Rolls and Pending-Roll Flow): dice/probability engine Claude-implemented directly; `Roll`/`PendingRoll` models and `SoulRollApi` implemented by Codex against a written handoff and reviewed/merged by Claude, with one signature gap (missing caller-identity argument on `resolve_pending`) caught and fixed during review. Ready to begin Phase 5 (GM-Assisted Rolls and Scene Integration).
 
 **Delegation model changed this session:** `Implementation_Specification_Addendum.md` was updated with a new, much broader Codex role (models, services, APIs, events, cron jobs, tests — not just command/web adapters as under the narrower LlamaCoder rules that preceded it). See the Addendum's "SOUL Codex Handoff Instructions" section. Claude's role is now consistently: architecture, mathematically/architecturally sensitive implementation, design-gap resolution, and review — with conventional CRUD/service implementation work delegated to Codex once the design is locked.
 
@@ -148,10 +148,15 @@ The Addendum was drafted before this session's discovery of the fabricated docs,
 - [x] ~~Re-verify the real `custom_approval.rb` snippet mechanism~~ — done in Phase 2 (`custom-install/custom_approval.snippet.rb`)
 - [x] ~~Backfill `SoulResonanceApi.lock_at_approval`'s `TODO(Phase 3)` marker~~ — done in Phase 3; `resonance_correction_log` was kept alongside the new `SoulAuditEntry`/`NarrativeHistoryEntry` writes (fast character-scoped access) rather than migrated away from, since removing it would cost a lookup with no real benefit
 
-### Before Phase 4 Is Considered Complete
+### Phase 4 Review Findings (2026-07-24)
 
-- [ ] Codex implements `docs/handoffs/Phase_4_Roll_Service_and_Models.md` (`Roll`/`PendingRoll` models, `SoulRollApi`, cron expiry sweep, specs)
-- [ ] Claude reviews the implementation per the Addendum's standing review checklist before merge
+Codex implemented `docs/handoffs/Phase_4_Roll_Service_and_Models.md` in full (`Roll`/`PendingRoll` models, `SoulRollApi`, cron expiry sweep via the existing `XpCronHandler`, specs) and pushed to the `Codex` branch. Review found the implementation faithful to the handoff's design in every respect — candidate B&B identification, signed modifier summation, difficulty/margin/degree-of-success calculation, the succeeded-vs-failed extraordinary-probability branch, expiry sweep, cron wiring (extending the existing handler rather than attempting a second `CronEvent` registration) — with one real defect:
+
+**`resolve_pending(pending_roll_id)` had no caller-identity argument.** Codex built against the handoff's original (pre-fix) signature — the branch's merge-base predates the commit that added the `character` parameter, since Codex had already started work before that fix was pushed. Fixed directly after merge: added the `character` parameter, reused the existing `validate_owned_open_pending` helper Codex had already written for `select_entries`/`abort_pending` (rather than duplicating a third ownership-check implementation), updated all spec call sites, and added an explicit ownership-rejection test. No other changes were needed.
+
+Also confirmed during review: `DataType::Float` (used for `Roll#success_probability`) is a real, valid Ohm data type (`engine/aresmush/models/ohm_data_types.rb`, cast `x.to_f`) — not previously used elsewhere in this codebase, but not an invented one either; worth knowing it has the same no-nil-guard behavior as `Integer`/`Decimal`, though it doesn't matter here since `success_probability` is always set at `Roll` creation, never read before that.
+
+**Known pre-existing issue, not introduced by Phase 4:** `plugin/spec/spec_helper.rb` still doesn't exist, so none of this session's specs (Phase 4's included) have actually been executed — only `ruby -c` syntax-checked. This was flagged independently by Codex during both the Phase 1-3 and Phase 4 handoffs; it appears to be a repository-level test-harness setup step (likely requiring the real AresMUSH engine/gems) that was never completed, not a bug in any phase's code.
 
 ## Resolved Architecture Questions
 

@@ -95,18 +95,10 @@ module AresMUSH
       { success: true, pending_roll: pending }
     end
 
-    def self.resolve_pending(pending_roll_id)
+    def self.resolve_pending(pending_roll_id, character)
       pending = PendingRoll[pending_roll_id]
-      return { error: "Pending roll not found." } unless pending
-      return { error: "Pending roll is not awaiting selection." } unless pending.status == "awaiting_selection"
-      if pending.expires_at && pending.expires_at < Time.now
-        expire_pending(pending, Time.now)
-        return { error: "Pending roll has expired." }
-      end
-
-      character = pending.character
-      return { error: "Pending roll has no character." } unless character
-      return { error: "Pending roll ownership is invalid." } unless pending.player == character
+      pending_error = validate_owned_open_pending(pending, character)
+      return { error: pending_error } if pending_error
       return { error: "You don't have permission to resolve this roll." } unless Soul.can_play?(character)
 
       selected_ids = pending.player_selected_entries.map(&:to_s)
