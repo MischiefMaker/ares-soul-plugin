@@ -16,7 +16,7 @@
         <li>{{match.character}} — {{match.name}} ({{match.level_state}})</li>
       {{/each}}</ul>
 
-      {{#if (or custom.soul_can_review_rolls custom.soul_can_manage_soul)}}
+      {{#if canViewSheets}}
         <hr><h4>View Participant Sheet</h4>
         <PowerSelect @selected={{selectedParticipant}} @options={{scene.participants}}
           @searchField="name" @onChange={{action "selectParticipant"}} as |participant|>
