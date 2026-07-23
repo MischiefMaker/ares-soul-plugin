@@ -18,7 +18,7 @@ Claude's ongoing engineering notebook for SOUL implementation. Tracks current st
 
 **Branch:** `main`
 
-**Phase:** ✅ Phases 1-5 complete. 🔶 Phase 6 (Complete MUSH/Web UI Parity) in progress — Sheet/B&B/XP/Culmination/History/Framework-staff command layer already complete (Codex, earlier); roll commands and audit-log viewing handed to Codex (`docs/handoffs/Phase_6_Roll_Commands_and_Audit.md`), pending implementation and review.
+**Phase:** ✅ Phases 1-6 complete. Ready to begin Phase 7 (Inklings and Grimoire Integrations).
 
 **Delegation model changed this session:** `Implementation_Specification_Addendum.md` was updated with a new, much broader Codex role (models, services, APIs, events, cron jobs, tests — not just command/web adapters as under the narrower LlamaCoder rules that preceded it). See the Addendum's "SOUL Codex Handoff Instructions" section. Claude's role is now consistently: architecture, mathematically/architecturally sensitive implementation, design-gap resolution, and review — with conventional CRUD/service implementation work delegated to Codex once the design is locked.
 
@@ -38,6 +38,14 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 **Lesson for future sessions:** Never write architecture/reference scaffolding without deriving it from the actual governing specification. If a specification file exists, read it fully before writing any supporting documentation — do not fill gaps with generic assumptions.
 
 ## Recent Changes
+
+### Phase 6 Review Findings (2026-07-24)
+
+Codex implemented `docs/handoffs/Phase_6_Roll_Commands_and_Audit.md` in full and pushed to the `Codex` branch. Merge base predated the §5.3.1 handoff fix (Codex started before that commit landed), same pattern as Phase 4 — but this time it turned out not to matter: Codex's own implementation notes flagged the identical gap ("selection commands called `select_entries` but provided no route to `resolve_pending`") and fixed it independently, arriving at the same select-then-resolve sequencing without having seen the corrected handoff. Verified this by inspection rather than trusting the summary: `SoulRollCmd#select_and_resolve` and the equivalent web operation both call `select_entries` first, return early on its error without attempting resolution, and call `resolve_pending` immediately on success — exactly matching §5.3.1.
+
+Every other piece of the handoff — the §5.3 bare-`+roll` disambiguation precedence, the §5.4 scene-GM authority split (command-gated for `+roll/review`'s discovery list, API-gated everywhere else, never duplicated), the §5.5 tag-to-entry-ID resolution for `+roll/mark` restricted to the privacy-filtered candidate view, the §5.6 required-reason handling for abort/force-abort, the §5.7 audit command mirroring the history command's shape but staff-only, and the three new read-only `SoulRollApi` query methods — was implemented correctly and matched the specification exactly, with thorough test coverage for each. No corrections were needed beyond confirming the doc files (which Codex hadn't touched) merged cleanly with the already-landed §5.3.1 fix.
+
+Phase 6 is complete. Phase 7 (Inklings and Grimoire Integrations) is next.
 
 ### Phase 6 Handoff Correction: Missing resolve_pending Call (2026-07-24)
 

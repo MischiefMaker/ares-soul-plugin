@@ -106,7 +106,7 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 
 ## Phase 6: Complete MUSH/Web UI Parity
 
-**Status:** 🔶 Sheet/B&B/XP/Culmination/History/Framework-Staff command layer complete (2026-07-24, see "Known Limitations" below). Roll commands and audit-log viewing — the two gaps that section's items 6/8 left open — handed to Codex (`docs/handoffs/Phase_6_Roll_Commands_and_Audit.md`), pending implementation and review.
+**Status:** ✅ Complete (2026-07-24). Sheet/B&B/XP/Culmination/History/Framework-Staff and Roll commands/audit-log viewing all implemented (Codex) and reviewed/merged (Claude). No gaps found beyond the one already caught and fixed before implementation began (below).
 
 - [x] SOUL Sheet — MUSH (`+soul`) and web, one-screen concise format (CI-02, REQ-033)
 - [x] Drill-down B&B catalogue browsing and detail views
@@ -117,15 +117,17 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 - [x] Culmination display and workflow (`+culmination`, `+culmination/propose`, `+culmination/approve`) — both interfaces
 - [x] Narrative History display (`+soul/history`, `+soul/history <character>`) — both interfaces
 - [x] XP award commands (`+xp/award`, `+xp/award/catchup`, `+xp/scene`, `+xp/scene/catchup`, `+xp/correct`) — staff only, with scene-participant preview
-- [ ] Roll history and pending-roll status (REQ-026, CI-03, CI-04) — full command family (`+roll`, `+roll/gm`, `+roll suggested`, `+roll <tag>`, `+roll none`, `+roll/abort`, `+roll/forceabort`, `+roll/pending`, `+roll/history`, `+roll/review`, `+roll/mark`) designed and handed to Codex — see two real gaps Claude resolved before writing the handoff, below
+- [x] Roll history and pending-roll status (REQ-026, CI-03, CI-04) — full command family (`+roll`, `+roll/gm`, `+roll suggested`, `+roll <tag>`, `+roll none`, `+roll/abort`, `+roll/forceabort`, `+roll/pending`, `+roll/history`, `+roll/review`, `+roll/mark`) — `SoulRollCmd`/`SoulRollWebHandler`
 - [ ] Chargen UI — **deferred to later phase** (underlying APIs exist; chargen integration is separate work)
 - [x] Staff UI: framework display, Resonance/B&B/Culmination management, no direct DB manipulation (REQ-036)
-- [ ] Staff Audit-log viewing (`+soul/audit <character>`) — item 8's gap, closed via the same handoff (extends the existing `SoulStaffCmd`, not a new command)
+- [x] Staff Audit-log viewing (`+soul/audit <character>`) — item 8's gap, closed by extending the existing `SoulStaffCmd`/`SoulStaffWebHandler`
 - [x] Web accessibility: Bootstrap 5 components, keyboard-accessible controls
 
 **Two real gaps in FINAL's canonical roll syntax, resolved before writing the Phase 6 handoff (not left for Codex to guess):**
 1. **No difficulty argument.** `+roll <skill>` (REQ-026) has no way to specify difficulty at all. Resolved: defaults to Standard difficulty; a Proposed `+roll <skill>=<difficulty>` extension allows an explicit tier. See `Commands.md`'s Rolls section note.
-2. **No stated disambiguation rule for the bare `+roll` command.** REQ-026 lists `+roll <skill>` (start) and `+roll <tag> [<tag>...]` (select) as the same bare form with no switch to distinguish them. Resolved with an explicit precedence rule (Phase 6 handoff §5.3): `suggested`/`none` keywords first, then — if the caller already has an open pending roll awaiting selection — anything else is tag-selection (never re-interpreted as starting a second roll), otherwise it's a skill-start.
+2. **No stated disambiguation rule for the bare `+roll` command.** REQ-026 lists `+roll <skill>` (start) and `+roll <tag> [<tag>...]` (select) as the same bare form with no switch to distinguish them. Resolved with an explicit precedence rule (Phase 6 handoff §5.3): `suggested`/`none` keywords first, then — if the caller already has an open pending roll awaiting selection — anything else is tag-selection (never re-interpreted as starting a second roll), otherwise it's a skill-start. Implemented by Codex exactly to spec, verified by inspection during review.
+
+**Handoff gap caught and fixed before implementation, then independently rediscovered by Codex:** the original Phase 6 handoff specified `select_entries` for the selection forms but never specified a call to `resolve_pending` — a fully-selected pending roll would have sat in `"awaiting_selection"` forever with no way to ever produce a completed `Roll`. Claude caught and fixed this in the handoff (new §5.3.1) before Codex's implementation was reviewed; Codex's branch had already started from the pre-fix version and independently arrived at the identical fix (select, then immediately resolve on success) without seeing the corrected handoff — both `SoulRollCmd#select_and_resolve` and the equivalent web operation implement it correctly. No further correction was needed; this was verified by inspection during review, not just assumed from Codex's own summary.
 
 ### Known Limitations and Design Decisions
 

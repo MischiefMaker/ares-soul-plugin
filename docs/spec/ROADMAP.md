@@ -44,25 +44,29 @@ The 2d20 open-ended dice engine, Boon/Bane die rerolls, degrees of success, extr
 
 Per-scene GM policy (Required/Optional/Unavailable), mandatory/optional B&B selection, abort/force-abort. Builds on Phase 4's `PendingRoll` model, which already reserved the `gm_suggested_entries`/`gm_mandatory_entries`/`gm_assisted` fields for this phase. Scene-GM authorization (no dedicated GM field exists on the real `Scene` model) is resolved as global `gm_review_permission` scoped to actual scene participation — see the handoff §5.1.
 
-## Current Milestone: Implementation, Phase 6
+## Completed Milestone: Implementation, Phase 6
 
-**Status:** 🔶 In progress. Sheet/B&B/XP/Culmination/History/Framework-staff command layer complete (Codex, 2026-07-24). The two remaining gaps — roll commands (never built, Phases 4-5 had no command surface at all) and staff audit-log viewing (design gap, no syntax previously existed) — handed to Codex (`docs/handoffs/Phase_6_Roll_Commands_and_Audit.md`), pending implementation and review.
+**Status:** ✅ Complete (2026-07-24). Full command/web-handler layer across every subsystem — Sheet, B&B, XP, Culmination, History, Staff (Framework/Resonance/Reload/Audit), and Rolls (start, GM-assist, selection, abort/force-abort, pending, history, GM review/mark) — implemented by Codex and reviewed/merged by Claude. Chargen UI remains deferred to a later phase (underlying APIs exist; chargen integration is separate work).
 
 ### Phase 6 — Complete MUSH/Web UI Parity
 
 Every command family from `docs/reference/Commands.md` implemented equivalently on both interfaces (CP-05) — Sheet, B&B, Rolls, XP, History, and Staff UI. Rolls (`+roll`, `+roll/gm`, `+roll suggested`, `+roll <tag>`, `+roll none`, abort/force-abort) join the command surface already deferred from Phases 1-4.
 
-## Future Phases
+## Current Milestone: Implementation, Phase 7
+
+**Status:** Ready to begin
 
 ### Phase 7 — Inklings and Grimoire Integrations
 
 The Inklings validate/apply hook handoff, and Grimoire's read-only Skill/Aspect/Resonance access. Both remain fully optional — SOUL's core functionality never depends on either.
 
+## Future Phases
+
 ### Phase 8 — Migration, Documentation, Tests, and Release Review
 
 FS3 migration validation, full documentation currency pass, coverage targets, FINAL Appendix C acceptance criteria, and the release checklist.
 
-**Estimated scope for Phases 4-8:** 3-5 remaining implementation cycles, with LlamaCoder handling repetitive scaffolding under Claude's architectural review (see the LlamaCoder Handoff Instructions in `Implementation_Specification_Addendum.md`).
+**Estimated scope for remaining phases:** 1-2 remaining implementation cycles, with Codex handling well-specified implementation work under Claude's architectural review (see the Codex Handoff Instructions in `Implementation_Specification_Addendum.md`).
 
 ## Stretch Goals (Deferred — FINAL Appendix E)
 
