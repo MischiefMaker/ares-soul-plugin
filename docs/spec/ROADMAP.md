@@ -46,7 +46,7 @@ Per-scene GM policy (Required/Optional/Unavailable), mandatory/optional B&B sele
 
 ## Current Milestone: Implementation, Phase 6
 
-**Status:** Ready to begin
+**Status:** 🔶 In progress. Sheet/B&B/XP/Culmination/History/Framework-staff command layer complete (Codex, 2026-07-24). The two remaining gaps — roll commands (never built, Phases 4-5 had no command surface at all) and staff audit-log viewing (design gap, no syntax previously existed) — handed to Codex (`docs/handoffs/Phase_6_Roll_Commands_and_Audit.md`), pending implementation and review.
 
 ### Phase 6 — Complete MUSH/Web UI Parity
 

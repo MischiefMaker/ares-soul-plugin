@@ -106,7 +106,7 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 
 ## Phase 6: Complete MUSH/Web UI Parity
 
-**Status:** ✅ Command/web-handler layer complete (2026-07-24) — verified for specification compliance, AresMUSH conventions, authorization/privacy, and MUSH/web parity. See "Known Limitations and Design Decisions" below.
+**Status:** 🔶 Sheet/B&B/XP/Culmination/History/Framework-Staff command layer complete (2026-07-24, see "Known Limitations" below). Roll commands and audit-log viewing — the two gaps that section's items 6/8 left open — handed to Codex (`docs/handoffs/Phase_6_Roll_Commands_and_Audit.md`), pending implementation and review.
 
 - [x] SOUL Sheet — MUSH (`+soul`) and web, one-screen concise format (CI-02, REQ-033)
 - [x] Drill-down B&B catalogue browsing and detail views
@@ -117,10 +117,15 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 - [x] Culmination display and workflow (`+culmination`, `+culmination/propose`, `+culmination/approve`) — both interfaces
 - [x] Narrative History display (`+soul/history`, `+soul/history <character>`) — both interfaces
 - [x] XP award commands (`+xp/award`, `+xp/award/catchup`, `+xp/scene`, `+xp/scene/catchup`, `+xp/correct`) — staff only, with scene-participant preview
-- [x] Roll history and pending-roll status — **deferred to Phase 4/5** (rolls not yet implemented)
-- [x] Chargen UI — **deferred to later phase** (underlying APIs exist; chargen integration is separate work)
+- [ ] Roll history and pending-roll status (REQ-026, CI-03, CI-04) — full command family (`+roll`, `+roll/gm`, `+roll suggested`, `+roll <tag>`, `+roll none`, `+roll/abort`, `+roll/forceabort`, `+roll/pending`, `+roll/history`, `+roll/review`, `+roll/mark`) designed and handed to Codex — see two real gaps Claude resolved before writing the handoff, below
+- [ ] Chargen UI — **deferred to later phase** (underlying APIs exist; chargen integration is separate work)
 - [x] Staff UI: framework display, Resonance/B&B/Culmination management, no direct DB manipulation (REQ-036)
+- [ ] Staff Audit-log viewing (`+soul/audit <character>`) — item 8's gap, closed via the same handoff (extends the existing `SoulStaffCmd`, not a new command)
 - [x] Web accessibility: Bootstrap 5 components, keyboard-accessible controls
+
+**Two real gaps in FINAL's canonical roll syntax, resolved before writing the Phase 6 handoff (not left for Codex to guess):**
+1. **No difficulty argument.** `+roll <skill>` (REQ-026) has no way to specify difficulty at all. Resolved: defaults to Standard difficulty; a Proposed `+roll <skill>=<difficulty>` extension allows an explicit tier. See `Commands.md`'s Rolls section note.
+2. **No stated disambiguation rule for the bare `+roll` command.** REQ-026 lists `+roll <skill>` (start) and `+roll <tag> [<tag>...]` (select) as the same bare form with no switch to distinguish them. Resolved with an explicit precedence rule (Phase 6 handoff §5.3): `suggested`/`none` keywords first, then — if the caller already has an open pending roll awaiting selection — anything else is tag-selection (never re-interpreted as starting a second roll), otherwise it's a skill-start.
 
 ### Known Limitations and Design Decisions
 
@@ -160,8 +165,8 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 **8. Web Route Integration**
 - Ember components and templates provided (`web-portal/app/components/soul/` and `/templates/components/soul/`)
 - Game must mount these in its own profile route or SOUL-specific route
-- No Audit-viewing command or handler provided (scope mentioned it but provided no command syntax)
-- Rationale: Route integration depends on host game's architecture; Audit viewing requires design clarification
+- Audit-viewing command syntax (`+soul/audit <character>`) is now designed and handed to Codex (`docs/handoffs/Phase_6_Roll_Commands_and_Audit.md`) — no longer an open design question, pending implementation
+- Rationale: Route integration depends on host game's architecture (still open); Audit viewing's design gap is resolved
 
 **9. XP Correction Behavior**
 - `SoulXpApi.correct` with `direction: "correction"` (default) adds to available XP

@@ -18,7 +18,7 @@ Claude's ongoing engineering notebook for SOUL implementation. Tracks current st
 
 **Branch:** `main`
 
-**Phase:** ✅ Phases 1-5 complete. Ready to begin Phase 6 (Complete MUSH/Web UI Parity).
+**Phase:** ✅ Phases 1-5 complete. 🔶 Phase 6 (Complete MUSH/Web UI Parity) in progress — Sheet/B&B/XP/Culmination/History/Framework-staff command layer already complete (Codex, earlier); roll commands and audit-log viewing handed to Codex (`docs/handoffs/Phase_6_Roll_Commands_and_Audit.md`), pending implementation and review.
 
 **Delegation model changed this session:** `Implementation_Specification_Addendum.md` was updated with a new, much broader Codex role (models, services, APIs, events, cron jobs, tests — not just command/web adapters as under the narrower LlamaCoder rules that preceded it). See the Addendum's "SOUL Codex Handoff Instructions" section. Claude's role is now consistently: architecture, mathematically/architecturally sensitive implementation, design-gap resolution, and review — with conventional CRUD/service implementation work delegated to Codex once the design is locked.
 
@@ -38,6 +38,18 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 **Lesson for future sessions:** Never write architecture/reference scaffolding without deriving it from the actual governing specification. If a specification file exists, read it fully before writing any supporting documentation — do not fill gaps with generic assumptions.
 
 ## Recent Changes
+
+### Phase 6 Handoff: Roll Commands and Audit Command (2026-07-24)
+
+Reviewed the existing Phase 1-3 command/web-handler layer (already complete under the "Phase 6" label in `IMPLEMENTATION_CHECKLIST.md`) to find the actual remaining gaps: Rolls (Phases 4-5) never got any command surface at all, and its own item 8 flagged that staff Audit-log viewing was never designed. Both closed in one handoff (`docs/handoffs/Phase_6_Roll_Commands_and_Audit.md`), extending existing files (`SoulStaffCmd`/`SoulStaffWebHandler` gain an `"audit"` switch) plus two new files (`SoulRollCmd`/`SoulRollWebHandler`).
+
+**Two real gaps in FINAL's canonical roll syntax resolved before writing the handoff** (documented in `Commands.md` and `IMPLEMENTATION_CHECKLIST.md`, not left for Codex):
+1. `+roll <skill>` (REQ-026) has no difficulty argument at all — resolved as defaulting to Standard, with a Proposed `=<difficulty>` extension.
+2. REQ-026 lists `+roll <skill>` (start) and `+roll <tag> [<tag>...]` (select) as the identical bare command with no switch distinguishing them — resolved with an explicit precedence rule: `suggested`/`none` keywords first, then tag-selection if the caller already has an open pending roll, otherwise a fresh start. This matters because a naive implementation could misinterpret a second `+roll <skill>` as re-starting rather than continuing the existing conversation.
+
+Also specified (not left ambiguous) how `+roll/mark` resolves player-facing tags to the `gm_submit_selections` API's entry-ID contract (via the same privacy-filtered candidate view the GM already sees, never against the roller's full B&B collection), and where scene-GM authority is checked twice for good reason: once by the command layer for the `+roll/review` no-argument discovery list (since `get_pending_gm_review` is a plain query with no authorization of its own), and once already inside `SoulRollApi` for every operation that touches a specific pending roll (which the command layer must NOT re-check, per CP-09).
+
+Three small read-only query methods were added to `SoulRollApi`'s scope (`get_open_pending_for_selection`, `get_open_pending_rolls`, `get_pending_gm_review`) — pure lookups needed for command-layer disambiguation and discovery, no new authorization rules.
 
 ### Phase 5 Review Findings (2026-07-24)
 

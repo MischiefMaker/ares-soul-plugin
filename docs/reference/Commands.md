@@ -32,16 +32,26 @@ Name collisions return matching names, IDs, and tags for disambiguation (GL-10).
 
 | Command | Status | Purpose | Constraints |
 |---|---|---|---|
-| `+roll <skill>` | Canonical (REQ-026) | Start a standard roll | Scene policy MAY convert it to GM-assisted |
-| `+roll/gm <skill>` | Canonical (REQ-026) | Request GM assistance | Only when scene policy permits |
-| `+roll suggested` | Canonical (REQ-026) | Accept all system-suggested optional B&Bs | SHALL NOT remove GM-mandatory entries |
-| `+roll <tag> [<tag> ...]` | Canonical (REQ-026) | Select owned B&Bs for this roll | Full names accepted; collisions disambiguate |
-| `+roll none` | Canonical (REQ-026) | Decline optional entries | SHALL NOT remove GM-mandatory entries |
-| `+roll/abort` | Proposed (REQ-026 — exact syntax open) | Abort an eligible pending roll | Only before GM submission (GM-assisted) |
-| `+roll/forceabort <roll id>` | Proposed (REQ-026 — exact syntax open) | Staff clears an erroneous pending roll | Reason and audit required |
-| `+roll/pending` | Proposed | List your open pending rolls | Standard limit 1 open, GM-assisted limit 2 open (CI-04) |
+| `+roll <skill>` | Canonical (REQ-026) | Start a standard roll at Standard difficulty | Scene policy MAY convert it to GM-assisted |
+| `+roll <skill>=<difficulty>` | Proposed (extends REQ-026) | Start a roll at an explicit difficulty tier | `<difficulty>` must be a configured `rolls.difficulties` key |
+| `+roll/gm <skill>` | Canonical (REQ-026) | Request GM assistance | Only when scene policy permits; requires an active scene |
+| `+roll/gm <skill>=<difficulty>` | Proposed (extends REQ-026) | Request GM assistance at an explicit difficulty | Same as above |
+| `+roll suggested` | Canonical (REQ-026) | Accept all system-suggested (or, on a GM-assisted roll, GM-approved) optional B&Bs | Applies to your own open pending roll awaiting selection; SHALL NOT remove GM-mandatory entries |
+| `+roll <tag> [<tag> ...]` | Canonical (REQ-026) | Select owned B&Bs for this roll | Full names accepted; collisions disambiguate; on a GM-assisted roll, a candidate the GM reviewed and did not approve is rejected, not silently reclassified |
+| `+roll none` | Canonical (REQ-026) | Decline optional entries | Applies to your own open pending roll awaiting selection; SHALL NOT remove GM-mandatory entries |
+| `+roll/abort <roll id>=<reason>` | Proposed (REQ-026 — exact syntax open) | Abort your own eligible pending roll | Only before GM submission (GM-assisted); reason required |
+| `+roll/forceabort <roll id>=<reason>` | Proposed (REQ-026 — exact syntax open) | Staff/scene-GM clears an erroneous pending roll at any open status | Reason and audit required |
+| `+roll/pending` | Proposed | List your open pending rolls | Standard limit 1 open, GM-assisted limit 2 open (CI-04) — two independent caps |
+| `+roll/history` | Proposed | View your own completed roll history | play |
+| `+roll/review` | Proposed | Scene-GM: list pending rolls awaiting your review in the current scene | Requires scene-GM authority (§ below) |
+| `+roll/review <roll id>` | Proposed | Scene-GM: view privacy-filtered candidate B&Bs for a specific pending roll | Only fields configured in `privacy.gm_reveal_categories` are shown |
+| `+roll/mark <roll id>=<mandatory tags>/<optional tags>` | Proposed | Scene-GM: partition reviewed candidates into mandatory and optional | Both tag lists may be empty (e.g. `+roll/mark 12=/tag1 tag2`); an entry not named in either list is dropped from the roll, not implicitly optional |
 
 Rolling mechanics (dice model, difficulty scale, degrees of success, extraordinary luck) are specified in `docs/spec/Implementation_Specification_Addendum.md` §1–§2, §8.1, §9.
+
+**Scene-GM authority for `+roll/review`/`+roll/mark`/`+roll/forceabort`:** `Soul.can_review_rolls?(enactor) && scene.is_participant?(enactor)`, or `Soul.can_manage_soul?(enactor)` unconditionally — see `docs/handoffs/Phase_5_GM_Assisted_Rolls.md` §5.1 for why this is the authorization rule rather than a dedicated Scene GM field (none exists on the real AresMUSH `Scene` model).
+
+**Difficulty default:** FINAL's canonical `+roll <skill>` syntax has no difficulty argument. Standard difficulty is the default when none is given — a reasonable, low-stakes assumption for an unassisted roll — with the `=<difficulty>` extension above as a Proposed way to choose a harder or easier tier explicitly.
 
 ## XP
 
@@ -74,7 +84,8 @@ Scene-targeted awards SHOULD preview recipients and MAY require confirmation bef
 |---|---|---|---|
 | `+soul/history` | Proposed | View your own Narrative History | play |
 | `+soul/history <character>` | Proposed | View an authorized character's Narrative History | staff |
-| `+roll/history` | Proposed | View your own roll history | play |
+
+`+roll/history` (view your own completed roll history) is listed under Rolls above, alongside the rest of the roll command family.
 
 ## Staff (`manage soul`)
 
@@ -85,8 +96,9 @@ Per CI-08, the admin help topic for these commands SHALL be named `manage soul` 
 | `+soul/framework` | Proposed | Review/correct Character Framework state (Aspects, Skills) | manage_soul |
 | `+soul/resonance <character>=<value>/<reason>` | Proposed | Correct a character's locked Resonance | manage_soul |
 | `+soul/reload` | Proposed | Reload live configuration from `game/config/soul.yml` | manage_soul |
+| `+soul/audit <character>` | Proposed | View a character's staff-only technical audit log (`SoulAuditApi`) | manage_soul |
 
-Staff tools SHALL NOT require direct database manipulation (REQ-036).
+Staff tools SHALL NOT require direct database manipulation (REQ-036). `+soul/audit` closes a gap noted since the Phase 1-3 command handoff: Permissions.md documents audit review as a staff capability, but no command surface existed for it until now — unlike Narrative History, the audit log is staff-only even for the character it concerns (`SoulAuditApi.get_audit`'s existing contract, unchanged).
 
 ## Help Files
 
