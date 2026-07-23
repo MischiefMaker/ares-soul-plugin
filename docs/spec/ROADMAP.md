@@ -77,12 +77,15 @@ FS3 migration validation, full documentation currency pass, coverage targets, FI
 - `SoulBnbApi.resolve`/`.restore` (REQ-020, built in Phase 3) had no command or web surface at all. Added `+bnb/resolve`/`+bnb/restore` and matching web operations.
 - `SoulCulminationApi.deny`/`.revoke`/`.correct` (REQ-023, built in Phase 3) had no command or web surface at all — only `propose`/`approve` were ever wired. Added `+culmination/deny`/`/revoke`/`/correct` and matching web operations.
 
-### Handed to Codex
+### Handed to Codex, still open
 
 - `docs/handoffs/Phase_9_Automatic_XP_Award_Sources.md` — REQ-013's scene-sharer/participant and forum XP award sources were never actually automatic; `+xp/scene` is a manual staff command, not the event-driven award REQ-013 specifies, and no forum award path exists at all. Design resolved (real `SceneSharedEvent` + `Scene#owner` as sharer; forum via idempotent reconciliation, since no core forum-post event exists).
 - `docs/handoffs/Phase_9_Character_Generation_UI.md` — REQ-011's chargen-time Resonance selection, Skill/Aspect allocation, and B&B selection were deferred since Phase 2 and never scheduled a home phase. Underlying service APIs already do the right thing; only the command/web/chargen-stage integration layer is missing.
-- `docs/handoffs/Phase_9_Profile_Tab_and_XP_Spend_UI.md` — found in response to a direct user question about web parity: the SOUL Ember components (Sheet/XP/B&B/Culmination/History) and their backend web operations are all correct, but none are ever mounted into the character profile page (no profile-tab-mounting snippets exist, unlike Inklings), and the web XP-spend form has no template UI despite its component actions already being wired correctly.
-- `docs/handoffs/Phase_9_Scene_Page_Roll_Widget.md` — found in response to a direct user question comparing to Grimoire's scene-page `cast` component: SOUL has no roll UI on the scene page at all. All backend web operations already exist; this is Ember component work plus locating the real scene-page mounting point (unconfirmed in this project — no `ares-webportal` checkout available to verify against). Resolved that roll results should not auto-post to the scene transcript (unlike Grimoire/FS3's precedent), matching SOUL's existing privacy-first `+roll` behavior.
+
+### Handed to Codex, implemented and merged (`60721d1`)
+
+- `docs/handoffs/Phase_9_Profile_Tab_and_XP_Spend_UI.md` — found in response to a direct user question about web parity: the SOUL Ember components (Sheet/XP/B&B/Culmination/History) and their backend web operations were all correct, but none were ever mounted into the character profile page, and the web XP-spend form had no template UI. Codex's implementation matched Inklings' established profile-tab-mounting pattern correctly, including the `isSelf`-gated XP fix; one small gap found in review (no error feedback on a failed spend attempt) was fixed directly.
+- `docs/handoffs/Phase_9_Scene_Page_Roll_Widget.md` — found in response to a direct user question comparing to Grimoire's scene-page `cast` component. Codex's review of the *original* handoff caught three real backend gaps the "no backend changes needed" claim had missed (missing player-facing candidate display — a genuine REQ-028 violation; missing difficulty lookup; `soulRollReview` omitting the rolling character) plus a real UX problem with the proposed authorization approach; all four were resolved (three backend fixes plus a `custom_scene_data.rb` snippet) before Codex implemented the actual widget against the corrected contract, confirmed correct by reading the diff directly.
 
 ### Confirmed stale, not real gaps (checkboxes corrected in `IMPLEMENTATION_CHECKLIST.md`)
 

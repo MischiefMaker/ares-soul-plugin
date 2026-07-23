@@ -50,8 +50,11 @@ export default Component.extend({
         skill_key: skillKey,
         amount
       });
-      if (!preview.error) {
+      if (preview.error) {
+        this.setProperties({ spendError: preview.error, spendPreview: null });
+      } else {
         this.setProperties({
+          spendError: null,
           spendPreview: preview,
           spendPreviewAmount: amount
         });
@@ -64,9 +67,12 @@ export default Component.extend({
         amount,
         confirmed: 'true'
       });
-      if (!result.error) {
+      if (result.error) {
+        this.set('spendError', result.error);
+      } else {
         await this.loadXp();
         this.setProperties({
+          spendError: null,
           spendPreview: null,
           spendPreviewAmount: null
         });

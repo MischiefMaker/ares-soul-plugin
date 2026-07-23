@@ -50,6 +50,10 @@
           </div>
         </div>
 
+        {{#if spendError}}
+          <div class="alert alert-danger mt-3 mb-0">{{spendError}}</div>
+        {{/if}}
+
         {{#if spendPreview}}
           <div class="border-start border-3 ps-3 mt-3">
             <p>
