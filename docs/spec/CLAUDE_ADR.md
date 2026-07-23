@@ -62,7 +62,17 @@ README.md's rewrite is being handled separately (Codex), not duplicated by this 
 
 Wrote `docs/handoffs/Phase_9_Profile_Tab_and_XP_Spend_UI.md`, resolving the design directly (mirror Inklings' three-file mounting pattern exactly; gate the interactive XP-spend form to self-view only, since `soulXp`/`soulXpSpend` are correctly enactor-only and staff corrections already have a separate path). Retroactively corrected Phase 6's checklist entries: "both interfaces" there meant a working web *operation* existed, not that a player could actually navigate to it — a real, if subtle, distinction this project's own review discipline should have caught at Phase 6 and didn't.
 
-**Next:** await Codex's implementation of all three open Phase 9 handoffs; review and merge per the established discipline (read the actual diff, not just the completion summary).
+**User then asked whether SOUL has a roll command on the scene page**, referencing Grimoire's `cast` as a possible model to reuse. Investigated rather than assumed:
+- Confirmed SOUL has no roll UI on the scene page at all — no component, no scene code anywhere in `web-portal/`.
+- Checked Grimoire's `cast` before recommending it: `grimoire-cast-spell.js`/`.hbs` is scene-aware (`sceneId` input, posts `scene_id` to `grimoireCast`) but is **not actually mounted onto any scene page anywhere in that repository either** — no `custom-install/` snippet exists for it, same "built but not wired in" situation already found in SOUL's own profile tab. Useful as an API-contract pattern, not a proven end-to-end solution to copy.
+- Found a stronger, real precedent instead: FS3Skills' bundled-core `plugins/fs3skills/web/add_scene_roll_handler.rb` (`addSceneRoll`) plus `Scenes.add_to_scene`/`plugins/scenes/custom_scene_data.rb` — the actual, official mechanism AresMUSH core provides for exactly this feature.
+- Resolved one real design question directly: unlike FS3/Grimoire, which post the roll/cast result straight into the scene transcript, SOUL's own `+roll` command already never does this — results only ever go back to the roller privately, consistent with REQ-031 ("notifications SHALL not reveal private explanations, GM notes, or another character's information") and the fact that GM-assisted rolls exist specifically to negotiate what a roll reveals. Decided the new scene-page widget should match this existing behavior, not introduce a public auto-echo.
+- Confirmed all backend web operations already exist and are correct (`soulRollStart`/`soulRollGm`/`soulRollSelect`/`soulRollReview`/`soulRollMark`) — this handoff is Ember-only.
+- One thing left genuinely unresolved and flagged honestly rather than guessed: the exact real scene-page template file to mount into. No `ares-webportal` checkout is available in this project's research environment, and neither Grimoire nor Inklings ever reference one — Codex's first step per the handoff is to locate it in an actual checkout and document what's found, the same way the profile page's mounting mechanism was already documented.
+
+Wrote `docs/handoffs/Phase_9_Scene_Page_Roll_Widget.md`.
+
+**Next:** await Codex's implementation of all four open Phase 9 handoffs; review and merge per the established discipline (read the actual diff, not just the completion summary).
 
 ### Phase 8: Documentation Currency, Spec Correctness, and Release Review (2026-07-24)
 
