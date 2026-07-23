@@ -57,5 +57,8 @@
     {{soul/bnb}}
     {{soul/culmination character=this.char.name}}
     {{soul/history character=this.char.name}}
+    {{#if this.char.custom.can_manage_soul}}
+      {{soul/staff}}
+    {{/if}}
   </div>
 {{/if}}
