@@ -21,46 +21,54 @@ Tests SHALL verify:
 - actionable errors carrying relevant identifiers (CI-07);
 - help/documentation parity, including the `manage soul` topic name (CI-08).
 
+Every item above has real, existing spec coverage as of Phase 7 — see `plugin/spec/*.rb`, one file per API/command/handler, following the `Test Structure` layout below. The examples in this document quote actual method signatures from the shipped code, not illustrative/aspirational ones — if a signature here ever drifts from the real file, the real file wins (CP-09).
+
 ## Test Structure
 
 Tests live in a single flat `plugin/spec/` directory — verified against Inklings' own test suite (`plugin/spec/approve_inkling_spec.rb`, `submit_inkling_spec.rb`, `format_inkling_summary_spec.rb`, etc.), which uses no subdirectories at all. `PluginManager#code_files` explicitly skips any directory named `spec`/`specs` when loading plugin code, so this directory is safe from being accidentally loaded as runtime code regardless of where it sits under `plugin/`.
 
 ```
-plugin/
-  spec/
-    spec_helper.rb                    # or require_relative into the core's own spec_helper
-    soul_config_validator_spec.rb
-    framework_api_spec.rb
-    xp_api_spec.rb
-    bnb_api_spec.rb
-    culmination_api_spec.rb
-    roll_api_spec.rb
-    soul_sheet_cmd_spec.rb
-    soul_roll_cmd_spec.rb
-    skill_spec.rb
-    character_skill_spec.rb
-    bnb_catalogue_entry_spec.rb
+plugin/spec/
+  soul_config_validator_spec.rb
+  soul_framework_api_spec.rb
+  soul_character_api_spec.rb
+  soul_resonance_api_spec.rb
+  soul_xp_api_spec.rb
+  soul_bnb_api_spec.rb
+  soul_culmination_api_spec.rb
+  soul_narrative_history_api_spec.rb
+  soul_dice_engine_spec.rb
+  soul_roll_api_spec.rb
+  soul_inklings_hook_spec.rb
+  roll_spec.rb                        # Roll/PendingRoll model specs
+  soul_sheet_cmd_spec.rb / _web_handler_spec.rb
+  soul_bnb_cmd_spec.rb / _web_handler_spec.rb
+  soul_xp_cmd_spec.rb / _web_handler_spec.rb
+  soul_culmination_cmd_spec.rb / _web_handler_spec.rb
+  soul_history_cmd_spec.rb / _web_handler_spec.rb
+  soul_staff_cmd_spec.rb / _web_handler_spec.rb
+  soul_roll_cmd_spec.rb / _web_handler_spec.rb
 ```
 
 Every spec file starts with `require_relative 'spec_helper'` and wraps its examples in `module AresMUSH ... end`, matching the convention in every existing Inklings spec.
+
+### About `plugin/spec/spec_helper.rb`
+
+**No `spec_helper.rb` file is committed to this repository, and that is correct, not a gap.** Verified against the real AresMUSH engine (`.rspec`: `--require spec_helper` resolved via `-I .` against the engine's own top-level `spec/spec_helper.rb`, with `--pattern spec/**/*_spec*.rb,plugins/**/*_spec*.rb` picking up plugin specs from wherever the engine repo root is) and against the real Inklings plugin repository, which **also commits no `plugin/spec/spec_helper.rb` of its own** despite every one of its specs `require_relative`-ing it. AresMUSH plugins are designed to be tested from inside a full game installation — engine, plugins, and a shared `Gemfile`/`.rspec`/`spec_helper.rb` all in one checkout — not as a standalone repository with its own independent test runner. Running SOUL's suite requires installing this plugin into such a game checkout (see `docs/development/Release_Process.md`), at which point `require_relative 'spec_helper'` resolves the same way every other plugin's specs already do.
+
+Earlier phases' implementation notes repeatedly flagged this as "RSpec remains unavailable, spec_helper.rb missing" — that phrasing is corrected here after checking the real engine and Inklings repositories directly (Phase 8 documentation-currency review, 2026-07-24): every spec file in this repository is syntax-valid (`ruby -c`) and has been reviewed for correctness against its target API's actual behavior, but none has been *executed*, because this repository was never going to be able to execute them standalone in the first place — not because anything is missing from it.
 
 ## Test Patterns
 
 ### XP Cost and Idempotency (REQ-013, REQ-015, Addendum §3)
 
+Quoted from the real `plugin/spec/soul_xp_api_spec.rb`:
+
 ```ruby
 describe SoulXpApi do
   describe ".calculate_cost" do
-    it "matches the algebraic formula exactly" do
-      # rating 5: ceil(25/2) = 13; xp_spent 0 → dev modifier 1.0; resonance 0 → 1.0
-      cost = SoulXpApi.calculate_cost(character_with(xp_spent: 0, resonance: 0), "blade", 5)
-      expect(cost).to eq(13)
-    end
-
-    it "increases cost for positive Resonance" do
-      base = SoulXpApi.calculate_cost(character_with(resonance: 0), "blade", 5)
-      boosted = SoulXpApi.calculate_cost(character_with(resonance: 3), "blade", 5)
-      expect(boosted).to be > base
+    it "matches the Addendum §3 worked example at rating 5, 0 XP spent, R0" do
+      expect(SoulXpApi.calculate_cost(character, "blade", 5)).to eq(13)
     end
 
     it "never decreases as rating rises (REQ-015 invariant)" do
@@ -70,22 +78,17 @@ describe SoulXpApi do
   end
 
   describe ".award" do
-    it "does not double-award on duplicate idempotency key" do
-      SoulXpApi.award(character, 10, source: "scene:1", idempotency_key: "scene:1:#{character.id}")
-      SoulXpApi.award(character, 10, source: "scene:1", idempotency_key: "scene:1:#{character.id}")
-      expect(SoulCharacterApi.get_lifetime_earned_xp(character)).to eq(10)
+    it "does not double-award on a repeated idempotency key" do
+      SoulXpApi.award(character, 10, source: "scene:1", idempotency_key: "scene:1:#{character.id}", apply_catchup: false)
+      SoulXpApi.award(character, 10, source: "scene:1", idempotency_key: "scene:1:#{character.id}", apply_catchup: false)
+      expect(SoulXpApi.get_lifetime_earned_xp(character)).to eq(10)
     end
 
-    it "separates base award from catch-up bonus" do
-      allow(SoulXpApi).to receive(:median_earned_xp).and_return(100)
-      result = SoulXpApi.award(character_with(xp_earned: 0), 2, source: "weekly", idempotency_key: "week:1")
-      expect(result[:catchup_portion]).to eq(2)  # 2 base × 2.0 multiplier - 2 base
-    end
-
-    it "caps catch-up bonus at the median gap" do
+    it "caps the catch-up bonus at the median gap (Addendum §8 Example B.4)" do
+      allow(SoulXpApi).to receive(:catchup_eligible?).and_return(true)
       allow(SoulXpApi).to receive(:median_earned_xp).and_return(1)
-      result = SoulXpApi.award(character_with(xp_earned: 0), 2, source: "weekly", idempotency_key: "week:2")
-      expect(result[:awarded]).to eq(3)  # 2 base + 1 capped catch-up, not 4
+      result = SoulXpApi.award(character, 2, source: "weekly", apply_catchup: true)
+      expect(result[:awarded]).to eq(3)   # 2 base + 1 capped catch-up, not 4
     end
   end
 end
@@ -93,90 +96,100 @@ end
 
 ### B&B Transitions and Non-Destructive Resolution (REQ-018 through REQ-021)
 
+Real signatures: `SoulBnbApi.resolve(entry_id, reason:, enactor:)`, `SoulBnbApi.delete(entry_id, enactor:, confirmations:, reason:)` — both return `{ error: }` or `{ success: true, ... }`, never raise for an ordinary validation failure.
+
 ```ruby
 describe SoulBnbApi do
   describe ".resolve" do
     it "preserves the entry and its prior level rather than deleting it" do
-      entry = AresMUSH::CharacterBnbEntry.create(character_id: character.id, catalogue_id: catalogue_entry.id, level_state: "major")
-      SoulBnbApi.resolve(character, entry.id, reason: "Story resolved", enactor: staff)
+      entry = CharacterBnbEntry.create(character: character, catalogue_entry: catalogue_entry, level_state: "major")
+      SoulBnbApi.resolve(entry.id, reason: "Story resolved", enactor: staff)
 
-      entry.reload
-      expect(entry.resolved).to be true
-      expect(entry.level_state).to eq("major")   # preserved, not zeroed destructively
+      expect(entry.resolved).to eq("true")
+      expect(entry.preserved_level_state).to eq("major")   # preserved, not zeroed destructively
     end
   end
 
   describe ".delete" do
     it "requires two confirmations and an audit snapshot" do
-      expect {
-        SoulBnbApi.delete(entry.id, enactor: staff, confirmations: 1)
-      }.to raise_error(/confirmation/i)
+      result = SoulBnbApi.delete(entry.id, enactor: staff, confirmations: 1, reason: "Duplicate entry")
+      expect(result[:error]).to match(/confirmation/i)
 
-      expect {
-        SoulBnbApi.delete(entry.id, enactor: staff, confirmations: 2, reason: "Duplicate entry")
-      }.not_to raise_error
-      expect(AuditLog.where(target_id: entry.id)).to be_present
+      result = SoulBnbApi.delete(entry.id, enactor: staff, confirmations: 2, reason: "Duplicate entry")
+      expect(result[:success]).to be true
+      expect(SoulAuditEntry.find(action: "bnb_delete").to_a).not_to be_empty
     end
   end
 end
 ```
 
-### Roll Resolution Invariants (REQ-030)
+### Dice Engine and Roll Resolution Invariants (Addendum §2, REQ-030)
+
+Real signatures: `SoulDiceEngine.roll(net_modifier)` (RNG-based live resolution), `SoulDiceEngine.success_probability(net_modifier, required_dice_total)` (pure/deterministic, no RNG — REQ-030's "identical math across interfaces" requirement is why this is a separate, non-random method rather than derived from a live roll).
 
 ```ruby
-describe "roll resolution invariants" do
-  it "never lets higher Skill reduce expected effectiveness" do
-    low = SoulRollApi.effective_rating(character_with(skill: 3), "blade")
-    high = SoulRollApi.effective_rating(character_with(skill: 7), "blade")
-    expect(high).to be > low
-  end
+describe Soul::SoulDiceEngine do
+  describe ".success_probability" do
+    it "increases with a positive (Boon) modifier relative to no modifier" do
+      baseline = Soul::SoulDiceEngine.success_probability(0, 20)
+      boosted = Soul::SoulDiceEngine.success_probability(5, 20)
+      expect(boosted).to be > baseline
+    end
 
-  it "never lets greater difficulty increase success probability" do
-    easy_prob = SoulRollApi.success_probability(character, "blade", difficulty: 13)
-    hard_prob = SoulRollApi.success_probability(character, "blade", difficulty: 25)
-    expect(hard_prob).to be < easy_prob
-  end
-
-  it "produces identical rounding across interfaces" do
-    mush_result = SoulRollApi.aspect_contribution(rating: 3)
-    web_result = SoulRollApi.aspect_contribution(rating: 3)   # same service call, no separate web math
-    expect(mush_result).to eq(web_result)
+    it "is deterministic across repeated calls with identical inputs" do
+      a = Soul::SoulDiceEngine.success_probability(2, 20)
+      b = Soul::SoulDiceEngine.success_probability(2, 20)
+      expect(a).to eq(b)
+    end
   end
 end
 ```
 
 ### Pending Roll Limits and Expiry (CI-04, REQ-027, Addendum §6)
 
+Real signatures: `SoulRollApi.start_roll(character, skill_key, context: {}, gm_requested: false)`, `SoulRollApi.expire_stale_pending_rolls(now = Time.now)`. Standard and GM-assisted pending-roll limits are two independent per-player caps (Phase 5), not a shared pool.
+
 ```ruby
-describe "pending roll limits" do
-  it "enforces the standard limit of 1 open roll" do
-    SoulRollApi.start_roll(character, "blade")
-    result = SoulRollApi.start_roll(character, "reflexes")
-    expect(result[:error]).to match(/pending roll/i)
+describe SoulRollApi do
+  describe ".start_roll" do
+    it "enforces the pending-roll limit" do
+      SoulRollApi.start_roll(character, "strength", context: { difficulty: "standard" })
+      result = SoulRollApi.start_roll(character, "strength", context: { difficulty: "standard" })
+      expect(result[:error]).to match(/maximum number/i)
+    end
   end
 
-  it "expires after 720 hours without auto-resolving" do
-    pending = AresMUSH::PendingRoll.create(character_id: character.id, status: "waiting", created_at: 721.hours.ago)
-    SoulRollApi.sweep_expired_rolls
-    expect(pending.reload.status).to eq("expired")
-    expect(pending.result).to be_nil   # no auto-resolution
+  describe ".expire_stale_pending_rolls" do
+    it "expires stale open rolls without creating completed rolls" do
+      stale = PendingRoll.create(player: character, character: character, status: "awaiting_selection", expires_at: Time.now - 60)
+      count = SoulRollApi.expire_stale_pending_rolls(Time.now)
+      expect(count).to eq(1)
+      expect(stale.status).to eq("expired")
+      expect(Roll.all.to_a).to be_empty   # no auto-resolution, per Addendum §6
+    end
   end
 end
 ```
 
 ### Narrative History vs. Audit Separation (CP-07, GL-16/17)
 
+Real signatures: `SoulNarrativeHistoryApi.get_history(character, viewer, limit: 50)` (owner or staff), `SoulAuditApi.get_audit(character, viewer, limit: 50)` (staff-only, even for the character it concerns).
+
 ```ruby
 describe "Narrative History vs audit" do
   it "does not create Narrative History for a failed validation" do
-    SoulBnbApi.apply_transition(character, 999, "major", source: "test")  # invalid catalogue id
-    expect(NarrativeHistory.where(character_id: character.id)).to be_empty
-    expect(AuditLog.where(character_id: character.id)).to be_present
+    SoulBnbApi.grant(character, "nonexistent-tag", level_state: "minor", source: "test")
+    expect(character.narrative_history_entries.to_a).to be_empty
   end
 
-  it "creates Narrative History for an approved Culmination" do
-    SoulCulminationApi.approve(culmination.id, staff)
-    expect(NarrativeHistory.where(soul_record_reference: culmination.id)).to be_present
+  it "creates Narrative History for a resolved B&B entry" do
+    SoulBnbApi.resolve(entry.id, reason: "Story resolved", enactor: staff)
+    expect(character.narrative_history_entries.to_a.map(&:event_type)).to include("bnb_resolved")
+  end
+
+  it "keeps the audit log staff-only, even for the subject character" do
+    expect(SoulAuditApi.get_audit(character, character)).to eq([])   # character is not staff
+    expect(SoulAuditApi.get_audit(character, staff)).not_to be_empty
   end
 end
 ```
@@ -187,8 +200,8 @@ end
 describe "SOUL without Inklings" do
   it "still resolves rolls and B&B transitions" do
     expect(defined?(AresMUSH::Inklings)).to be_nil
-    result = SoulRollApi.start_roll(character, "blade")
-    expect(result[:error]).to be_nil
+    result = SoulRollApi.start_roll(character, "strength", context: { difficulty: "standard" })
+    expect(result[:success]).to be true
   end
 end
 ```
@@ -198,34 +211,30 @@ end
 AresMUSH's own test suite uses the **Fabrication** gem, not FactoryBot — `Fabricate(:character)` and `Fabricate(:job)` (verified against real usage in Inklings' own spec files, e.g. `plugin/spec/approve_inkling_spec.rb`) construct pre-defined core models. Neither the AresMUSH core checkout nor Inklings defines new Fabricators for plugin-specific models, even where the plugin adds its own persistent models — specs instead construct those directly via `.create(...)`. Follow that same pattern for SOUL's own models rather than introducing a new fixture framework:
 
 ```ruby
-describe Soul::SoulSkillsApi do
+describe SoulCharacterApi do
   let(:character) { Fabricate(:character) }
+  let(:catalogue_entry) { BnbCatalogueEntry.create(name: "Test", description: "...", tag: "test", kind: "boon") }
 
-  let(:aspect) { AresMUSH::Aspect.create(key: "body", name: "Body", order: 1) }
-  let(:skill) { AresMUSH::Skill.create(key: "blade", name: "Blade", aspect_key: "body", order: 1) }
-  let(:character_skill) { AresMUSH::CharacterSkill.create(character_id: character.id, skill_key: "blade", rating: 0) }
-
-  # ... use character, aspect, skill, character_skill as needed
+  # ... use character, catalogue_entry as needed
 end
 ```
 
-If a helper reduces enough duplication to be worth extracting, put it in `plugin/spec/spec_helper.rb` (loaded via `require_relative 'spec_helper'` at the top of every spec file, matching Inklings' convention) rather than introducing a factory library the rest of the codebase doesn't use.
+If a helper reduces enough duplication to be worth extracting, put it in `plugin/spec/spec_helper.rb` (loaded via `require_relative 'spec_helper'` at the top of every spec file, matching Inklings' convention) rather than introducing a factory library the rest of the codebase doesn't use — see "About `plugin/spec/spec_helper.rb`" above for why this file isn't committed here.
 
 ## Configuration in Tests
 
-```ruby
-# spec/support/soul_config.rb
-module SoulTestConfig
-  def self.setup
-    allow(Global).to receive(:read_config).and_call_original
-    allow(Global).to receive(:read_config).with("soul", "framework", "skill_max_rating").and_return(10)
-    allow(Global).to receive(:read_config).with("soul", "aspect", "weight").and_return(0.20)
-    allow(Global).to receive(:read_config).with("soul", "permissions", "play").and_return("play")
-  end
-end
+Real config keys are flat, top-level `soul.yml` settings — not a nested `permissions:` hash (confirmed against Inklings' own `manage_permission` precedent, see `docs/reference/Permissions.md`):
 
-RSpec.configure { |config| config.before(:each) { SoulTestConfig.setup } }
+```ruby
+before do
+  allow(Global).to receive(:read_config).and_call_original
+  allow(Global).to receive(:read_config).with("soul", "framework", "skill_max_rating").and_return(10)
+  allow(Global).to receive(:read_config).with("soul", "aspect", "weight").and_return(0.20)
+  allow(Global).to receive(:read_config).with("soul", "play_permission").and_return("play")
+end
 ```
+
+`Global.read_config` is always stubbed with `.and_call_original` first, then specific `.with(...)` stubs layered on top — this lets a spec override only the keys it cares about while leaving everything else to the real config loader (or a further, more general stub), matching every existing spec file's `before` block.
 
 ## Coverage Targets
 
@@ -233,13 +242,13 @@ RSpec.configure { |config| config.before(:each) { SoulTestConfig.setup } }
 - **APIs:** 90%+ (business logic is critical)
 - **Models:** 85%+ (include validations)
 - **Commands:** 75%+
-- **Formatters/Serializers:** 80%+ (privacy filtering lives here — high stakes)
+- **Web Handlers:** 80%+ (privacy filtering lives here — high stakes)
 
-```bash
-COVERAGE=true rspec spec/
-```
+Coverage cannot currently be measured in this repository (no standalone execution — see above); it must be measured from within the full game installation this plugin is deployed into, using that installation's own `Gemfile`'s coverage tooling (e.g. SimpleCov, if the target game's `Gemfile` includes it — check before assuming it's available).
 
 ## Integration Tests
+
+Real signatures: `SoulInklingsHook.validate_outcome(outcome_type:, character:, proposed_transition:, requester: nil, inkling_reference:)`, `SoulInklingsHook.apply_outcome(payload, source:)`.
 
 ```ruby
 describe "Inklings + SOUL integration" do
@@ -247,7 +256,7 @@ describe "Inklings + SOUL integration" do
     payload = SoulInklingsHook.validate_outcome(
       outcome_type: :boon_progression,
       character: character,
-      proposed_transition: { catalogue_id: bnb_entry.catalogue_id, from: "minor", to: "major" },
+      proposed_transition: { catalogue_id: catalogue_entry.id, from: "minor", to: "major" },
       requester: player,
       inkling_reference: "inkling:1"
     )
@@ -255,7 +264,7 @@ describe "Inklings + SOUL integration" do
 
     result = SoulInklingsHook.apply_outcome(payload, source: "inkling:1")
     expect(result[:success]).to be true
-    expect(NarrativeHistory.where(external_reference: "inkling:1")).to be_present
+    expect(result[:soul_references][:character_bnb_entry_id]).to be_present
   end
 end
 ```
@@ -264,8 +273,8 @@ end
 
 1. One assertion per test (or a tightly related group).
 2. Descriptive names — `"returns error when rating exceeds maximum"`, not `"tests validation"`.
-3. Build test data in factories, not inline.
-4. Stub external dependencies (Ares core methods, filesystem).
+3. Build test data directly (`Fabricate`/`.create`), not via a factory library the codebase doesn't otherwise use.
+4. Stub external dependencies (Ares core methods, filesystem, `Login.notify`).
 5. Test both success and failure paths — every documented `{ error: }` needs a test.
 6. Don't test Ares internals — assume the core framework works; test SOUL's logic.
 

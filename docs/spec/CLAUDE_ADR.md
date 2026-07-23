@@ -18,7 +18,7 @@ Claude's ongoing engineering notebook for SOUL implementation. Tracks current st
 
 **Branch:** `main`
 
-**Phase:** ✅ Phases 1-7 complete. Ready to begin Phase 8 (Migration, Documentation, Tests, and Release Review) — the final planned phase.
+**Phase:** ✅ All eight planned implementation phases (FINAL Appendix D) complete. Phase 8 (Migration, Documentation, Tests, and Release Review) closed out the project's documentation-currency and code-review obligations directly (2026-07-24) — see Recent Changes. Future work is project-owner-directed: Stretch Goals (FINAL Appendix E), Roll subsystem Ember components, or live deployment.
 
 **Delegation model changed this session:** `Implementation_Specification_Addendum.md` was updated with a new, much broader Codex role (models, services, APIs, events, cron jobs, tests — not just command/web adapters as under the narrower LlamaCoder rules that preceded it). See the Addendum's "SOUL Codex Handoff Instructions" section. Claude's role is now consistently: architecture, mathematically/architecturally sensitive implementation, design-gap resolution, and review — with conventional CRUD/service implementation work delegated to Codex once the design is locked.
 
@@ -38,6 +38,24 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 **Lesson for future sessions:** Never write architecture/reference scaffolding without deriving it from the actual governing specification. If a specification file exists, read it fully before writing any supporting documentation — do not fill gaps with generic assumptions.
 
 ## Recent Changes
+
+### Phase 8: Documentation Currency, Spec Correctness, and Release Review (2026-07-24)
+
+The final planned phase (FINAL Appendix D). Unlike Phases 1-7, this is a review/validation pass across everything already built, not new implementation — done directly rather than handed to Codex, matching the Addendum's division of labor ("Claude reviews, integrates, and accepts").
+
+**Corrected a repeated misunderstanding, verified against real source rather than assumed:** every phase's implementation notes since Phase 1-3 flagged `plugin/spec/spec_helper.rb`'s absence as a gap ("RSpec remains unavailable"). Checked directly against the real AresMUSH engine's `.rspec` (`--require spec_helper` resolved via `-I .` against the engine's own top-level `spec/spec_helper.rb`, with `--pattern` covering `plugins/**/*_spec*.rb`) and the real Inklings plugin repository, which **also commits no `plugin/spec/spec_helper.rb`** despite every spec file `require_relative`-ing it. AresMUSH plugins are designed to be tested from inside a full game installation (engine + plugins + a shared `Gemfile`/`.rspec` in one checkout), not as an independently-runnable standalone repository — this was never a SOUL-specific gap. `docs/development/Testing.md` now documents this correctly.
+
+**Fixed a real, previously-undetected bug:** 3 spec files (`soul_character_api_spec.rb`, `soul_resonance_api_spec.rb`, `soul_xp_api_spec.rb`) used `describe Soul::SoulCharacterApi`/`Soul::SoulResonanceApi`/`Soul::SoulXpApi` (and one used `Soul::SoulXpLedgerEntry`), but all of these classes are declared flat under `AresMUSH::`, not nested under `Soul::` — every one of these `describe` lines would have raised `NameError: uninitialized constant AresMUSH::Soul::SoulXpApi` (etc.) the moment the suite actually ran. Cross-checked all ~25 spec files' `describe` targets against their actual module declarations before fixing only the 3 that were genuinely wrong — commands, `SoulConfigValidator`, and `SoulDiceEngine` are all legitimately nested under `Soul::` (matching their real files) and needed no change.
+
+**Rewrote `docs/development/Testing.md` and `docs/development/Migration_From_FS3.md`**, both of which contained illustrative example code referencing methods and model shapes that never existed in the real implementation (`SoulRollApi.effective_rating`/`.success_probability`/`.sweep_expired_rolls`, `NarrativeHistory.where(...)`, `AuditLog`, `PendingRoll.create(character_id: ...)`, `SoulBnbApi.apply_transition`, `SoulCharacterApi.get_skill_ratings`/`.initialize_character`) — replaced with real, quoted signatures from the shipped code. Also found and fixed a genuine logic bug in `Migration_From_FS3.md`'s own XP-recalculation script: it computed every skill rating's advancement cost against a single static `soul_xp_spent` snapshot instead of progressively updating it after each purchase, meaning the algebraic cost formula's development-curve term (Addendum §3) would never reflect the accumulating total the way a real `.spend` call would.
+
+**Fixed 3 stale rows in `docs/reference/Commands.md`** that still showed pre-implementation placeholder syntax rather than what Codex actually built in Phase 1-3: `+bnb/create <name>=<description>` (real: `<kind>/<tag>/<name>=<description>`, since `kind`/`tag` are required parameters), `+bnb/delete <entry id>` (real: `<entry id>/<reason>/confirm/confirm`, per REQ-021's two-confirmation requirement), and `+bnb/grant` (missing its optional `/<level>` segment, which defaults to `minor`).
+
+**FINAL Appendix C acceptance criteria** were verified by inspection across all existing spec files rather than by execution (see the `spec_helper.rb` finding above) — every required coverage area has real, correctly-targeted tests; none were found missing entirely.
+
+**`docs/development/Release_Process.md`**: fixed one fictional code example (a `VERSION` constant declared via `module AresMUSH::Soul` — Ruby's compact nesting syntax, which resolves constants differently from the `module AresMUSH; module Soul; end; end` form every real file in this plugin uses, and which doesn't exist in `plugin/soul.rb` today regardless).
+
+This closes all eight planned implementation phases. Remaining work is project-owner-directed: FINAL Appendix E Stretch Goals (each requires owner approval/an ADR), Ember/web-portal frontend components for the Roll subsystem (Phase 6 built the Ruby web handlers only), or live deployment/pilot feedback.
 
 ### Phase 7 Review Findings (2026-07-24)
 

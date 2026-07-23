@@ -116,6 +116,8 @@ Follow the README installation steps: clone the plugin, copy web portal files, a
 
 ### Step 4: Migrate Skill Data
 
+Use `SoulCharacterApi.set_skill_rating` rather than creating `CharacterSkill` records directly — it validates the skill key and rating range the same way chargen/staff correction does, and correctly creates-or-updates so the script is safe to re-run:
+
 ```ruby
 fs3_data = JSON.parse(File.read("fs3_export.json"))
 
@@ -127,8 +129,9 @@ fs3_data.each do |char_data|
     soul_skill_key = map_fs3_to_soul(fs3_name)
     next unless soul_skill_key
 
-    soul_rating = [fs3_rating * 2, 10].min   # example conversion rule; document yours
-    CharacterSkill.create(character_id: character.id, skill_key: soul_skill_key, rating: soul_rating)
+    soul_rating = [fs3_rating * 2, SoulFrameworkApi.skill_max_rating].min   # example conversion rule; document yours
+    result = SoulCharacterApi.set_skill_rating(character, soul_skill_key, soul_rating, nil)
+    puts "WARNING: #{character.name} #{soul_skill_key}: #{result[:error]}" if result[:error]
   end
 
   puts "Migrated #{character.name}"
@@ -146,45 +149,57 @@ end
 
 ### Step 5: Recalculate XP Spent Under SOUL's Formula
 
-Do not copy FS3's `xp_spent` directly — recompute it bottom-up so future advancement costs stay consistent:
+Do not copy FS3's `xp_spent` directly — recompute it bottom-up so future advancement costs stay consistent. `calculate_cost`'s development-curve term (Addendum §3) reads the character's *current* `soul_xp_spent` at the time of the call, exactly like a real `.spend` would see it mid-advancement — so the running total must be written back to the character **as you go**, not just once at the end, or every rating's cost will be computed against a stale (pre-migration) `soul_xp_spent` instead of the progressively-accumulating total a real advancement history would have produced. There is no service-layer setter for this kind of bulk backfill (ordinary play only ever changes `soul_xp_spent` through `.spend`/`.correct`) — updating the Character attribute directly is a deliberate, one-time exception for migration only:
 
 ```ruby
 Character.all.each do |character|
+  character.update(soul_xp_spent: 0)   # start the simulation from a clean baseline
   total_spent = 0
-  character.character_skills.each do |char_skill|
+  character.character_skills.to_a.each do |char_skill|
     (1..char_skill.rating).each do |rating|
-      total_spent += SoulXpApi.calculate_cost(character_at_spend_time(character, total_spent), char_skill.skill_key, rating)
+      cost = SoulXpApi.calculate_cost(character, char_skill.skill_key, rating)
+      total_spent += cost
+      character.update(soul_xp_spent: total_spent)   # so the next calculate_cost call sees the running total
     end
   end
-  SoulCharacterApi.set_lifetime_spent_xp(character, total_spent)
   puts "#{character.name}: recalculated xp_spent = #{total_spent}"
 end
 ```
 
 ### Step 6: Migrate Boons & Banes
 
-**Option A — Manual (recommended for small catalogues):**
+**Option A — Manual (recommended for small catalogues):** real implemented syntax is `+bnb/create <kind>/<tag>/<name>=<description>` (see `docs/reference/Commands.md`) — `kind` is `boon` or `bane`, both required:
 ```
-+bnb/create Lucky=You have uncanny good fortune.
-+bnb/create Cursed=Bad luck dogs your heels.
++bnb/create boon/lucky/Lucky=You have uncanny good fortune.
++bnb/create bane/cursed/Cursed=Bad luck dogs your heels.
 ```
-Then grant existing character B&Bs:
+Then grant existing character B&Bs — `+bnb/grant <character>/<catalogue id or tag>[/<level>]=<explanation>`:
 ```
-+bnb/grant Alice/cursed=Migrated from FS3; originally granted for the Ashford incident.
++bnb/grant Alice/cursed/minor=Migrated from FS3; originally granted for the Ashford incident.
 ```
 
-**Option B — Scripted (for large catalogues):**
+**Option B — Scripted (for large catalogues):** go through `SoulBnbApi` rather than creating `BnbCatalogueEntry`/`CharacterBnbEntry` records directly — it enforces tag uniqueness (check-then-create, since Ohm has no native unique constraint) and the 2:1 Boon-to-Bane ratio, and correctly stamps `source: "migration"` on each granted entry for audit/history purposes:
+
 ```ruby
 fs3_boons = JSON.parse(File.read("fs3_boons.json"))
 
-fs3_boons.each do |boon_name|
-  BnbCatalogueEntry.create(tag: boon_name.downcase.gsub(/\s+/, "_"), name: boon_name, category: "Mundane")
+fs3_boons.each do |boon_data|
+  result = SoulBnbApi.create_catalogue_entry(
+    name: boon_data["name"],
+    description: boon_data["description"],
+    kind: boon_data["kind"],   # "boon" or "bane" - decide per FS3 entry; SOUL requires this explicitly
+    tag: boon_data["name"].downcase.gsub(/\s+/, "_"),
+    enactor: nil
+  )
+  puts "WARNING: #{boon_data['name']}: #{result[:error]}" if result[:error]
 end
 
 Character.all.each do |character|
   character.fs3_boons.each do |boon_name|
-    catalogue_entry = BnbCatalogueEntry.find_one_by_name(boon_name)
-    SoulBnbApi.apply_transition(character, catalogue_entry.id, "minor", source: "migration")
+    catalogue_entry = SoulBnbApi.get_catalogue_entry(boon_name.downcase.gsub(/\s+/, "_"))
+    next unless catalogue_entry
+    result = SoulBnbApi.grant(character, catalogue_entry, level_state: "minor", source: "migration")
+    puts "WARNING: #{character.name}/#{boon_name}: #{result[:error]}" if result[:error]
   end
 end
 ```
@@ -216,17 +231,18 @@ Type +soul to see your Sheet. Questions? See help soul.
 
 ## Post-Migration Validation
 
+`SoulCharacterApi` has no bulk "all ratings" accessor — check each configured Skill individually per character (`get_skill_rating` returns `0` for a character with no `CharacterSkill` record at all, which is indistinguishable from "genuinely rated 0," so check for the *absence* of any `character_skills` records instead, which is what actually indicates a character was skipped by migration):
+
 ```ruby
 Character.all.each do |character|
-  skills = SoulCharacterApi.get_skill_ratings(character)
-  puts "WARNING: #{character.name} has no SOUL skill data!" if skills.empty?
+  puts "WARNING: #{character.name} has no SOUL skill data!" if character.character_skills.to_a.empty?
 end
 ```
 
+Spot-check individual characters via the real staff commands (see `docs/reference/Commands.md`):
 ```
-+admin
 +soul TestChar
-+xp TestChar
++soul/audit TestChar
 +bnb/search TestChar
 ```
 
@@ -242,18 +258,15 @@ end
 
 ### "Character has no SOUL data"
 
-**Fix:**
-```ruby
-SoulCharacterApi.initialize_character(character)
-```
+There is no separate "initialize" step to run — `Character`'s SOUL attributes (`soul_xp_available`, etc.) default to `0` from `character_soul_fields.rb`'s own attribute declarations the moment the plugin is loaded, and `CharacterSkill`/`CharacterAspect` records are created lazily the first time a rating is actually set. If a character truly has no skill data after migration, it means Step 4's script skipped them (check the export for that character's name) — re-run Step 4 for that one character rather than looking for a missing initialization call.
 
 ### "Skill not found" during migration
 
-**Fix:** Verify `map_fs3_to_soul` covers every FS3 skill actually in use; add the missing mapping or create the corresponding SOUL Skill first.
+**Fix:** Verify `map_fs3_to_soul` covers every FS3 skill actually in use; add the missing mapping, or add the corresponding entry to `game/config/soul.yml`'s `framework.skills` first if the Skill doesn't exist in SOUL's config yet.
 
 ### "XP advancement cost mismatch"
 
-**Fix:** Re-run Step 5's recalculation script — `xp_spent` must be derived from SOUL's own formula, not copied from FS3.
+**Fix:** Re-run Step 5's recalculation script — `soul_xp_spent` must be derived from SOUL's own formula, not copied from FS3.
 
 ## Long-Term Considerations
 

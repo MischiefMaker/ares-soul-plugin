@@ -51,10 +51,14 @@ Steps for releasing a new version of SOUL. Grounded in `docs/spec/SOUL_LLM_Imple
 
 ### 1. Update Version Number
 
+`plugin/soul.rb` does not currently define a `VERSION` constant — if one is added for release tracking, follow the module-nesting convention every other file in this plugin uses (`module AresMUSH; module Soul; ...; end; end`), **not** the compact `module AresMUSH::Soul` form, which resolves constants differently and doesn't match anything else in this codebase:
+
 ```ruby
 # plugin/soul.rb
-module AresMUSH::Soul
-  VERSION = "1.2.0"
+module AresMUSH
+  module Soul
+    VERSION = "1.2.0"
+  end
 end
 ```
 

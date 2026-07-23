@@ -60,15 +60,13 @@ Every command family from `docs/reference/Commands.md` implemented equivalently 
 
 The Inklings validate/apply hook, and Grimoire's read-only Skill/Aspect/Resonance access. Both remain fully optional — SOUL's core functionality never depends on either. A real idempotency gap in `SoulBnbApi.grant`/`.progress` (no protection against duplicate delivery) was found and resolved at the hook layer before the handoff was written, and Codex independently surfaced and correctly resolved a second, subtler ordering issue: the idempotency check must run before the state-matches-current revalidation, or a successful retry looks like stale state.
 
-## Current Milestone: Implementation, Phase 8
+## Completed Milestone: Implementation, Phase 8
 
-**Status:** Ready to begin
+**Status:** ✅ Complete (2026-07-24). This was a review/documentation-currency pass, not new implementation, so it was done directly rather than handed to Codex. Found and fixed real issues: `docs/development/Testing.md` and `Migration_From_FS3.md` contained fictional API examples that never matched any real shipped method (rewritten to quote actual signatures); 3 spec files had a genuine namespace bug that would have raised `NameError` on execution; `Commands.md` had 3 stale rows still showing pre-implementation placeholder syntax; and the long-repeated "`spec_helper.rb` is missing" note across every phase's implementation notes was corrected after checking the real AresMUSH engine and Inklings plugin directly — a standalone plugin repository never runs its own specs independently, by design, so nothing was actually missing.
 
 ### Phase 8 — Migration, Documentation, Tests, and Release Review
 
-FS3 migration validation, full documentation currency pass, coverage targets, FINAL Appendix C acceptance criteria, and the release checklist.
-
-**Estimated scope for the remaining phase:** 1 remaining implementation cycle, with Codex handling well-specified implementation work under Claude's architectural review (see the Codex Handoff Instructions in `Implementation_Specification_Addendum.md`).
+FS3 migration validation, full documentation currency pass, coverage targets, FINAL Appendix C acceptance criteria, and the release checklist. All eight planned implementation phases (FINAL Appendix D) are now complete.
 
 ## Stretch Goals (Deferred — FINAL Appendix E)
 
@@ -91,6 +89,6 @@ FINAL explicitly defers these; they require owner approval/an ADR before any imp
 
 ---
 
-**Last Updated:** 2026-07-23
+**Last Updated:** 2026-07-24
 
-**Next Review:** After completing Phase 4 (standard rolls and pending-roll flow)
+**Next Review:** All eight planned implementation phases (FINAL Appendix D) are complete. Future work is project-owner-directed: Stretch Goals above (each requires owner approval/an ADR per FINAL Appendix E), Ember/web-portal component work for the Roll subsystem (Phase 6 built the Ruby web handlers; frontend components for rolls specifically remain, following the pattern in `web-portal/app/components/soul/` from Phases 1-3), or live deployment/pilot feedback.

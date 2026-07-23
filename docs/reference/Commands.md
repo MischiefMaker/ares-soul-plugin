@@ -21,10 +21,10 @@ The default Sheet fits roughly one MUSH screen (CI-02); drill-down commands belo
 | `+bnb/here <tag>` | Canonical (REQ-022, concise alias configurable) | Minimal scene-scoped lookup limited to involved players and permitted data | play |
 | `+bnb/search <tag>` | Canonical (REQ-022, concise alias configurable) | Staff/admin global search; may support detail/full modes | manage_soul |
 | `+bnb/catalogue` | Proposed | Browse the full public catalogue | play |
-| `+bnb/create <name>=<description>` | Proposed | Create a new catalogue entry (category, level defaults, chargen flags via follow-up prompts) | manage_soul |
-| `+bnb/grant <character>/<catalogue id or tag>=<explanation>` | Proposed | Grant a character entry (post-chargen, non-XP) | manage_soul |
-| `+bnb/progress <character>/<entry id>=<new level>` | Proposed | Progress or resolve/negate an existing character entry | manage_soul |
-| `+bnb/delete <entry id>` | Proposed | Two-confirmation destructive delete (REQ-021); resolution/negation is preferred | manage_soul |
+| `+bnb/create <kind>/<tag>/<name>=<description>` | Proposed (implemented; syntax fixed 2026-07-24) | Create a new catalogue entry (`kind`: boon/bane) | manage_soul |
+| `+bnb/grant <character>/<catalogue id or tag>[/<level>]=<explanation>` | Proposed (implemented) | Grant a character entry (post-chargen, non-XP); `level` defaults to `minor` if omitted | manage_soul |
+| `+bnb/progress <character>/<entry id>=<new level>` | Proposed (implemented) | Progress (or retreat) an entry's level — **level-progression only**; cannot call the dedicated `resolve`/`restore` API (which requires a reason this syntax doesn't capture) | manage_soul |
+| `+bnb/delete <entry id>/<reason>/confirm/confirm` | Proposed (implemented; syntax fixed 2026-07-24) | Two-confirmation destructive delete (REQ-021) — counts literal `confirm` tokens; resolution/negation via `+bnb/progress` is preferred for ordinary play | manage_soul |
 
 Name collisions return matching names, IDs, and tags for disambiguation (GL-10).
 
