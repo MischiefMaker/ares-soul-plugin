@@ -65,6 +65,9 @@ en:
     audit_line: "%{at}: %{action} by %{actor} — %{reason}"
     audit: "%xhSOUL Audit: %{name}%xn%r%{entries}"
     system_actor: "System"
+    chargen_approved: "SOUL chargen choices can only be changed before approval."
+    chargen_updated: "SOUL chargen selection updated."
+    chargen_status: "%xhSOUL Chargen%xn%rResonance: %{resonance}%rSkill points: %{spent} spent / %{remaining} remaining%r%{skills}%r%xhSelected Boons & Banes:%xn%r%{bnb}"
     commands:
       soul:
         help: "Usage: +soul [character]"
@@ -81,3 +84,6 @@ en:
       roll:
         help: "Usage: +roll <skill>, +roll suggested, or help soul_rolls"
         desc: "Make and manage SOUL rolls."
+      chargen:
+        help: "Usage: +chargen, +chargen/resonance, +chargen/skill, +chargen/bnb, or +chargen/drop"
+        desc: "Choose your starting SOUL traits before approval."
