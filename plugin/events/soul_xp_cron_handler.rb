@@ -13,6 +13,7 @@ module AresMUSH
     class XpCronHandler
       def on_event(event)
         SoulRollApi.expire_stale_pending_rolls(event.time)
+        reconcile_forum_xp(event.time)
 
         config = Global.read_config("soul", "xp", "weekly_award_cron")
         return unless Cron.is_cron_match?(config, event.time)
@@ -30,6 +31,33 @@ module AresMUSH
             amount,
             source: "weekly",
             idempotency_key: "weekly:#{week_id}:#{char.id}",
+            apply_catchup: true
+          )
+        end
+      end
+
+      private
+
+      def reconcile_forum_xp(now)
+        amount = Global.read_config("soul", "xp", "forum_award") || 0
+        return if amount <= 0
+        return unless defined?(BbsPost) && defined?(BbsReply)
+
+        week_id = now.strftime("%G-W%V")
+        approved_ids = Chargen.approved_chars.map { |character| character.id.to_s }
+        contributions = (BbsPost.all.to_a + BbsReply.all.to_a).select do |item|
+          item.created_at && item.created_at.strftime("%G-W%V") == week_id
+        end.sort_by(&:created_at)
+
+        contributions.each do |item|
+          character = item.author
+          next unless character && approved_ids.include?(character.id.to_s)
+
+          SoulXpApi.award(
+            character,
+            amount,
+            source: "forum:#{week_id}",
+            idempotency_key: "forum:#{character.id}:#{week_id}",
             apply_catchup: true
           )
         end
