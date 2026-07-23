@@ -175,54 +175,92 @@ rolls:
 
 ## 3. XP Advancement Cost Table
 
-**Status:** Pending Decision
+**Status:** ✅ Approved
 
-**Question:**
-What is the XP cost to advance each skill rating?
+**Decision:**
+XP advancement costs are calculated using an algebraic model combining skill rating curves, character development curves, and Resonance modifiers. This approach eliminates static lookup tables while maintaining configurability and natural scaling.
 
-**Specification Requirement (REQ-014):**
-"Advancement cost per rating SHALL be configurable and documented. Default advancement costs SHALL be balanced such that a typical character gains 1-2 skill advancements per month of active play."
+**Cost Calculation Formula:**
 
-**Options Under Consideration:**
-
-### Option A: Linear Scaling
-```yaml
-advancement_cost: [10, 10, 10, 10, 10]
-# Cost to advance 0→1, 1→2, 2→3, 3→4, 4→5: all 10 XP
 ```
-- **Rationale:** Simplicity; each rating equally valued
-- **Impact:** Flat progression; experienced characters advance at same rate as beginners
-- **Monthly Rate:** With ~20 XP/month baseline, ~2 advancements/month (meets spec)
-
-### Option B: Ascending Escalation
-```yaml
-advancement_cost: [10, 15, 20, 25, 30]
-# Cost to advance 0→1=10, 1→2=15, 2→3=20, 3→4=25, 4→5=30
+base_cost = ceil(new_rating² / 2)
+development_modifier = 1 + (xp_spent / 250)^1.25
+resonance_modifier = (char_resonance > 0) ?
+                      (1 + 0.22 * char_resonance + 1 * char_resonance) :
+                      (1 + 0.12 * char_resonance)
+                      
+final_cost = ceil(base_cost × development_modifier × resonance_modifier)
 ```
-- **Rationale:** Higher ratings require greater investment; reinforces specialization
-- **Impact:** Early progression fast, late progression slow; spreads advancement over longer timeframe
-- **Monthly Rate:** ~1-2 advancements/month depending on player choice (meets spec)
 
-### Option C: Exponential Acceleration
-```yaml
-advancement_cost: [5, 10, 20, 40, 80]
-# Cost to advance: 5 → 10 → 20 → 40 → 80
+**Component Breakdown:**
+
+### Skill Curve: `ceil(new_rating² / 2)`
+- **Purpose:** Makes each higher rating progressively more expensive
+- **Examples:**
+  - Rating 1: ceil(1² / 2) = ceil(0.5) = 1 XP
+  - Rating 3: ceil(9 / 2) = ceil(4.5) = 5 XP
+  - Rating 5: ceil(25 / 2) = ceil(12.5) = 13 XP
+  - Rating 9: ceil(81 / 2) = ceil(40.5) = 41 XP
+  - Rating 10: ceil(100 / 2) = 50 XP
+- **Design Rationale:** Ratings 9–10 become intentionally expensive without requiring a hand-maintained table; smooth curve enables natural tuning
+
+### Development Curve: `1 + (xp_spent / 250)^1.25`
+- **Purpose:** Advancement gradually slows as a character develops
+- **Examples (with 0 Resonance):**
+  - At 0 XP spent: 1 + (0/250)^1.25 = 1.0 multiplier → cost unchanged
+  - At 250 XP spent: 1 + (250/250)^1.25 = 2.0 multiplier → costs double
+  - At 500 XP spent: 1 + (500/250)^1.25 ≈ 2.78 multiplier → costs nearly triple
+  - At 1000 XP spent: 1 + (1000/250)^1.25 ≈ 5.66 multiplier → costs >5× original
+- **Design Rationale:** Uses XP spent (not rating), so broad and focused builds advance at similar overall rates; starts nearly flat, then ramps up naturally
+
+### Resonance Modifiers
+
+**Negative Resonance (Below 0):**
 ```
-- **Rationale:** High ratings become rare and prestigious; encourages broad vs. deep specialization
-- **Impact:** Steep endgame cost; only dedicated players reach high ratings
-- **Monthly Rate:** 2-3 early advancements, <1 late-game (may exceed spec unless XP scales with seniority)
+1 + 0.12 * char_resonance
+Example: -5 Resonance → 1 + 0.12×(-5) = 0.4 multiplier → costs 40% of base
+```
 
-**Recommendation:**
-*Awaiting project-owner decision.* Implementation will use **Option B (Ascending Escalation)** as default, balancing accessibility early-game with meaningful late-game investment.
+**Positive Resonance (Above 0):**
+```
+1 + 0.22 * char_resonance + 1 * char_resonance
+Example: +5 Resonance → 1 + 0.22×5 + 1×5 = 6.1 multiplier → costs 610% of base
+```
 
-**Provisional Configuration:**
+- **Design Rationale:**
+  - Negative Resonance: Characters with lower innate potential pay slightly less for advancement
+  - Positive Resonance: Characters with greater innate potential pay substantially more (steeper curve reflects greater starting potential)
+  - Multiplicative curve: Effect grows naturally as characters progress through development curve
+  - Flat surcharge (+1 per positive level): Ensures effect is noticeable even at low costs before development curve dominates
+
+**Configuration:**
 ```yaml
 xp:
-  advancement_cost: [10, 15, 20, 25, 30]
+  # Skill rating curve (configurable constants)
+  skill_curve_numerator: 1      # numerator for rating²
+  skill_curve_denominator: 2    # denominator (rating² / 2)
+  
+  # Development curve (configurable constants)
+  development_base: 1           # baseline multiplier
+  development_scale: 250        # XP spent threshold
+  development_exponent: 1.25    # curve shape
+  
+  # Resonance modifiers
+  negative_resonance_rate: 0.12  # multiplier per negative level
+  positive_resonance_rate: 0.22  # multiplier per positive level
+  positive_resonance_surcharge: 1  # flat +1 XP per positive level
 ```
 
+**Design Goals Satisfied:**
+- ✔ No giant lookup tables
+- ✔ Entirely algebraic and configurable
+- ✔ Very high ratings (9–10) are genuinely difficult to reach
+- ✔ Positive Resonance makes advancement harder (intentional)
+- ✔ Effect of Resonance grows naturally as characters progress
+- ✔ Tunable by changing a few constants instead of rewriting a table
+
 **Catch-Up XP Interaction:**
-Characters earning catch-up XP spend with the same cost table; catch-up only accelerates earning, not spending.
+Characters earning catch-up XP spend with the same cost formula; catch-up only accelerates earning, not spending.
 
 ---
 
@@ -589,7 +627,18 @@ Failure:              margin < -10
 Catastrophic Failure: (same as Failure, but distinguished by narrative weight)
 ```
 
-*Note: Exact margin thresholds are pending configuration finalization.*
+**Configuration:**
+```yaml
+rolls:
+  degrees_of_success:
+    exceptional_success_min: 10
+    success_min: 0
+    complicated_success_min: -5
+    lucky_failure_min: -10
+    catastrophic_failure_min: null  # Below lucky_failure_min threshold
+```
+
+These thresholds are configurable per-game but locked to these defaults for SOUL.
 
 **Output Format - GM-Less (Player Authority):**
 
@@ -678,10 +727,10 @@ Before rolling, calculate the final success probability using:
 After rolling, compare the outcome to the pre-calculated probability:
 
 ```
-If success_probability < 0.5% AND roll succeeds:
+If success_probability ≤ 0.01% AND roll succeeds:
     Display: "In an extraordinary string of good luck, [Character] succeeds."
 
-If failure_probability < 0.5% AND roll fails:
+If failure_probability ≤ 0.01% AND roll fails:
     Display: "In an extraordinary string of bad luck, [Character] fails."
 ```
 
@@ -689,14 +738,14 @@ If failure_probability < 0.5% AND roll fails:
 
 | Scenario | Success Prob | Outcome | Message |
 |----------|--------------|---------|---------|
-| Character with 1% success chance | 1% | Succeeds | "In an extraordinary string of good luck, Sarah succeeds." |
-| Character with 98% success chance | 98% | Fails | "In an extraordinary string of bad luck, Gandalf fails." |
+| Character with 0.005% success chance | 0.005% | Succeeds | "In an extraordinary string of good luck, Sarah succeeds." |
+| Character with 99.995% success chance | 99.995% | Fails | "In an extraordinary string of bad luck, Gandalf fails." |
 | Character with 50% success chance | 50% | Succeeds | (Standard success message, no extraordinary tag) |
 
 **Rationale:**
 - Extraordinary messaging rewards/acknowledges statistically unlikely outcomes
 - Probability-based triggering reflects the actual rarity of the outcome, not arbitrary dice patterns
-- Threshold (< 0.5%) ensures messages are reserved for genuinely improbable events
+- Threshold (≤ 0.01%, or 1 in 10,000) ensures messages are reserved for genuinely improbable events
 - Applies equally to good and bad luck, maintaining narrative symmetry
 
 **Implementation Notes:**
@@ -708,7 +757,7 @@ If failure_probability < 0.5% AND roll fails:
 **Configuration:**
 ```yaml
 rolls:
-  extraordinary_result_threshold: 0.005    # Probability threshold (0.5%)
+  extraordinary_result_threshold: 0.0001    # Probability threshold (0.01%, 1 in 10,000)
   extraordinary_result_good: "In a shocking display of good luck"
   extraordinary_result_bad: "In a fit of bad luck"
 ```
