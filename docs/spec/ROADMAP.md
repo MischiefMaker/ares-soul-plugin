@@ -100,7 +100,7 @@ FS3 migration validation, full documentation currency pass, coverage targets, FI
 ### Carried forward from Phase 9, still open
 
 - `docs/handoffs/Phase_9_Automatic_XP_Award_Sources.md` — REQ-013's scene-sharer/participant and forum XP award sources were never actually automatic.
-- `docs/handoffs/Phase_9_Character_Generation_UI.md` — REQ-011's chargen-time Resonance/Skill/B&B selection has no command/web surface.
+- `docs/handoffs/Phase_9_Character_Generation_UI.md` — REQ-011's chargen-time Resonance/Skill/B&B selection has no command/web surface. **Revised after Codex correctly paused on three real gaps**: no chargen B&B removal API existed (fixed directly, along with a deeper Narrative-History-timing bug it exposed in `SoulBnbApi.grant`); no canonical MUSH syntax was specified (resolved: new `+chargen` command family; also removed Aspect allocation from scope, since FINAL's canonical chargen flow never actually calls for it); the web mounting mechanism wasn't identified (resolved: real `chargen-custom-tabs.hbs`/`chargen-custom.hbs` snippet pair for the tab, dedicated `soulChargen*` operations for the data, not the generic chargen-save mechanism, which doesn't fit SOUL's structured data).
 
 ### Handed to Codex, new
 

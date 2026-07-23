@@ -40,11 +40,15 @@ module AresMUSH
       end
     end
 
-    def self.get_catalogue(kind: nil, category: nil, active_only: true)
+    def self.get_catalogue(kind: nil, category: nil, active_only: true, chargen_available: nil)
       entries = BnbCatalogueEntry.all.to_a
       entries = entries.select { |e| e.active == "true" } if active_only
       entries = entries.select { |e| e.kind == kind.to_s } if kind
       entries = entries.select { |e| e.category == category } if category
+      unless chargen_available.nil?
+        expected = chargen_available ? "true" : "false"
+        entries = entries.select { |e| e.chargen_available == expected }
+      end
       entries.sort_by { |e| e.name.to_s }
     end
 
@@ -162,19 +166,85 @@ module AresMUSH
         }]
       )
 
-      SoulNarrativeHistoryApi.create(
-        character,
-        event_type: "bnb_granted",
-        narrative: "Gained #{catalogue_entry.name} (#{level_state.to_s.capitalize}).",
-        soul_record: entry,
-        external_reference: source.to_s =~ /\Ainkling:/ ? source.to_s : nil
-      )
+      # Chargen selections are provisional until approval (FINAL REQ-011:
+      # "Incomplete or rejected chargen SHALL NOT create Narrative History";
+      # rule 8 permits only "the feature-specific starting history entries
+      # required" at approval). Deferred here and created once, for every
+      # surviving chargen selection, by finalize_chargen_grants - called at
+      # approval, mirroring SoulResonanceApi.lock_at_approval exactly. A
+      # chargen-sourced grant reaching this method post-approval (should not
+      # normally happen) still records normally rather than silently losing
+      # the entry's history.
+      unless source.to_s == "chargen" && !character.is_approved?
+        SoulNarrativeHistoryApi.create(
+          character,
+          event_type: "bnb_granted",
+          narrative: "Gained #{catalogue_entry.name} (#{level_state.to_s.capitalize}).",
+          soul_record: entry,
+          external_reference: source.to_s =~ /\Ainkling:/ ? source.to_s : nil
+        )
 
-      Global.dispatcher.queue_event SoulBnbTransitionedEvent.new(
-        character.id, entry.id, catalogue_entry.id, nil, level_state.to_s, source.to_s
-      )
+        Global.dispatcher.queue_event SoulBnbTransitionedEvent.new(
+          character.id, entry.id, catalogue_entry.id, nil, level_state.to_s, source.to_s
+        )
+      end
 
       { success: true, entry: entry }
+    end
+
+    # Undo for a pre-approval chargen B&B pick (FINAL REQ-011 rule 6:
+    # "Permit correction without losing editable work"). Deliberately
+    # distinct from the destructive, staff-only .delete (2 confirmations,
+    # reason, audit trail - designed for a permanent post-story record, not
+    # routine chargen editing) and from .resolve/.restore (designed for a
+    # narrative "this Boon got resolved" transition after the entry already
+    # has real history). A chargen selection has neither yet - .grant defers
+    # its history until approval (above) - so a clean hard delete here is
+    # safe: nothing is orphaned, and nothing is silently lost.
+    def self.drop_chargen_selection(entry_id, character)
+      entry = CharacterBnbEntry[entry_id]
+      return { error: "B&B entry not found" } unless entry
+      return { error: "That entry does not belong to you." } unless entry.character == character
+      return { error: "Only chargen-selected entries can be dropped this way." } unless entry.source == "chargen"
+      return { error: "Chargen selections can only be dropped before approval." } if character.is_approved?
+
+      entry.delete
+      { success: true }
+    end
+
+    # Called once, at approval, from the same custom_approval.rb hook that
+    # already calls SoulResonanceApi.lock_at_approval (see
+    # custom-install/custom_approval.snippet.rb) - creates the "starting
+    # B&B" Narrative History entry .grant deferred for every chargen
+    # selection that survived to approval (entries dropped pre-approval via
+    # drop_chargen_selection were already deleted and never appear here). A
+    # no-op for a character with no chargen-sourced entries.
+    #
+    # Safe to call on every approval, including a re-approval: skips any
+    # entry that already has a "bnb_granted" Narrative History record
+    # (mirroring find_approval_history's own soul_record lookup in
+    # soul_culmination_api.rb), so re-approval never creates a duplicate.
+    def self.finalize_chargen_grants(character)
+      return unless character
+
+      character.character_bnb_entries.to_a.select { |entry| entry.source == "chargen" }.each do |entry|
+        next unless entry.catalogue_entry
+        already_finalized = NarrativeHistoryEntry.find(
+          soul_record_type: "CharacterBnbEntry", soul_record_id: entry.id.to_s
+        ).to_a.any?
+        next if already_finalized
+
+        SoulNarrativeHistoryApi.create(
+          character,
+          event_type: "bnb_granted",
+          narrative: "Gained #{entry.catalogue_entry.name} (#{entry.level_state.to_s.capitalize}).",
+          soul_record: entry
+        )
+
+        Global.dispatcher.queue_event SoulBnbTransitionedEvent.new(
+          character.id, entry.id, entry.catalogue_entry.id, nil, entry.level_state.to_s, "chargen"
+        )
+      end
     end
 
     def self.progress(entry_id, new_level_state, source:, explanation: nil, enactor: nil)
