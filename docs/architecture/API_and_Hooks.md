@@ -58,6 +58,13 @@ SoulXpApi.get_lifetime_spent_xp(character)
 SoulXpApi.get_catchup_xp_earned(character)
 SoulXpApi.median_earned_xp                          # Live-computed across Chargen.approved_chars
 SoulXpApi.get_history(character, limit: 50)
+
+# Correction/reversal (staff)
+SoulXpApi.correct(character, amount, reason:, actor:, direction: "correction")
+  # Adds amount to available XP, creating a ledger correction entry and audit trail
+
+# Scene utilities
+SoulXpApi.get_scene_participants(scene = nil)      # => [Character, ...] approved/active only
 ```
 
 ### B&B Validation / Transitions

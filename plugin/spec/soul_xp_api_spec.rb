@@ -96,5 +96,70 @@ module AresMUSH
         expect(result[:error]).to match(/unknown skill/i)
       end
     end
+
+    describe ".correct" do
+      it "adds XP to available when correcting" do
+        character.update(soul_xp_available: 50)
+        staff = Fabricate(:character)
+        result = Soul::SoulXpApi.correct(character, 10, reason: "Duplicate award reversal", actor: staff)
+        expect(result[:success]).to be true
+        expect(result[:old_available]).to eq(50)
+        expect(result[:new_available]).to eq(60)
+        expect(Soul::SoulXpApi.get_available_xp(character)).to eq(60)
+      end
+
+      it "creates a correction ledger entry" do
+        character.update(soul_xp_available: 50)
+        staff = Fabricate(:character)
+        Soul::SoulXpApi.correct(character, 10, reason: "Test correction", actor: staff)
+        ledger = Soul::SoulXpLedgerEntry.find(:direction, "correction")
+        expect(ledger).to exist
+      end
+
+      it "records audit trail with actor and reason" do
+        character.update(soul_xp_available: 50)
+        staff = Fabricate(:character)
+        Soul::SoulXpApi.correct(character, 10, reason: "Duplicate award reversal", actor: staff)
+        audit = AresMUSH::SoulAuditEntry.find_one(action: "xp_correction")
+        expect(audit).to exist
+        expect(audit.actor_id).to eq(staff.id)
+        expect(audit.reason).to eq("Duplicate award reversal")
+      end
+
+      it "returns an error if reason is blank" do
+        staff = Fabricate(:character)
+        result = Soul::SoulXpApi.correct(character, 10, reason: "", actor: staff)
+        expect(result[:error]).to match(/reason.*required/i)
+      end
+
+      it "returns an error if amount is not positive" do
+        staff = Fabricate(:character)
+        result = Soul::SoulXpApi.correct(character, 0, reason: "Test", actor: staff)
+        expect(result[:error]).to match(/positive/i)
+      end
+    end
+
+    describe ".get_scene_participants" do
+      it "returns an empty list when scene is nil" do
+        result = Soul::SoulXpApi.get_scene_participants(nil)
+        expect(result).to eq([])
+      end
+
+      it "filters to approved characters only" do
+        scene = Fabricate(:scene)
+        approved = Fabricate(:character)
+        unapproved = Fabricate(:character, is_approved: false)
+        scene.update(people: [approved, unapproved])
+        allow(Chargen).to receive(:approved_chars).and_return([approved])
+        result = Soul::SoulXpApi.get_scene_participants(scene)
+        expect(result).to eq([approved])
+      end
+
+      it "handles scenes with no people" do
+        scene = Fabricate(:scene)
+        result = Soul::SoulXpApi.get_scene_participants(scene)
+        expect(result).to be_empty
+      end
+    end
   end
 end

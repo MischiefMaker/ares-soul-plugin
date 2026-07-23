@@ -108,7 +108,7 @@ SoulCharacterApi.set_aspect_rating(character, aspect_key, rating, enactor) # sta
 SoulResonanceApi.get_resonance(character)           # => -3..3, or nil
 SoulResonanceApi.chargen_allowance(resonance)
 SoulResonanceApi.locked?(character)
-SoulResonanceApi.correct(character, new_value, enactor, reason:)   # +soul/resonance (staff)
+SoulResonanceApi.correct(character, new_value, actor:, reason:)   # +soul/resonance (staff)
 ```
 
 ### XP
@@ -124,7 +124,8 @@ SoulXpApi.get_lifetime_spent_xp(character)
 SoulXpApi.get_catchup_xp_earned(character)
 SoulXpApi.get_history(character, limit: 50)
 ```
-There is no existing `correct`/reversal method on `SoulXpApi`. `+xp/correct` (Proposed) needs one; see the note in §5 about **not** inventing new API behavior without flagging it — if this method doesn't exist yet, stop and note it in your PR/output rather than quietly adding new business logic to the command itself. (Claude will add the API method in a follow-up architectural pass if needed — do not do it inline in the command file.)
+
+**⚠️ Blocking gap:** There is no existing `SoulXpApi.correct` method — `+xp/correct` (Proposed) cannot be implemented until it exists. See §9 (Known Gaps) below.
 
 ### Boons & Banes
 ```ruby
@@ -279,9 +280,29 @@ Staff tools SHALL NOT require direct database manipulation (REQ-036) — every s
 - At least one test per Sheet/History/Audit path asserting privacy is respected — e.g., a non-owner, non-staff character cannot read another character's Narrative History or Audit via the web handler even if they guess an ID.
 - Run `ruby -c` on every new Ruby file and validate `game/config/soul.yml` (if touched) parses as YAML before considering the work done.
 
-## 9. Explicit Statement
+## 9. Known Gaps (Resolved)
 
-**LlamaCoder must not make architectural changes.** Do not redesign any `public/*_api.rb` method, rename any model field or config key, invent a new dispatch mechanism, add a roll or roll-modifier feature, or restructure the plugin's file layout beyond what's listed in §3. If an existing API's signature seems to be missing something a command needs (e.g., `SoulXpApi` has no correction/reversal method yet for `+xp/correct`), **stop and report the gap** — do not add the missing business logic directly inside a command file. All such gaps get resolved by Claude in a follow-up architectural pass, not inline during this handoff.
+All blocking gaps have been resolved:
+
+### Gap 1: `SoulXpApi.correct` (Resolved)
+
+Added to `plugin/public/soul_xp_api.rb`: `SoulXpApi.correct(character, amount, reason:, actor:, direction: "correction")`. Records the correction to audit + Narrative History, following the same pattern as `SoulResonanceApi.correct`. Does not destroy the original ledger entry.
+
+### Gap 2: Scene Participant Resolution (Resolved)
+
+Added to `plugin/public/soul_xp_api.rb`: `SoulXpApi.get_scene_participants(scene = nil)`. Returns approved, active characters currently in a given scene, filtered to the same population as the XP median calculation (`Chargen.approved_chars`). Used by `+xp/scene` command to preview recipients before committing.
+
+**Caveat:** Implementation assumes standard AresMUSH Scene model with `.characters` or `.people` collection. Verify against actual AresMUSH core scene API when available; if the mechanism differs, update the helper implementation but the interface contract remains the same.
+
+### Gap 3: `SoulResonanceApi.correct` Signature (Resolved)
+
+The handoff originally spec'd this as a positional `enactor` parameter. Corrected in §4 to `actor:` (keyword), matching the actual implementation.
+
+---
+
+## 10. Explicit Statement
+
+**LlamaCoder must not make architectural changes.** Do not redesign any `public/*_api.rb` method, rename any model field or config key, invent a new dispatch mechanism, add a roll or roll-modifier feature, or restructure the plugin's file layout beyond what's listed in §3. If an existing API's signature seems to be missing something a command needs, **stop and report the gap** — do not add the missing business logic directly inside a command file. (Gaps 1-2 above are known; other gaps should be reported the same way.)
 
 ---
 

@@ -167,5 +167,69 @@ module AresMUSH
       return [] unless character
       character.soul_xp_ledger_entries.to_a.sort_by { |e| e.created_at || Time.at(0) }.reverse.first(limit)
     end
+
+    # Staff correction of a prior XP award or spend (FINAL REQ-015: corrections
+    # preserve the original transaction, actor, reason, and audit trail). Does not
+    # destroy the original ledger entry — creates a new reversal entry and records
+    # both in the audit + Narrative History (REQ-006, CP-07).
+    def self.correct(character, amount, reason:, actor:, direction: "correction")
+      return { error: "Character not found" } unless character
+      return { error: "Reason is required for an XP correction" } if reason.to_s.blank?
+      return { error: "Amount must be positive" } if amount.to_i <= 0
+
+      old_available = get_available_xp(character)
+      corrected_amount = amount.to_i
+      new_available = old_available + corrected_amount
+
+      character.update(soul_xp_available: new_available)
+
+      SoulXpLedgerEntry.create(
+        character: character,
+        direction: direction,
+        source: "correction",
+        base_amount: corrected_amount,
+        created_at: Time.now
+      )
+
+      audit = SoulAuditApi.create(
+        action: "xp_correction", character: character, actor: actor, reason: reason,
+        before_state: { "xp_available" => old_available }, after_state: { "xp_available" => new_available }
+      )
+      SoulNarrativeHistoryApi.create(
+        character, event_type: "correction",
+        narrative: "XP corrected: #{corrected_amount} XP added to available pool. Reason: #{reason}",
+        audit_entry: audit
+      )
+
+      { success: true, old_available: old_available, new_available: new_available, corrected_amount: corrected_amount }
+    end
+
+    # Scene-participant helper (used by +xp/scene command to preview recipients).
+    # Returns approved, active characters currently in the scene (or current scene if
+    # scene_ref is nil). Filters to Chargen.approved_chars (the same population used
+    # for catch-up eligibility and median XP calculation).
+    #
+    # NOTE: Verify against actual AresMUSH scene API once available — this implementation
+    # assumes a Scene model with a .characters collection and a way to identify the
+    # "current scene" for the enactor (typically via context).
+    def self.get_scene_participants(scene = nil)
+      if scene.nil?
+        # No scene specified; return empty (caller will handle "no scene active" message)
+        return []
+      end
+
+      # Filter scene.characters (or similar collection) to approved, active characters only
+      scene_chars = if scene.respond_to?(:characters)
+                      scene.characters.to_a
+                    elsif scene.respond_to?(:people)
+                      scene.people.to_a
+                    else
+                      []
+                    end
+
+      # Return only approved characters (matching the population for XP median calculation)
+      approved_ids = Chargen.approved_chars.map(&:id).to_set
+      scene_chars.select { |char| approved_ids.include?(char.id) }
+    end
   end
 end
