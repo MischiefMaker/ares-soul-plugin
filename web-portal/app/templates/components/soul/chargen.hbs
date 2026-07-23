@@ -1,0 +1,72 @@
+<section class="soul-chargen">
+  <h3>SOUL Character Framework</h3>
+  {{#if isLoading}}<p class="text-muted">Saving…</p>{{/if}}
+  {{#if status}}
+    {{#if status.resonance_enabled}}
+      <div class="card card-body mb-3">
+        <h4>Resonance</h4>
+        <p>Current: {{status.resonance}}</p>
+        <div class="d-flex gap-2 flex-wrap">
+          {{#each status.resonance_options as |value|}}
+            <button type="button" class="btn btn-outline-primary"
+              onclick={{action "setResonance" value}}>R{{value}}</button>
+          {{/each}}
+        </div>
+      </div>
+    {{/if}}
+
+    <div class="card card-body mb-3">
+      <h4>Skills</h4>
+      <p>{{status.points_spent}} of {{status.skill_points}} points spent;
+        {{status.points_remaining}} remaining. Starting cap: {{status.starting_cap}}.</p>
+      {{#each status.aspects as |aspect|}}
+        <h5>{{aspect.name}}</h5>
+        {{#each status.skills as |skill|}}
+          {{#if (eq skill.aspect_key aspect.key)}}
+            <div class="row align-items-center mb-2 soul-chargen-skill">
+              <label class="col-sm-8" for="soul-chargen-skill-{{skill.key}}">{{skill.name}}</label>
+              <div class="col-sm-4">
+                <Input @id="soul-chargen-skill-{{skill.key}}" @type="number"
+                  @min="0" @max={{status.starting_cap}} @value={{skill.rating}}
+                  class="form-control" onchange={{action "setSkill" skill}} />
+              </div>
+            </div>
+          {{/if}}
+        {{/each}}
+      {{/each}}
+    </div>
+
+    <div class="card card-body mb-3">
+      <h4>Starting Boons &amp; Banes</h4>
+      {{#each status.selected_bnb as |entry|}}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span><strong>{{entry.name}}</strong> [{{entry.tag}}] — {{entry.level_state}}</span>
+          <button type="button" class="btn btn-sm btn-outline-danger"
+            onclick={{action "dropBnb" entry}}>Remove</button>
+        </div>
+      {{/each}}
+      <PowerSelect @selected={{selectedCatalogue}} @options={{status.catalogue}}
+        @searchField="name" @onChange={{action "selectCatalogue"}} as |entry|>
+        {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
+      </PowerSelect>
+      <div class="row g-2 mt-2">
+        <div class="col-md-3">
+          <select class="form-select" onchange={{action (mut selectedLevel) value="target.value"}}>
+            <option value="minor">Minor</option>
+            <option value="major">Major</option>
+            <option value="legendary">Legendary</option>
+          </select>
+        </div>
+        <div class="col-md-7">
+          <Input @type="text" @value={{explanation}} class="form-control"
+            placeholder="Why does this apply to your character?" />
+        </div>
+        <div class="col-md-2">
+          <button type="button" class="btn btn-primary w-100"
+            disabled={{or (not selectedCatalogue) (not explanation)}}
+            onclick={{action "addBnb"}}>Add</button>
+        </div>
+      </div>
+    </div>
+  {{/if}}
+</section>
