@@ -3,7 +3,7 @@ module AresMUSH
     class SoulCulminationCmd
       include CommandHandler
 
-      attr_accessor :name, :title, :description, :culmination_id
+      attr_accessor :name, :title, :description, :culmination_id, :reason
 
       def parse_args
         case cmd.switch
@@ -12,13 +12,22 @@ module AresMUSH
           self.name, self.title, self.description = args.arg1, args.arg2, args.arg3
         when "approve"
           self.culmination_id = integer_arg(cmd.args)
+        when "deny", "revoke"
+          args = cmd.parse_args(ArgParser.arg1_equals_arg2)
+          self.culmination_id, self.reason = integer_arg(args.arg1), args.arg2
+        when "correct"
+          args = cmd.parse_args(/(?<id>[^=]+)=(?<title>[^\/]*)\/(?<description>[^\/]*)\/(?<reason>.+)/)
+          self.culmination_id = integer_arg(args.id)
+          self.title = args.title.to_s.blank? ? nil : args.title
+          self.description = args.description.to_s.blank? ? nil : args.description
+          self.reason = args.reason
         else
           self.name = cmd.args ? titlecase_arg(cmd.args) : enactor_name
         end
       end
 
       def check_permission
-        if %w[propose approve].include?(cmd.switch)
+        if %w[propose approve deny revoke correct].include?(cmd.switch)
           return t('soul.permission_denied') unless Soul.can_manage_soul?(enactor)
         elsif self.name != enactor_name && !Soul.can_manage_soul?(enactor)
           return t('soul.permission_denied')
@@ -34,14 +43,30 @@ module AresMUSH
           [ self.name, self.title, self.description ]
         when "approve"
           [ self.culmination_id ]
+        when "deny", "revoke"
+          [ self.culmination_id, self.reason ]
+        when "correct"
+          [ self.culmination_id, self.reason ]
         else
           [ self.name ]
         end
       end
 
       def handle
-        if cmd.switch == "approve"
+        case cmd.switch
+        when "approve"
           emit_result SoulCulminationApi.approve(self.culmination_id, enactor), 'soul.culmination_approved'
+          return
+        when "deny"
+          emit_result SoulCulminationApi.deny(self.culmination_id, enactor, reason: self.reason), 'soul.culmination_denied'
+          return
+        when "revoke"
+          emit_result SoulCulminationApi.revoke(self.culmination_id, enactor, reason: self.reason), 'soul.culmination_revoked'
+          return
+        when "correct"
+          result = SoulCulminationApi.correct(self.culmination_id, enactor,
+            title: self.title, description: self.description, reason: self.reason)
+          emit_result result, 'soul.culmination_corrected'
           return
         end
 

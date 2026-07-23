@@ -25,13 +25,20 @@ module AresMUSH
           left, *tokens = raw.split("/")
           self.entry_id, self.reason = integer_arg(left), tokens.shift
           self.confirmations = tokens.count { |token| token.downcase == "confirm" }
+        when "resolve"
+          left, self.reason = raw.split("=", 2)
+          self.name, id = left.to_s.split("/", 2)
+          self.entry_id = integer_arg(id)
+        when "restore"
+          self.name, id = raw.split("/", 2)
+          self.entry_id = integer_arg(id)
         else
           self.reference = raw
         end
       end
 
       def check_permission
-        staff_switches = %w[search create grant progress delete]
+        staff_switches = %w[search create grant progress delete resolve restore]
         return t('soul.permission_denied') if staff_switches.include?(cmd.switch) && !Soul.can_manage_soul?(enactor)
         return t('soul.permission_denied') if !staff_switches.include?(cmd.switch) && !Soul.can_play?(enactor)
         nil
@@ -47,6 +54,10 @@ module AresMUSH
           [ self.name, self.entry_id, self.level ]
         when "delete"
           [ self.entry_id, self.reason ]
+        when "resolve"
+          [ self.name, self.entry_id, self.reason ]
+        when "restore"
+          [ self.name, self.entry_id ]
         when "here", "search", nil
           [ self.reference ]
         else
@@ -64,6 +75,8 @@ module AresMUSH
         when "grant" then with_character { |character| grant_entry(character) }
         when "progress" then with_character { |character| progress_entry(character) }
         when "delete" then delete_entry
+        when "resolve" then with_character { |character| resolve_entry(character) }
+        when "restore" then with_character { |character| restore_entry(character) }
         end
       end
 
@@ -139,6 +152,26 @@ module AresMUSH
         result = SoulBnbApi.delete(self.entry_id, enactor: enactor,
           confirmations: self.confirmations, reason: self.reason)
         emit_result result, 'soul.bnb_deleted'
+      end
+
+      def resolve_entry(character)
+        entry = SoulBnbApi.get_character_entries(character).find { |item| item.id.to_s == self.entry_id.to_s }
+        unless entry
+          client.emit_failure t('soul.bnb_not_found')
+          return
+        end
+        result = SoulBnbApi.resolve(entry.id, reason: self.reason, enactor: enactor)
+        emit_result result, 'soul.bnb_resolved'
+      end
+
+      def restore_entry(character)
+        entry = SoulBnbApi.get_character_entries(character).find { |item| item.id.to_s == self.entry_id.to_s }
+        unless entry
+          client.emit_failure t('soul.bnb_not_found')
+          return
+        end
+        result = SoulBnbApi.restore(entry.id, enactor: enactor)
+        emit_result result, 'soul.bnb_restored'
       end
 
       def with_character(&block)

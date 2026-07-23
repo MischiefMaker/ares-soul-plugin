@@ -68,6 +68,25 @@ The Inklings validate/apply hook, and Grimoire's read-only Skill/Aspect/Resonanc
 
 FS3 migration validation, full documentation currency pass, coverage targets, FINAL Appendix C acceptance criteria, and the release checklist. All eight planned implementation phases (FINAL Appendix D) are now complete.
 
+## Milestone In Progress: Phase 9 — Checklist Review Follow-Up
+
+**Status:** 🔶 In progress (started 2026-07-24). A full review of `IMPLEMENTATION_CHECKLIST.md`'s accumulated "deferred/incomplete" items, cross-checked directly against shipped code rather than each phase's own self-reported status. Several previously-flagged items turned out to be stale (already done in a later phase but never checked off); two genuinely real command-surface bugs were found and fixed directly; two genuinely real feature gaps remain and have been handed to Codex.
+
+### Fixed directly (small, mechanical, exact precedent already established elsewhere in the codebase)
+
+- `SoulBnbApi.resolve`/`.restore` (REQ-020, built in Phase 3) had no command or web surface at all. Added `+bnb/resolve`/`+bnb/restore` and matching web operations.
+- `SoulCulminationApi.deny`/`.revoke`/`.correct` (REQ-023, built in Phase 3) had no command or web surface at all — only `propose`/`approve` were ever wired. Added `+culmination/deny`/`/revoke`/`/correct` and matching web operations.
+
+### Handed to Codex
+
+- `docs/handoffs/Phase_9_Automatic_XP_Award_Sources.md` — REQ-013's scene-sharer/participant and forum XP award sources were never actually automatic; `+xp/scene` is a manual staff command, not the event-driven award REQ-013 specifies, and no forum award path exists at all. Design resolved (real `SceneSharedEvent` + `Scene#owner` as sharer; forum via idempotent reconciliation, since no core forum-post event exists).
+- `docs/handoffs/Phase_9_Character_Generation_UI.md` — REQ-011's chargen-time Resonance selection, Skill/Aspect allocation, and B&B selection were deferred since Phase 2 and never scheduled a home phase. Underlying service APIs already do the right thing; only the command/web/chargen-stage integration layer is missing.
+
+### Confirmed stale, not real gaps (checkboxes corrected in `IMPLEMENTATION_CHECKLIST.md`)
+
+- Resonance's approval Narrative History entry, Phase 6's staff XP commands, Phase 6's B&B search commands, and Phase 6's `+roll` GM-review family were all already implemented; their checklist entries just never got flipped from earlier phases' "deferred" notes.
+- The roll-modifier contribution hook and `SoulXpAwardedEvent`/`SoulSkillAdvancedEvent` are resolved as intentionally out of scope (no real core dispatch mechanism exists for the former; no concrete consumer exists for either) rather than left as open TODOs — see `IMPLEMENTATION_CHECKLIST.md`'s Phase 3 section for the full reasoning.
+
 ## Stretch Goals (Deferred — FINAL Appendix E)
 
 FINAL explicitly defers these; they require owner approval/an ADR before any implementation work begins, and must preserve every named Core Principle (CP-01 through CP-09):
@@ -91,4 +110,4 @@ FINAL explicitly defers these; they require owner approval/an ADR before any imp
 
 **Last Updated:** 2026-07-24
 
-**Next Review:** All eight planned implementation phases (FINAL Appendix D) are complete. Future work is project-owner-directed: Stretch Goals above (each requires owner approval/an ADR per FINAL Appendix E), Ember/web-portal component work for the Roll subsystem (Phase 6 built the Ruby web handlers; frontend components for rolls specifically remain, following the pattern in `web-portal/app/components/soul/` from Phases 1-3), or live deployment/pilot feedback.
+**Next Review:** All eight planned implementation phases (FINAL Appendix D) are complete; Phase 9 (checklist review follow-up) is in progress with two handoffs awaiting Codex implementation. Once Phase 9 closes, future work is project-owner-directed: Stretch Goals above (each requires owner approval/an ADR per FINAL Appendix E), Ember/web-portal component work for the Roll subsystem (Phase 6 built the Ruby web handlers; frontend components for rolls specifically remain, following the pattern in `web-portal/app/components/soul/` from Phases 1-3), or live deployment/pilot feedback.

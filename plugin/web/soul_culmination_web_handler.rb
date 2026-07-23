@@ -24,6 +24,19 @@ module AresMUSH
         return { error: t('soul.permission_denied') } unless Soul.can_manage_soul?(enactor)
         result = SoulCulminationApi.approve(request.args['id'], enactor)
         result[:error] ? result : { success: true, culmination: serialize(result[:culmination]) }
+      when "soulCulminationDeny"
+        return { error: t('soul.permission_denied') } unless Soul.can_manage_soul?(enactor)
+        result = SoulCulminationApi.deny(request.args['id'], enactor, reason: request.args['reason'])
+        result[:error] ? result : { success: true, culmination: serialize(result[:culmination]) }
+      when "soulCulminationRevoke"
+        return { error: t('soul.permission_denied') } unless Soul.can_manage_soul?(enactor)
+        result = SoulCulminationApi.revoke(request.args['id'], enactor, reason: request.args['reason'])
+        result[:error] ? result : { success: true, culmination: serialize(result[:culmination]) }
+      when "soulCulminationCorrect"
+        return { error: t('soul.permission_denied') } unless Soul.can_manage_soul?(enactor)
+        result = SoulCulminationApi.correct(request.args['id'], enactor,
+          title: request.args['title'], description: request.args['description'], reason: request.args['reason'])
+        result[:error] ? result : { success: true, culmination: serialize(result[:culmination]) }
       end
     end
 

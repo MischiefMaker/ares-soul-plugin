@@ -90,11 +90,12 @@ module AresMUSH
       when "soulSheet"
         SoulSheetWebHandler
       when "soulBnb", "soulBnbCatalogue", "soulBnbCreate", "soulBnbGrant",
-           "soulBnbProgress", "soulBnbDelete"
+           "soulBnbProgress", "soulBnbDelete", "soulBnbResolve", "soulBnbRestore"
         SoulBnbWebHandler
       when "soulXp", "soulXpSpend", "soulXpAward", "soulXpScene", "soulXpCorrect"
         SoulXpWebHandler
-      when "soulCulminations", "soulCulminationPropose", "soulCulminationApprove"
+      when "soulCulminations", "soulCulminationPropose", "soulCulminationApprove",
+           "soulCulminationDeny", "soulCulminationRevoke", "soulCulminationCorrect"
         SoulCulminationWebHandler
       when "soulHistory"
         SoulHistoryWebHandler

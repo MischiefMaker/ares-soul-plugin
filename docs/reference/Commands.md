@@ -23,8 +23,10 @@ The default Sheet fits roughly one MUSH screen (CI-02); drill-down commands belo
 | `+bnb/catalogue` | Proposed | Browse the full public catalogue | play |
 | `+bnb/create <kind>/<tag>/<name>=<description>` | Proposed (implemented; syntax fixed 2026-07-24) | Create a new catalogue entry (`kind`: boon/bane) | manage_soul |
 | `+bnb/grant <character>/<catalogue id or tag>[/<level>]=<explanation>` | Proposed (implemented) | Grant a character entry (post-chargen, non-XP); `level` defaults to `minor` if omitted | manage_soul |
-| `+bnb/progress <character>/<entry id>=<new level>` | Proposed (implemented) | Progress (or retreat) an entry's level — **level-progression only**; cannot call the dedicated `resolve`/`restore` API (which requires a reason this syntax doesn't capture) | manage_soul |
-| `+bnb/delete <entry id>/<reason>/confirm/confirm` | Proposed (implemented; syntax fixed 2026-07-24) | Two-confirmation destructive delete (REQ-021) — counts literal `confirm` tokens; resolution/negation via `+bnb/progress` is preferred for ordinary play | manage_soul |
+| `+bnb/progress <character>/<entry id>=<new level>` | Proposed (implemented) | Progress (or retreat) an entry's level | manage_soul |
+| `+bnb/resolve <character>/<entry id>=<reason>` | Proposed (implemented 2026-07-24) | Resolve/negate an entry, preserving its prior level for restoration (REQ-020) — the recommended non-destructive alternative to `+bnb/delete` | manage_soul |
+| `+bnb/restore <character>/<entry id>` | Proposed (implemented 2026-07-24) | Restore a resolved/negated entry to its preserved level (REQ-020) | manage_soul |
+| `+bnb/delete <entry id>/<reason>/confirm/confirm` | Proposed (implemented; syntax fixed 2026-07-24) | Two-confirmation destructive delete (REQ-021) — counts literal `confirm` tokens; `+bnb/resolve` is preferred for ordinary play | manage_soul |
 
 Name collisions return matching names, IDs, and tags for disambiguation (GL-10).
 
@@ -77,6 +79,9 @@ Scene-targeted awards SHOULD preview recipients and MAY require confirmation bef
 | `+culmination <character>` | Proposed | View a character's Culminations | play (own) / staff (others) |
 | `+culmination/propose <character>=<title>/<description>` | Proposed | Propose a Culmination for staff review | manage_soul (or approved Inkling outcome) |
 | `+culmination/approve <id>` | Proposed | Approve a proposed Culmination | manage_soul |
+| `+culmination/deny <id>=<reason>` | Proposed (implemented 2026-07-24) | Deny a proposed Culmination | manage_soul |
+| `+culmination/revoke <id>=<reason>` | Proposed (implemented 2026-07-24) | Revoke an already-approved Culmination, preserving the original record (REQ-023) | manage_soul |
+| `+culmination/correct <id>=<title>/<description>/<reason>` | Proposed (implemented 2026-07-24) | Correct a Culmination's title and/or description; leave `title` or `description` blank to keep the current value | manage_soul |
 
 ## History
 

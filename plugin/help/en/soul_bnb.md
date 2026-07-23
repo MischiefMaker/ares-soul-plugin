@@ -21,5 +21,10 @@ The level defaults to `minor` when omitted.
 
 `+bnb/progress <character>/<entry id>=<new level>` — Progress an entry.
 
+`+bnb/resolve <character>/<entry id>=<reason>` — Resolve/negate an entry,
+preserving its level for later restoration. Preferred over deletion.
+
+`+bnb/restore <character>/<entry id>` — Restore a resolved/negated entry.
+
 `+bnb/delete <entry id>/<reason>/confirm/confirm` — Permanently delete an
 entry. Both explicit confirmations and a reason are required.

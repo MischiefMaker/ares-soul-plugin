@@ -5,7 +5,7 @@ module AresMUSH
       return error if error
       enactor = request.enactor
 
-      staff_commands = %w[soulBnbCreate soulBnbGrant soulBnbProgress soulBnbDelete]
+      staff_commands = %w[soulBnbCreate soulBnbGrant soulBnbProgress soulBnbDelete soulBnbResolve soulBnbRestore]
       if staff_commands.include?(request.cmd)
         return { error: t('soul.permission_denied') } unless Soul.can_manage_soul?(enactor)
       elsif !Soul.can_play?(enactor)
@@ -42,6 +42,12 @@ module AresMUSH
       when "soulBnbDelete"
         SoulBnbApi.delete(request.args['entry_id'], enactor: enactor,
           confirmations: request.args['confirmations'], reason: request.args['reason'])
+      when "soulBnbResolve"
+        result = SoulBnbApi.resolve(request.args['entry_id'], reason: request.args['reason'], enactor: enactor)
+        result[:error] ? result : { success: true, entry: serialize_character_entry(result[:entry], true) }
+      when "soulBnbRestore"
+        result = SoulBnbApi.restore(request.args['entry_id'], enactor: enactor)
+        result[:error] ? result : { success: true, entry: serialize_character_entry(result[:entry], true) }
       end
     end
 

@@ -17,4 +17,5 @@ aliases:
 
 `+culmination [character]` — View Culminations.
 
-See `help soul_bnb` for Boons and Banes and `help manage soul` for staff tools.
+See `help soul_bnb` for Boons and Banes, `help soul_rolls` for rolls, and
+`help manage soul` for staff tools.
