@@ -2,41 +2,62 @@
 
 High-level milestones for SOUL implementation. This roadmap reflects current planning; timelines and scope may adjust based on development progress and research findings.
 
-## Current Milestone: Architecture & Foundation
+## Completed Milestone: Architecture & Foundation
 
-**Status:** In Progress (Planning Phase)
+**Status:** ✅ Complete (2026-07-23)
 
-**Goals:**
-- Finalize system design and architecture
-- Resolve open design questions (Aspects, Resonance, B&B mechanics)
-- Plan implementation order and dependencies
-- Set up initial project structure and documentation
+**Achievements:**
+- ✅ Finalized all 10 core mechanical decisions (see Implementation_Specification_Addendum.md)
+- ✅ Resolved open design questions (Aspects, Resonance, B&B mechanics, XP costs, etc.)
+- ✅ Established comprehensive specification with formulas, examples, and configuration
+- ✅ Set up complete documentation structure (architecture, reference, development, spec)
+- ✅ Researched AresMUSH patterns via Inklings project guide
+- ✅ Created implementation checklist and prioritization (LlamaCoder handoff workflow)
 
-**Key Activities:**
-- Research existing AresMUSH patterns (in progress)
-- Design core data models
-- Plan plugin integration points
-- Create implementation checklist and prioritization
+**Key Decisions Locked:**
+- Difficulty scale (8 levels: Trivial–Mythic)
+- 2d20 open-ended rolling with Boon/Bane die rerolls
+- Algebraic XP advancement costs with Resonance modifiers
+- Catch-up XP median-based system (2x multiplier, weekly cron)
+- Six degrees of success with configurable narrative output
+- Character chargen limits (2:1 Boon-to-Bane ratio)
 
-**Expected Completion:** Before coding begins
+## Current Milestone: Core Implementation
 
-## Next Milestone: Core Implementation
+**Status:** Ready to Begin (Handoff Preparation Phase)
 
-**Status:** Planned
+**Phasing Strategy:**
+The implementation will be broken into subsystems and handed to LlamaCoder for repetitive work, with Claude maintaining architecture review and acceptance. See SOUL_LLM_Implementation_Specification.md for handoff workflow.
 
-**Goals:**
-- Implement core Character model integration
-- Build foundational systems (Aspects, Skills, XP)
-- Establish command and web handler patterns
-- Create basic testing infrastructure
+**Phase 1: Foundation (Data Models & Configuration)**
+- Character model schema and initialization
+- Aspect system implementation
+- Boon & Bane model and lifecycle
+- Resonance mechanics
+- Configuration system and YAML parsing
 
-**Key Deliverables:**
-- Character sheet integration with SOUL data
-- Basic skill tracking and advancement
-- XP earning and spending mechanics
-- Initial MUSH commands and web API endpoints
+**Phase 2: Progression (XP & Advancement)**
+- XP earning system (scene rewards, admin grants)
+- Catch-up XP calculation and application
+- Skill advancement mechanics
+- XP spending and cost calculations
+- Configuration-driven advancement curves
 
-**Estimated Scope:** 2-3 implementation cycles
+**Phase 3: Rolling (Dice Engine & Resolution)**
+- Core 2d20 rolling engine with explosion/implosion
+- Boon/Bane die reroll mechanics
+- Modifier application (Skill + Aspect + other)
+- Degree of success determination
+- Extraordinary luck probability calculation
+
+**Phase 4: Workflows (Commands & Web Portal)**
+- Character management commands
+- Roll command with contextual modifiers
+- Pending roll approval workflow (GM-assisted)
+- Roll history and statistics
+- Web portal API endpoints
+
+**Estimated Scope:** 4-6 implementation cycles (with LlamaCoder parallelization)
 
 ## Future Enhancements
 
@@ -82,6 +103,6 @@ High-level milestones for SOUL implementation. This roadmap reflects current pla
 
 ---
 
-**Last Updated:** 2026-07-22
+**Last Updated:** 2026-07-23
 
-**Next Review:** Before core implementation begins
+**Next Review:** After completing Phase 1 (Foundation) handoffs to LlamaCoder
