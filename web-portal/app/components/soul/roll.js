@@ -90,6 +90,40 @@ export default Component.extend({
     }
   },
 
+  async loadPendingAndHistory() {
+    let [pending, history] = await Promise.all([
+      this.api.requestOne('soulRollPending', {}, null),
+      this.api.requestOne('soulRollHistory', {}, null)
+    ]);
+    if (!pending.error) {
+      this.set('pendingRolls', pending.pending_rolls || []);
+    }
+    if (!history.error) {
+      this.set('rollHistory', history.rolls || []);
+    }
+  },
+
+  async abortRoll(pending, force) {
+    let reason = force ? this.forceAbortReason : this.abortReason;
+    if (!reason) {
+      this.flashMessages.danger('An abort reason is required.');
+      return;
+    }
+    let result = await this.api.requestOne(
+      force ? 'soulRollForceAbort' : 'soulRollAbort',
+      { pending_roll_id: pending.id, reason },
+      null
+    );
+    if (!result.error) {
+      this.flashMessages.success('Pending SOUL roll aborted.');
+      await this.loadRollData();
+      await this.loadPendingAndHistory();
+      if (force) {
+        await this.loadGmReviews();
+      }
+    }
+  },
+
   async showPendingRoll(pending) {
     this.setProperties({
       pendingRoll: pending,
@@ -264,6 +298,7 @@ export default Component.extend({
     async openRoll() {
       this.set('rollOpen', true);
       await this.loadRollData();
+      await this.loadPendingAndHistory();
     },
 
     closeRoll() {
@@ -310,6 +345,19 @@ export default Component.extend({
 
     async refreshPendingRoll() {
       await this.loadRollData();
+      await this.loadPendingAndHistory();
+    },
+
+    showPendingRoll(pending) {
+      return this.showPendingRoll(pending);
+    },
+
+    abortRoll(pending) {
+      return this.abortRoll(pending, false);
+    },
+
+    forceAbortRoll(pending) {
+      return this.abortRoll(pending, true);
     },
 
     newRoll() {
