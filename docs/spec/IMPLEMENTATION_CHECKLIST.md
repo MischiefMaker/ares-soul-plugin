@@ -178,12 +178,16 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 
 ## Phase 7: Inklings and Grimoire Integrations
 
-- [ ] Inklings validation hook (`validate_outcome`) — normalized payload, no state mutation (REQ-039)
-- [ ] Inklings application hook (`apply_outcome`) — atomic, idempotent, Narrative History/audit (REQ-039)
-- [ ] Equivalent standalone staff path for every Inklings-triggered outcome (REQ-039)
-- [ ] Grimoire read-only API exposure: Skills/Aspects/Resonance (REQ-040)
-- [ ] Grimoire branch → Spirit Skill mapping support, without a dedicated Arcana Skill (REQ-040)
-- [ ] Optional-plugin-absence handling: capability detection, dependent-path-only disablement, actionable warnings (REQ-007, REQ-038)
+**Status:** 🔶 Grimoire side complete (2026-07-24, Claude-implemented directly — read-only lookups over an existing config-driven catalogue, no handoff needed). Inklings hook (`SoulInklingsHook`) handed to Codex (`docs/handoffs/Phase_7_Inklings_Hook_and_Grimoire_Mapping.md`), pending implementation and review.
+
+- [ ] Inklings validation hook (`validate_outcome`) — normalized payload, no state mutation (REQ-039) — designed, handed to Codex
+- [ ] Inklings application hook (`apply_outcome`) — atomic, idempotent, Narrative History/audit (REQ-039) — designed, handed to Codex; see the idempotency gap resolved below
+- [x] Equivalent standalone staff path for every Inklings-triggered outcome (REQ-039) — already true: `+xp/award`, `+bnb/grant`/`+bnb/progress`, `+culmination/propose` all exist from Phases 1-6
+- [x] Grimoire read-only API exposure: Skills/Aspects/Resonance (REQ-040) — already true: `SoulCharacterApi.get_skill_rating`/`get_aspect_rating`, `SoulResonanceApi.get_resonance` (Phase 2)
+- [x] Grimoire branch → Spirit Skill mapping support, without a dedicated Arcana Skill (REQ-040) — `SoulFrameworkApi.get_skill_for_grimoire_branch`, `game/config/soul.yml`'s `integrations.grimoire.branch_skill_map`, validator cross-check against real Skill keys
+- [x] Optional-plugin-absence handling: capability detection, dependent-path-only disablement, actionable warnings (REQ-007, REQ-038) — already documented in `docs/architecture/Integration_Guide.md`'s `defined?(AresMUSH::Soul)` pattern; no SOUL-side code needed (SOUL doesn't need to detect its own absence — other plugins detect SOUL's presence)
+
+**Real gap found and resolved before writing the Inklings handoff:** `SoulBnbApi.grant`/`.progress` (built in Phase 3) have **no built-in duplicate-delivery protection** — calling either twice with the same `source` creates a duplicate grant or double-progresses an entry. This matters directly for REQ-039's "revalidate current state and idempotency" requirement, since Inklings' `apply_outcome` call must be safe to retry. Resolved by having the hook itself check each entry's own stored `source` (on grant) or `progression_history` (on progression) before calling `grant`/`.progress` — reusing data these models already store rather than adding a new audit-marker mechanism (CP-09). `SoulXpApi.award` (idempotency_key) and `SoulCulminationApi.propose` (source-based dedup) already had this built in from Phases 2-3 and need no wrapper.
 
 ## Phase 8: Migration, Documentation, Tests, and Release Review
 

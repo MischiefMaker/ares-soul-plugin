@@ -95,6 +95,29 @@ module AresMUSH
         errors = Soul::SoulConfigValidator.new.validate
         expect(errors).to include(match(/difficulties/))
       end
+
+      it "accepts an absent integrations section" do
+        expect(Soul::SoulConfigValidator.new.validate).to eq([])
+      end
+
+      it "accepts a branch_skill_map referencing a real Skill" do
+        valid_config["framework"]["skills"] = { "ceremonial_magic" => { "name" => "Ceremonial Magic", "aspect" => "spirit" } }
+        valid_config["integrations"] = { "grimoire" => { "branch_skill_map" => { "evocation" => "ceremonial_magic" } } }
+        expect(Soul::SoulConfigValidator.new.validate).to eq([])
+      end
+
+      it "flags a branch_skill_map referencing an unknown Skill" do
+        valid_config["framework"]["skills"] = {}
+        valid_config["integrations"] = { "grimoire" => { "branch_skill_map" => { "evocation" => "nonexistent_skill" } } }
+        errors = Soul::SoulConfigValidator.new.validate
+        expect(errors).to include(match(/branch_skill_map.*evocation/))
+      end
+
+      it "flags a branch_skill_map that isn't a hash" do
+        valid_config["integrations"] = { "grimoire" => { "branch_skill_map" => "evocation" } }
+        errors = Soul::SoulConfigValidator.new.validate
+        expect(errors).to include(match(/branch_skill_map/))
+      end
     end
   end
 end

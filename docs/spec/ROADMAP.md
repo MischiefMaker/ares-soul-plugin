@@ -54,11 +54,11 @@ Every command family from `docs/reference/Commands.md` implemented equivalently 
 
 ## Current Milestone: Implementation, Phase 7
 
-**Status:** Ready to begin
+**Status:** 🔶 In progress. Grimoire side complete (Claude, 2026-07-24 — read-only lookups already existed from Phase 2; only a branch-to-Skill config mapping was added). The Inklings validate/apply hook (`SoulInklingsHook`) handed to Codex (`docs/handoffs/Phase_7_Inklings_Hook_and_Grimoire_Mapping.md`), pending implementation and review.
 
 ### Phase 7 — Inklings and Grimoire Integrations
 
-The Inklings validate/apply hook handoff, and Grimoire's read-only Skill/Aspect/Resonance access. Both remain fully optional — SOUL's core functionality never depends on either.
+The Inklings validate/apply hook handoff, and Grimoire's read-only Skill/Aspect/Resonance access. Both remain fully optional — SOUL's core functionality never depends on either. A real idempotency gap in `SoulBnbApi.grant`/`.progress` (no protection against duplicate delivery) was found and resolved at the hook layer before the handoff was written — see the handoff §5.2.
 
 ## Future Phases
 

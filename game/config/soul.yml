@@ -303,5 +303,15 @@ soul:
       inspiration_cost: 0
     grimoire:
       enabled: true
+      # Maps a Grimoire spell branch key to an existing SOUL Skill key
+      # (FINAL REQ-040: "map configured Grimoire branches to Spirit Skills"
+      # - no dedicated Arcana Skill is created; Grimoire re-purposes whatever
+      # Skill(s) a game already defines). Empty by default; a game enabling
+      # Grimoire integration configures its own branch names here.
+      # Example:
+      #   branch_skill_map:
+      #     evocation: "ceremonial_magic"
+      #     divination: "ceremonial_magic"
+      branch_skill_map: {}
 
   shortcuts: {}

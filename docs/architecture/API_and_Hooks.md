@@ -256,13 +256,15 @@ event.resolved_at
 ```ruby
 # Inklings calls this before staff approval, to get a normalized payload without mutating state
 SoulInklingsHook.validate_outcome(
-  outcome_type:,        # :xp, :boon_progression, :bane_progression, :culmination, ...
+  outcome_type:,        # :xp, :boon_progression, :bane_progression, :culmination
   character:,
-  proposed_transition:,
-  requester:,
+  proposed_transition:,  # exact shape per outcome_type - see Phase 7 handoff §5.4
+  requester: nil,
   inkling_reference:
 )
-# Returns a validated payload or actionable errors; never mutates SOUL state.
+# Returns a JSON-safe normalized payload (string keys, no live model references - see
+# docs/handoffs/Phase_7_Inklings_Hook_and_Grimoire_Mapping.md §5.5) or { error: }.
+# Never mutates SOUL state.
 ```
 
 ### Inklings: Application Hook
@@ -270,8 +272,16 @@ SoulInklingsHook.validate_outcome(
 ```ruby
 # Inklings calls this after approval, with the validated payload from above
 SoulInklingsHook.apply_outcome(payload, source: "inkling:234")
-# Revalidates current state + idempotency, atomically applies, creates
-# Narrative History/audit, returns { success:, soul_references: } or { error: }
+# Re-derives the character from payload, revalidates current state (state may have
+# changed since submission - e.g. the B&B ratio, or the target entry's level), applies
+# atomically, returns { success:, soul_references: } or { error: }.
+#
+# Idempotency (REQ-038): :xp relies on SoulXpApi.award's own idempotency_key; :culmination
+# relies on SoulCulminationApi.propose's own source-based dedup; :boon_progression/
+# :bane_progression have no such protection in SoulBnbApi.grant/.progress themselves, so
+# the hook checks each entry's own stored source/progression_history before calling them -
+# see the Phase 7 handoff §5.2 for the exact mechanism. A repeat call with the same source
+# never double-applies.
 ```
 
 ### Grimoire: Read-Only Capability Exchange
@@ -279,6 +289,12 @@ SoulInklingsHook.apply_outcome(payload, source: "inkling:234")
 ```ruby
 # Grimoire reads Skills/Aspects/Resonance through documented read APIs only
 SoulCharacterApi.get_skill_rating(caster, "ceremonial_magic")
+
+# Grimoire branch -> Skill mapping (REQ-040: no dedicated Arcana Skill is created)
+SoulFrameworkApi.get_skill_for_grimoire_branch(branch_key)
+  # => the mapped Skill's hash, or nil if unmapped. Config-driven:
+  # game/config/soul.yml's integrations.grimoire.branch_skill_map.
+
 # SOUL never receives or stores Grimoire spell history (REQ-040).
 ```
 

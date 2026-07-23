@@ -39,6 +39,7 @@ module AresMUSH
         validate_xp
         validate_bnb
         validate_rolls
+        validate_integrations
 
         @validator.errors
       end
@@ -212,6 +213,29 @@ module AresMUSH
 
         if !["required", "optional", "unavailable"].include?(rolls["gm_scene_policy"])
           @validator.add_error("soul:rolls.gm_scene_policy must be one of: required, optional, unavailable (FINAL REQ-029).")
+        end
+      end
+
+      def validate_integrations
+        integrations = @validator.config["integrations"]
+        return unless integrations.kind_of?(Hash)
+
+        grimoire = integrations["grimoire"]
+        return unless grimoire.kind_of?(Hash)
+
+        branch_map = grimoire["branch_skill_map"]
+        return if branch_map.nil?
+
+        unless branch_map.kind_of?(Hash)
+          @validator.add_error("soul:integrations.grimoire.branch_skill_map must be a hash of branch key => Skill key (FINAL REQ-040).")
+          return
+        end
+
+        skills = (@validator.config["framework"] || {})["skills"] || {}
+        branch_map.each do |branch_key, skill_key|
+          unless skills.key?(skill_key.to_s)
+            @validator.add_error("soul:integrations.grimoire.branch_skill_map.#{branch_key} references unknown Skill '#{skill_key}'.")
+          end
         end
       end
     end

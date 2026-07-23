@@ -18,7 +18,7 @@ Claude's ongoing engineering notebook for SOUL implementation. Tracks current st
 
 **Branch:** `main`
 
-**Phase:** ✅ Phases 1-6 complete. Ready to begin Phase 7 (Inklings and Grimoire Integrations).
+**Phase:** ✅ Phases 1-6 complete. 🔶 Phase 7 (Inklings and Grimoire Integrations) in progress — Grimoire side complete (Claude, directly); the Inklings hook (`SoulInklingsHook`) handed to Codex (`docs/handoffs/Phase_7_Inklings_Hook_and_Grimoire_Mapping.md`), pending implementation and review.
 
 **Delegation model changed this session:** `Implementation_Specification_Addendum.md` was updated with a new, much broader Codex role (models, services, APIs, events, cron jobs, tests — not just command/web adapters as under the narrower LlamaCoder rules that preceded it). See the Addendum's "SOUL Codex Handoff Instructions" section. Claude's role is now consistently: architecture, mathematically/architecturally sensitive implementation, design-gap resolution, and review — with conventional CRUD/service implementation work delegated to Codex once the design is locked.
 
@@ -38,6 +38,18 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 **Lesson for future sessions:** Never write architecture/reference scaffolding without deriving it from the actual governing specification. If a specification file exists, read it fully before writing any supporting documentation — do not fill gaps with generic assumptions.
 
 ## Recent Changes
+
+### Phase 7 Begun: Grimoire Mapping (Claude) + Inklings Hook Handoff (2026-07-24)
+
+Reviewed FINAL §8 (REQ-038 through REQ-041), `SOUL_Design_Decisions.md`'s Grimoire/Inklings mentions, and the already-published `Integration_Guide.md`/`API_and_Hooks.md` integration contracts before starting.
+
+**Grimoire side implemented directly** (read-only lookups over an already-existing config-driven catalogue — no handoff needed, matching how config additions have been handled directly in every prior phase): added `integrations.grimoire.branch_skill_map` to `game/config/soul.yml` (empty by default, game-configured), a cross-referential validator check (`validate_integrations`, confirming each mapped value is a real Skill key), and `SoulFrameworkApi.get_skill_for_grimoire_branch(branch_key)`. Grimoire's read-only Skill/Aspect/Resonance access and the standalone-staff-path requirement were already satisfied since Phases 2/1-6 respectively — confirmed rather than re-implemented.
+
+**A real, material gap found while designing the Inklings hook:** `SoulBnbApi.grant`/`.progress` (Phase 3) have no built-in duplicate-delivery protection at all — calling either twice with the same `source` creates a duplicate grant or double-progresses an entry. This directly threatens REQ-039's "revalidate current state and idempotency" requirement for `apply_outcome`, since Inklings may legitimately retry a delivery. Resolved at the hook layer rather than retrofitting the underlying APIs: the hook checks each entry's own stored `source` (fresh grant) or `progression_history` (existing entry) before calling `grant`/`.progress`, reusing data these models already persist instead of adding a parallel audit-marker mechanism (CP-09, One Rule One Home). `SoulXpApi.award`'s `idempotency_key` and `SoulCulminationApi.propose`'s source-based dedup already had this covered from Phases 2-3 and need no wrapper — only Boon/Bane grant/progression needed new idempotency logic.
+
+Also resolved: the grant-vs-progression distinction for a `:boon_progression`/`:bane_progression` outcome is determined by whether `proposed_transition["from"]` is present (matching the already-published example shape `{ catalogue_id: 22, from: "Minor", to: "Major" }`) — absent/blank means a fresh grant, present means progressing an existing entry, which must be re-validated at apply time against the entry's actual current level (not trusted from the stored payload) since real time passes between an Inkling's submission and its staff approval.
+
+Handed `SoulInklingsHook`'s implementation to Codex (`docs/handoffs/Phase_7_Inklings_Hook_and_Grimoire_Mapping.md`) with the idempotency mechanism and grant/progression rule fully specified — this is squarely "well-defined implementation" once the design questions are resolved, matching the pattern that worked for Phases 4-6.
 
 ### Phase 6 Review Findings (2026-07-24)
 

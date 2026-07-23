@@ -57,6 +57,20 @@ module AresMUSH
       Global.read_config("soul", "framework", "skill_max_rating") || 10
     end
 
+    # Grimoire branch -> Skill mapping (FINAL REQ-040: "map configured
+    # Grimoire branches to Spirit Skills" - no dedicated Arcana Skill is
+    # created). Returns the mapped skill's full hash (via get_skill, so an
+    # unknown/removed skill key correctly returns nil) or nil if the branch
+    # has no configured mapping. Read-only; Grimoire itself decides what to
+    # do with the returned Skill - SOUL never receives or stores spell data
+    # (REQ-040).
+    def self.get_skill_for_grimoire_branch(branch_key)
+      map = Global.read_config("soul", "integrations", "grimoire", "branch_skill_map") || {}
+      skill_key = map[branch_key.to_s]
+      return nil unless skill_key
+      get_skill(skill_key)
+    end
+
     private
 
     def self.aspect_hash(key, data)
