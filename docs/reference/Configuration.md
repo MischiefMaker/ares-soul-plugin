@@ -1,6 +1,6 @@
 # SOUL Configuration Reference
 
-Configuration structure for SOUL in `game/config/soul.yml`. All values are read live via `Global.read_config` (never memoized) — changes take effect without a plugin reload, per CP-06.
+Configuration structure for SOUL in `game/config/soul.yml`. All values are read fresh via `Global.read_config` on every use (never cached in a plugin-level constant or variable), per CP-06 — this is what lets a staff config reload (not a plugin restart) pick up changes immediately. `Global.read_config` itself reads from an in-memory hash parsed once at boot or reload, not the YAML file on disk on every call.
 
 Sources: `docs/spec/SOUL_LLM_Implementation_Specification_FINAL.md` ("FINAL") §9 (REQ-042 through REQ-045) for configurable areas and canonical defaults, and `docs/spec/Implementation_Specification_Addendum.md` ("Addendum") for the mechanics FINAL's REQ-045 left open (dice model, XP cost formula, chargen B&B ratio, degrees of success, extraordinary luck, pending roll expiry, aspect rounding).
 

@@ -18,18 +18,23 @@ Follows standard AresMUSH plugin layout (CP-08 — AresMUSH First):
 
 ```
 plugin/
-  soul.rb                    # Module registration and plugin hooks
+  soul.rb                    # Module registration: plugin_dir, get_cmd_handler,
+                              # get_event_handler, get_web_request_handler,
+                              # check_config, permission helpers
+  soul_config_validator.rb   # Config validation (Manage::ConfigValidator)
   commands/                  # One class per MUSH command (+soul, +roll, +bnb, +xp, ...)
   web/                       # Thin web request handlers
   public/                    # Business logic APIs (shared by MUSH and web)
   models/                    # Ohm::Model database classes (in the AresMUSH namespace)
-  hooks/                     # Lifecycle hooks (chargen, custom_char_fields, custom_approval)
   events/                    # Event handlers
   locales/                   # User-facing strings (locale_en.yml)
-  help/
-    admin/                   # `manage soul` and other staff help topics (CI-08)
-    en/                      # Player-facing help topics
+  help/en/                   # All help topics, player and staff alike - admin
+                              # topics are distinguished by a "Permission
+                              # Required" note in the body, not a separate
+                              # directory (see docs/reference/Commands.md)
 ```
+
+There is deliberately no `hooks/` directory. `get_cmd_handler`, `get_event_handler`, and `get_web_request_handler` are the only dispatch points the framework actually discovers automatically (`Global.plugin_manager.sorted_plugins.each { |p| ... if p.respond_to?(:get_x_handler) }` in `AresMUSH::Dispatcher`). Chargen integration works differently — see Character Integration below.
 
 ## Plugin Initialization
 
@@ -130,11 +135,11 @@ See `docs/reference/Permissions.md` for the full permission matrix.
 
 ## Configuration
 
-Configuration is read live (never memoized), per CP-06:
+Configuration is read fresh on every use, never cached in a plugin-level constant or variable, per CP-06:
 ```ruby
 Global.read_config("soul", "key_name")
 ```
-This allows admins to edit `game/config/soul.yml` without restarting the plugin. See `docs/reference/Configuration.md`.
+This allows admins to edit `game/config/soul.yml` and have the change picked up on the next staff config reload — no plugin restart needed. See `docs/reference/Configuration.md`.
 
 ## Extensibility
 

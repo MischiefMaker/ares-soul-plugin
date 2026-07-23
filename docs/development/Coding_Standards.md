@@ -203,11 +203,11 @@ client.emit_success "Advanced to #{result[:new_rating]}!"
 
 ## Configuration Access
 
-Always read config live, never memoize:
+Always call `Global.read_config` fresh, never memoize the result:
 
 ```ruby
-def self.can_advance_skill?(enactor)
-  permission = Global.read_config("soul", "permissions", "play") || "play"
+def self.can_play?(enactor)
+  permission = Global.read_config("soul", "play_permission") || "play"
   enactor.has_permission?(permission)
 end
 ```

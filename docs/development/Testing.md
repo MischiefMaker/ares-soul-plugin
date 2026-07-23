@@ -23,32 +23,26 @@ Tests SHALL verify:
 
 ## Test Structure
 
+Tests live in a single flat `plugin/spec/` directory — verified against Inklings' own test suite (`plugin/spec/approve_inkling_spec.rb`, `submit_inkling_spec.rb`, `format_inkling_summary_spec.rb`, etc.), which uses no subdirectories at all. `PluginManager#code_files` explicitly skips any directory named `spec`/`specs` when loading plugin code, so this directory is safe from being accidentally loaded as runtime code regardless of where it sits under `plugin/`.
+
 ```
-spec/
-  api/
+plugin/
+  spec/
+    spec_helper.rb                    # or require_relative into the core's own spec_helper
+    soul_config_validator_spec.rb
     framework_api_spec.rb
-    character_api_spec.rb
-    resonance_api_spec.rb
     xp_api_spec.rb
     bnb_api_spec.rb
     culmination_api_spec.rb
     roll_api_spec.rb
-  commands/
-    soul_sheet_spec.rb
-    soul_roll_spec.rb
-    soul_bnb_spec.rb
-    soul_xp_spec.rb
-  models/
+    soul_sheet_cmd_spec.rb
+    soul_roll_cmd_spec.rb
     skill_spec.rb
     character_skill_spec.rb
     bnb_catalogue_entry_spec.rb
-  hooks/
-    chargen_hook_spec.rb
-    custom_approval_hook_spec.rb
-  helpers/
-    factories.rb
-    permissions_helper.rb
 ```
+
+Every spec file starts with `require_relative 'spec_helper'` and wraps its examples in `module AresMUSH ... end`, matching the convention in every existing Inklings spec.
 
 ## Test Patterns
 
@@ -103,7 +97,7 @@ end
 describe SoulBnbApi do
   describe ".resolve" do
     it "preserves the entry and its prior level rather than deleting it" do
-      entry = create(:character_bnb_entry, level_state: "major")
+      entry = AresMUSH::CharacterBnbEntry.create(character_id: character.id, catalogue_id: catalogue_entry.id, level_state: "major")
       SoulBnbApi.resolve(character, entry.id, reason: "Story resolved", enactor: staff)
 
       entry.reload
@@ -162,7 +156,7 @@ describe "pending roll limits" do
   end
 
   it "expires after 720 hours without auto-resolving" do
-    pending = create(:pending_roll, created_at: 721.hours.ago)
+    pending = AresMUSH::PendingRoll.create(character_id: character.id, status: "waiting", created_at: 721.hours.ago)
     SoulRollApi.sweep_expired_rolls
     expect(pending.reload.status).to eq("expired")
     expect(pending.result).to be_nil   # no auto-resolution
@@ -199,44 +193,23 @@ describe "SOUL without Inklings" do
 end
 ```
 
-## Test Fixtures (Factories)
+## Test Fixtures
+
+AresMUSH's own test suite uses the **Fabrication** gem, not FactoryBot — `Fabricate(:character)` and `Fabricate(:job)` (verified against real usage in Inklings' own spec files, e.g. `plugin/spec/approve_inkling_spec.rb`) construct pre-defined core models. Neither the AresMUSH core checkout nor Inklings defines new Fabricators for plugin-specific models, even where the plugin adds its own persistent models — specs instead construct those directly via `.create(...)`. Follow that same pattern for SOUL's own models rather than introducing a new fixture framework:
 
 ```ruby
-# spec/helpers/factories.rb
+describe Soul::SoulSkillsApi do
+  let(:character) { Fabricate(:character) }
 
-FactoryBot.define do
-  factory :aspect, class: AresMUSH::Aspect do
-    key { "body" }
-    name { "Body" }
-    order { 1 }
-  end
+  let(:aspect) { AresMUSH::Aspect.create(key: "body", name: "Body", order: 1) }
+  let(:skill) { AresMUSH::Skill.create(key: "blade", name: "Blade", aspect_key: "body", order: 1) }
+  let(:character_skill) { AresMUSH::CharacterSkill.create(character_id: character.id, skill_key: "blade", rating: 0) }
 
-  factory :skill, class: AresMUSH::Skill do
-    key { "blade" }
-    name { "Blade" }
-    aspect_key { "body" }
-    order { 1 }
-  end
-
-  factory :character_skill, class: AresMUSH::CharacterSkill do
-    character { create(:character) }
-    skill_key { "blade" }
-    rating { 0 }
-  end
-
-  factory :bnb_catalogue_entry, class: AresMUSH::BnbCatalogueEntry do
-    tag { "cursed" }
-    name { "Cursed" }
-    category { "Mundane" }
-  end
-
-  factory :character_bnb_entry, class: AresMUSH::CharacterBnbEntry do
-    character { create(:character) }
-    catalogue_entry { create(:bnb_catalogue_entry) }
-    level_state { "minor" }
-  end
+  # ... use character, aspect, skill, character_skill as needed
 end
 ```
+
+If a helper reduces enough duplication to be worth extracting, put it in `plugin/spec/spec_helper.rb` (loaded via `require_relative 'spec_helper'` at the top of every spec file, matching Inklings' convention) rather than introducing a factory library the rest of the codebase doesn't use.
 
 ## Configuration in Tests
 

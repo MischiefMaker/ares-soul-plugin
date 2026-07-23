@@ -1,19 +1,21 @@
-# Default Configuration (game/config/soul.yml)
-
-Complete default configuration file for SOUL, matching the canonical defaults in `docs/reference/Configuration.md` (derived from `SOUL_LLM_Implementation_Specification_FINAL.md` and `Implementation_Specification_Addendum.md`). This mirrors the file shipped at `game/config/soul.yml` in the plugin repository — copy it to your game's `game/config/` directory as a starting point (or let `plugin/install` merge it automatically).
-
-```yaml
 # SOUL Configuration
 # This file defines all gameplay settings for the SOUL plugin.
 # Changes take effect after staff reload game config (@config/load or the
-# equivalent web portal action) - no plugin restart needed.
+# equivalent web portal action) - no plugin restart needed. See
+# docs/reference/Configuration.md for the full reference and
+# docs/spec/SOUL_LLM_Implementation_Specification_FINAL.md /
+# docs/spec/Implementation_Specification_Addendum.md for the mechanics
+# behind each setting.
 
 soul:
   enabled: true
 
-  # Permission required for staff SOUL administration. Defaults to
-  # "manage_jobs", the same broad staff-administration permission the
-  # Jobs plugin uses.
+  # Permission required for staff SOUL administration: award/correct XP,
+  # manage the Boon/Bane catalogue, correct Resonance, review the
+  # Character Framework. Defaults to "manage_jobs", the same broad
+  # staff-administration permission the Jobs plugin uses. Change this if
+  # your game wants a narrower, dedicated SOUL-admin permission - see
+  # docs/reference/Permissions.md.
   manage_permission: manage_jobs
 
   # Permission required for ordinary player actions: view your own Sheet,
@@ -23,13 +25,13 @@ soul:
   # Permission required to review/approve GM-assisted pending rolls.
   gm_review_permission: gm
 
-  # ============================================================================
+  # ==========================================================================
   # Character Framework
-  # ============================================================================
+  # ==========================================================================
 
   framework:
     skill_min_rating: 0
-    skill_max_rating: 10   # Ultimate cap at every Resonance tier
+    skill_max_rating: 10   # Ultimate cap at every Resonance tier (FINAL REQ-010)
 
     aspects:
       body:
@@ -45,7 +47,8 @@ soul:
         description: "Willpower, emotional depth, and the arcane"
         order: 3
 
-    # Skills map to exactly one Aspect by stable key. Example starter set:
+    # Skills map to exactly one Aspect by stable key (FINAL REQ-010).
+    # Starter set below - expand freely to fit your game's setting.
     skills:
       strength:
         name: "Strength"
@@ -84,17 +87,17 @@ soul:
         aspect: "spirit"
         order: 3
 
-  # ============================================================================
+  # ==========================================================================
   # Aspect Roll Contribution
-  # ============================================================================
+  # ==========================================================================
 
   aspect:
     weight: 0.20
     contribution_rounding: "nearest"
 
-  # ============================================================================
+  # ==========================================================================
   # Resonance
-  # ============================================================================
+  # ==========================================================================
 
   resonance:
     enabled: true
@@ -108,9 +111,9 @@ soul:
     negative_starting_cap_per_level: 1
     review_flag_at_extremes: true
 
-  # ============================================================================
+  # ==========================================================================
   # XP
-  # ============================================================================
+  # ==========================================================================
 
   xp:
     weekly_award: 1
@@ -136,9 +139,9 @@ soul:
       sources_excluded:
         - manual_grant
 
-  # ============================================================================
+  # ==========================================================================
   # Boons & Banes
-  # ============================================================================
+  # ==========================================================================
 
   bnb:
     categories:
@@ -193,9 +196,9 @@ soul:
         boons: { max_count: 4, max_at_level_2: 3, max_at_level_3: 2 }
         banes: { max_count: null, max_at_level_2: 3, max_at_level_3: 3 }
 
-  # ============================================================================
+  # ==========================================================================
   # Rolls
-  # ============================================================================
+  # ==========================================================================
 
   rolls:
     random_model: "d20_open_ended"
@@ -242,9 +245,9 @@ soul:
 
     gm_scene_policy: "optional"   # "required", "optional", or "unavailable"
 
-  # ============================================================================
+  # ==========================================================================
   # Privacy
-  # ============================================================================
+  # ==========================================================================
 
   privacy:
     gm_reveal_categories:
@@ -252,23 +255,23 @@ soul:
       - "public_description"
     warn_on_broader_reveal: true
 
-  # ============================================================================
+  # ==========================================================================
   # Culminations
-  # ============================================================================
+  # ==========================================================================
 
   culminations:
     approval_required: true
 
-  # ============================================================================
+  # ==========================================================================
   # Notifications
-  # ============================================================================
+  # ==========================================================================
 
   notifications:
     character_facing_success: true
 
-  # ============================================================================
+  # ==========================================================================
   # Integrations
-  # ============================================================================
+  # ==========================================================================
 
   integrations:
     inklings:
@@ -278,80 +281,3 @@ soul:
       enabled: true
 
   shortcuts: {}
-
-# ============================================================================
-# End of Configuration
-# ============================================================================
-# For detailed documentation, see:
-# - docs/reference/Configuration.md
-# - docs/reference/Commands.md
-# - docs/reference/Permissions.md
-# - docs/architecture/Integration_Guide.md
-```
-
-## Customization Guide
-
-### Adjusting XP Pacing
-
-Slower advancement (steeper development curve):
-```yaml
-soul:
-  xp:
-    cost:
-      development_scale: 150      # Ramps up faster than the 250 default
-```
-
-Faster advancement:
-```yaml
-soul:
-  xp:
-    weekly_award: 2
-    scene_sharer_award: 3
-```
-
-### Adding Custom Aspects or Skills
-
-Aspects and Skills are fully configurable, but changing the default three Aspects (Body/Mind/Spirit) is a significant deviation from FINAL's default framework — document the change in your game's own design notes.
-
-```yaml
-soul:
-  framework:
-    skills:
-      my_skill:
-        name: "My Skill"
-        aspect: "mind"     # Must reference an existing Aspect key
-        order: 5
-```
-
-### Adjusting Difficulty
-
-Difficulty values are fixed to the 8-level scale in `rolls.difficulties` by default (Addendum §1), but every value is independently configurable:
-```yaml
-soul:
-  rolls:
-    difficulties:
-      standard: 15   # Raise the baseline difficulty for a grittier game
-```
-
-### Restricting Features
-
-Require staff approval for XP spending:
-```yaml
-soul:
-  play_permission: "manage_jobs"   # Not recommended; overrides baseline play permission broadly
-```
-
-Disable GM-assisted rolls entirely:
-```yaml
-soul:
-  rolls:
-    gm_scene_policy: "unavailable"
-```
-
-## Notes
-
-- Every setting lives under a single top-level `soul:` key — this is how `AresMUSH::ConfigReader` namespaces each plugin's config file (confirmed against `game/config/inklings.yml`'s own top-level `inklings:` key).
-- Configuration is parsed once at boot and cached in memory; edits take effect the next time staff reload game config (not instantly on save, and not re-read from disk on every call) — see `docs/development/Coding_Standards.md`.
-- `null` represents "no configured cap" only where explicitly documented (e.g. `banes.max_count`, `bnb.level_definitions.epic.modifier`).
-- Permission names (`manage_permission`, `play_permission`, `gm_review_permission`) are plain strings, not Role names — they must be included in the `permissions` list of whichever Role(s) should have that capability, via Ares's own role configuration.
-- Changing interconnected defaults (e.g. `aspect.weight` alongside `xp.cost.*`) may affect pacing, probability, and staff workload — see `docs/spec/Implementation_Specification_Addendum.md` for the rationale behind each default.

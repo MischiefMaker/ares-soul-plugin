@@ -4,13 +4,17 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 
 ## Phase 1: Plugin Skeleton, Configuration, Localization, Permissions
 
-- [ ] Plugin module structure and initialization (`docs/architecture/Plugin_Architecture.md`)
-- [ ] Plugin hooks registration (commands, events, web handlers)
-- [ ] Configuration loading with live-reload support, no memoization (CP-06)
-- [ ] Startup configuration validation: structure, required keys, duplicate tags/IDs, Aspect–Skill mappings, ranges (REQ-042)
-- [ ] Localization setup (`plugin/locales/locale_en.yml`)
-- [ ] Permission structure and default mappings (REQ-005, `docs/reference/Permissions.md`)
-- [ ] `manage soul` admin help topic scaffolding (CI-08)
+**Status:** ✅ Complete (2026-07-23) — verified against real, current AresMUSH core source (`MischiefMaker/aresmush`, synced to 2026-07-08) and the Inklings plugin as a working reference implementation.
+
+- [x] Plugin module structure and initialization (`plugin/soul.rb` — `plugin_dir`, `shortcuts`, `check_config`)
+- [x] Plugin dispatch registration points defined (`get_cmd_handler`/`get_event_handler`/`get_web_request_handler` — no commands/events/handlers registered yet since no subsystem exists to dispatch to; wired in later phases)
+- [x] Configuration loading: `Global.read_config` called fresh at every use site, never memoized (CP-06) — confirmed this means "safe under a staff config reload," not "re-reads the YAML file from disk every call"
+- [x] Startup configuration validation (`plugin/soul_config_validator.rb`, using the real `AresMUSH::Manage::ConfigValidator` mechanism every bundled core plugin uses): structure, required keys, ranges, enum values for all Phase 1-checkable settings. Cross-referential checks (Skill→Aspect key resolution, B&B tag uniqueness) deferred to Phase 2/3 once those models exist.
+- [x] Localization setup (`plugin/locales/locale_en.yml`)
+- [x] Permission structure and default mappings (`Soul.can_manage_soul?`/`can_play?`/`can_review_rolls?` in `plugin/soul.rb`, flat top-level config keys — see `docs/reference/Permissions.md`)
+- [x] `manage soul` admin help topic scaffolding (`plugin/help/en/manage_soul.md`, CI-08 — single `help/en/` directory, not a separate `admin/` folder; admin-only status signaled via a "Permission Required" note in the body)
+- [x] Default `game/config/soul.yml` shipped, matching `docs/reference/Default_Config.md`
+- [x] Config validator spec (`plugin/spec/soul_config_validator_spec.rb`)
 
 ## Phase 2: Character Framework, Skills, Aspects, Resonance, XP Ledger
 

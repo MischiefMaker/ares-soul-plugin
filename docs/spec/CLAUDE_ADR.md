@@ -18,7 +18,14 @@ Claude's ongoing engineering notebook for SOUL implementation. Tracks current st
 
 **Branch:** `main`
 
-**Phase:** Documentation rebuilt on the correct specification; ready to begin implementation handoff preparation.
+**Phase:** ✅ Phase 1 (Plugin Skeleton, Configuration, Localization, Permissions) complete and verified against real, current AresMUSH core source. Ready to begin Phase 2 (Character Framework, Skills, Aspects, Resonance, XP Ledger).
+
+## Reference Repositories in This Session
+
+Two additional repos were added to verify Phase 1 against real source rather than documented-but-unconfirmed conventions (per FINAL.md Appendix D's requirement to inspect the closest official plugins before implementing):
+
+- `MischiefMaker/aresmush` — a fork of AresMUSH core. **Was frozen at a 2019-12-15 commit when first added; synced to a live 2026-07-08 commit mid-session at the user's instruction.** Any finding sourced from this repo should be treated as reflecting its currently-synced commit, not assumed permanently current — re-sync before relying on it in a future session if meaningful time has passed.
+- `MischiefMaker/ares-inklings-plugin` — the Inklings plugin, used as a working reference implementation (not just its dev guide). Its `ARES_PLUGIN_DEVELOPMENT_GUIDE.md` was updated this session (Lessons 30-35) with corrections discovered while building SOUL's Phase 1 against real source — read those lessons before starting Phase 2, since several correct earlier assumptions about SOUL's own docs were found wrong this way.
 
 ## Critical Incident: Fabricated Documentation (Discovered and Corrected 2026-07-23)
 
@@ -29,6 +36,25 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 **Lesson for future sessions:** Never write architecture/reference scaffolding without deriving it from the actual governing specification. If a specification file exists, read it fully before writing any supporting documentation — do not fill gaps with generic assumptions.
 
 ## Recent Changes
+
+### Phase 1 Implementation, Verified Against Real Source (2026-07-23)
+
+Wrote the plugin skeleton after re-syncing `MischiefMaker/aresmush` from its stale 2019 snapshot and reading real, current source for every convention used (plugin registration/dispatch, config validation, permission checks, help file loading) rather than relying solely on the documented-but-unverified conventions from the earlier doc rebuild:
+
+- `plugin/soul.rb` — module registration (`plugin_dir`, `shortcuts`), permission helpers (`can_manage_soul?`, `can_play?`, `can_review_rolls?`), `check_config` delegating to a validator class.
+- `plugin/soul_config_validator.rb` — uses the real `AresMUSH::Manage::ConfigValidator` mechanism (confirmed via `jobs_config_validator.rb`, `chargen_config_validator.rb`, and ten more bundled plugins, all following the identical `check_config` → `<Name>ConfigValidator#validate` → `Manage::ConfigValidator` shape).
+- `game/config/soul.yml` — full default config, corrected to nest everything under a top-level `soul:` key (confirmed against `ConfigReader`'s section-per-file model) with flat permission keys (see below).
+- `plugin/locales/locale_en.yml`, `plugin/help/en/soul.md`, `plugin/help/en/manage_soul.md`, `plugin/spec/soul_config_validator_spec.rb`.
+
+**Corrections this verification pass made to the 2026-07-23 doc rebuild** (all now fixed in the docs themselves, and reflected in the Inklings dev guide's new Lessons 30-35):
+1. Permission config keys are flat top-level settings (`manage_permission`, `play_permission`, `gm_review_permission`), not a nested `permissions: {}` hash — the nested version was an unforced invention never checked against Inklings' own `manage_permission` precedent.
+2. Permission checks are plain module methods on `Soul` itself (`Soul.can_manage_soul?`), not a separate `Permissions` class — matches `Inklings.can_manage_inklings?`.
+3. Help files load from a single `help/en/` directory — there is no `help/admin/` split. Admin topics are marked with a "Permission Required" note in the body (see `manage_inklings.md`), not routed to a different folder.
+4. There is no `hooks/` directory with framework-level auto-dispatch — `get_cmd_handler`/`get_event_handler`/`get_web_request_handler` are the only three dispatch points the core `Dispatcher` actually calls. Chargen integration (Phase 2+) happens via manually-pasted `custom_approval.rb`/`custom_app_review.rb` snippets in the game's own `plugins/chargen/` directory, not a plugin-defined hook class — confirmed by grepping current core for `chargen_finalize` (zero hits; Inklings' own `hooks/chargen_hook.rb` turned out to be unwired dead code).
+5. "Config is read live" means `Global.read_config` is called fresh at every use site (never memoized in plugin code) so a staff config reload takes effect immediately — not that AresMUSH re-parses the YAML file from disk on every call (it's cached in memory from boot/reload).
+6. Test fixtures use the Fabrication gem (`Fabricate(:character)`, confirmed from Inklings' own specs), not FactoryBot; tests live in a flat `plugin/spec/*.rb` (no subdirectories), not `spec/api/`, `spec/commands/`, etc.
+
+Docs updated to reflect all six corrections: `Permissions.md`, `Default_Config.md`, `Configuration.md`, `Plugin_Architecture.md`, `Coding_Standards.md`, `Testing.md`.
 
 ### Documentation Rebuild (2026-07-23)
 
@@ -62,13 +88,14 @@ Three editorial inconsistencies within the Addendum were also resolved: XP statu
 
 The Addendum was drafted before this session's discovery of the fabricated docs, so a few of its illustrative examples use pre-fabrication terminology (e.g. "Skill rating +0 to +5" in a §2 dice example) that predates confirming FINAL's actual 0-10 Skill range. This does not change any resolved mechanic — it is illustrative wording only — but implementers should read Addendum examples as operating on FINAL's real ranges (0-10 Skills, Body/Mind/Spirit Aspects) rather than the example numbers literally. Flag to the project owner if a genuine numeric conflict (not just an illustrative example) turns up during implementation.
 
-### Before Implementation Begins
+### Before Phase 2 Begins
 
 - [ ] Finalize exact Ruby class names for services (FINAL leaves this an implementation decision, REQ-004)
 - [ ] Decide B&B catalogue seeding approach: command-based creation with README examples (per DD-02), confirmed still current
 - [ ] Finalize non-canonical command syntax still open per REQ-037/REQ-045 (see `docs/reference/Commands.md` "Proposed" rows — e.g. exact abort-roll syntax)
 - [ ] Design cron/scheduler approach for weekly catch-up recalculation and weekly XP award
 - [ ] Finalize API contracts between Ruby backend and Ember web portal for each REQ-046 required capability
+- [ ] When chargen integration is needed (Phase 2's chargen flow, or Phase 5), re-verify the real `custom_approval.rb`/`custom_app_review.rb` snippet mechanism directly (see Inklings' `custom-install/custom_approval.snippet.rb`) rather than assuming a plugin-defined hook class gets auto-discovered — see Lesson 33 in the Inklings dev guide.
 
 ## Resolved Architecture Questions
 
@@ -83,7 +110,7 @@ These were open in the pre-fabrication era of this project and are now settled b
 
 ## Session Notes
 
-### Session: 2026-07-23 (Current)
+### Session: 2026-07-23 (Phase 1 Implementation)
 
 - Reviewed all documentation in the repo plus the Inklings AresMUSH Plugin Development Guide, as instructed before beginning the next implementation phase.
 - Discovered the fabricated-documentation incident (see above); confirmed via git history; user confirmed suspicion of fabrication.
@@ -91,7 +118,11 @@ These were open in the pre-fabrication era of this project and are now settled b
 - Added protective banners to FINAL.md and SOUL_Design_Decisions.md.
 - Archived 17 fabricated files to `docs/archive/`.
 - Rebuilt all architecture, reference, and development documentation from the correct sources.
-- **Next:** Rebuild `IMPLEMENTATION_CHECKLIST.md` and `ROADMAP.md`, then begin implementation handoff preparation per FINAL Appendix D's recommended order.
+- User asked to add both `MischiefMaker/aresmush` and `MischiefMaker/ares-inklings-plugin` to the session for source verification before writing any code, per FINAL Appendix D. Found the aresmush fork frozen at a 2019 commit; user synced it to 2026-07-08 mid-session.
+- Read real source for plugin registration/dispatch, config validation, permission checks, model conventions, command/web-handler patterns, and help file loading across both repos.
+- Implemented Phase 1 (`plugin/soul.rb`, `soul_config_validator.rb`, `game/config/soul.yml`, `locale_en.yml`, help topics, config validator spec), correcting six discrepancies the verification pass surfaced in the earlier doc rebuild (see above).
+- At user's request, added the six corrections as Lessons 30-35 to the Inklings plugin's own `ARES_PLUGIN_DEVELOPMENT_GUIDE.md`, committed and pushed to that repo's `main`.
+- **Next:** Phase 2 — Character Framework, Skills, Aspects, Resonance, XP Ledger (see `docs/spec/IMPLEMENTATION_CHECKLIST.md` Phase 2 and `docs/spec/ROADMAP.md`).
 
 ### Session: 2026-07-23 (Earlier — Addendum finalization)
 

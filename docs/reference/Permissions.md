@@ -24,8 +24,7 @@ Players MAY perform supported actions for their own characters:
 
 **Override example** — restrict XP spending to staff:
 ```yaml
-permissions:
-  play: "manage_jobs"   # Not recommended for normal play
+play_permission: "manage_jobs"   # Not recommended for normal play
 ```
 
 ### Scene-GM Operations (default: `gm`)
@@ -85,51 +84,51 @@ privacy:
 
 ## Configuration
 
+Permission names are flat, top-level `soul.yml` keys — not a nested hash. This matches the one real precedent in the AresMUSH ecosystem for a configurable permission name: the Inklings plugin's own `manage_permission` setting (`plugin/inklings.rb`), not an invented `permissions:` block.
+
 ```yaml
-permissions:
-  play: "play"                # Baseline player actions
-  gm_review: "gm"              # Scene-GM authority for GM-assisted rolls
-  manage_soul: "manage_jobs"   # Staff administration
+play_permission: "play"                # Baseline player actions
+gm_review_permission: "gm"              # Scene-GM authority for GM-assisted rolls
+manage_permission: "manage_jobs"        # Staff administration
 ```
 
 ### Typical Setups
 
 **Default (most permissive within safe bounds):**
 ```yaml
-permissions:
-  play: "play"
-  gm_review: "gm"
-  manage_soul: "manage_jobs"
+play_permission: "play"
+gm_review_permission: "gm"
+manage_permission: "manage_jobs"
 ```
 
 **Dedicated SOUL admin role** (separate from general wizard permissions):
 ```yaml
-permissions:
-  manage_soul: "manage_soul"
+manage_permission: "manage_soul"
 ```
 Then add `manage_soul` to the desired staff role(s) via Ares's own role configuration.
 
 **Hybrid (story-admins handle both GM review and SOUL admin):**
 ```yaml
-permissions:
-  gm_review: "story_admin"
-  manage_soul: "story_admin"
+gm_review_permission: "story_admin"
+manage_permission: "story_admin"
 ```
 
 ## Permission Checks in Code
 
+Permission checks are plain module methods on `Soul` itself (`Soul.can_manage_soul?`, `Soul.can_play?`, `Soul.can_review_rolls?` — see `plugin/soul.rb`), matching the verified convention from Inklings' own `Inklings.can_manage_inklings?` — not a separate `Permissions` class.
+
 ### In Commands
 ```ruby
 def check_can_manage
-  return nil if Permissions.can_manage_soul?(enactor)
-  "You don't have permission to manage SOUL."
+  return nil if Soul.can_manage_soul?(enactor)
+  t('soul.permission_denied')
 end
 ```
 
 ### In Web Handlers
 ```ruby
 def handle(request)
-  return { error: "You don't have permission." } unless Permissions.can_manage_soul?(request.enactor)
+  return { error: t('soul.permission_denied') } unless Soul.can_manage_soul?(request.enactor)
   # ... proceed with operation
 end
 ```
@@ -139,7 +138,7 @@ end
 Per REQ-002, handlers SHALL NOT trust client-supplied permissions — the API layer re-checks:
 ```ruby
 def self.award(character, amount, source:, enactor:)
-  return { error: "You don't have permission." } unless Permissions.can_manage_soul?(enactor)
+  return { error: "You don't have permission." } unless Soul.can_manage_soul?(enactor)
   # ... apply award
 end
 ```
