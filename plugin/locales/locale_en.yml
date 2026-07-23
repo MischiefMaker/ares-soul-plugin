@@ -41,6 +41,23 @@ en:
     framework: "%xhSOUL Framework%xn%r%{entries}"
     resonance_corrected: "Resonance corrected."
     config_live: "SOUL configuration is read live; no plugin cache needs reloading."
+    no_pending_selection: "You have no pending roll awaiting your selection."
+    no_open_pending: "You have no open pending roll."
+    no_active_scene_short: "No active scene."
+    roll_started: "Roll #%{id} started (%{status})."
+    roll_updated: "Pending roll updated."
+    roll_pending_line: "#%{id} %{skill} — %{status} (GM-assisted: %{gm_assisted})"
+    roll_pending: "%xhOpen Pending Rolls%xn%r%{entries}"
+    roll_result: "#%{id} %{skill}: %{result} — %{degree} (extraordinary: %{extraordinary})"
+    roll_history: "%xhRoll History%xn%r%{entries}"
+    roll_review_line: "#%{id} %{character}: %{skill}"
+    roll_reviews: "%xhRolls Awaiting GM Review%xn%r%{entries}"
+    roll_candidate_line: "#%{id} [%{tag}] %{details}"
+    roll_candidates: "%xhRoll Candidates%xn%r%{entries}"
+    roll_candidate_not_found: "No candidate tagged '%{tag}' on this roll."
+    audit_line: "%{at}: %{action} by %{actor} — %{reason}"
+    audit: "%xhSOUL Audit: %{name}%xn%r%{entries}"
+    system_actor: "System"
     commands:
       soul:
         help: "Usage: +soul [character]"
@@ -54,3 +71,6 @@ en:
       culmination:
         help: "Usage: +culmination [character]"
         desc: "View and manage Culminations."
+      roll:
+        help: "Usage: +roll <skill>, +roll suggested, or help soul_rolls"
+        desc: "Make and manage SOUL rolls."
