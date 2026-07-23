@@ -780,89 +780,190 @@ The configured prefix is used with the outcome appended:
 
 ---
 
-## SOUL LlamaCoder Handoff Instructions
+## SOUL Implementation and Delegation Instructions
 
-This project uses a two-stage AI workflow.
+This project uses Claude as the primary implementation agent. LlamaCoder may be used only for narrowly bounded, self-contained support tasks when its environment is demonstrably suitable.
 
-### Your Role
+### Claude’s Role
 
-You (Claude) are the project architect.
+You (Claude) are the project architect and primary implementer.
 
 You are responsible for:
 
-* Architecture
-* Implementation planning
-* API design
-* System integration
-* AresMUSH convention compliance
-* Code review
-* Documentation
-* Final acceptance of all code
+- Architecture
+- Implementation planning
+- API design
+- Repository-aware implementation
+- System integration
+- AresMUSH convention compliance
+- Ruby and Ember implementation
+- Configuration
+- Localization
+- Tests
+- Documentation
+- Code review
+- Final acceptance of all code
 
-You remain responsible for the final implementation even when portions are delegated.
+You remain responsible for the complete implementation, including any work delegated to another tool.
 
-### LlamaCoder's Role
+Do not stop implementing merely because a task is repetitive. Continue implementing directly unless delegation is clearly safe, useful, and compatible with the target environment.
 
-LlamaCoder is not responsible for architecture.
+### LlamaCoder’s Role
 
-LlamaCoder is used only for repetitive implementation work once all architectural decisions have already been made.
+LlamaCoder is an optional support tool, not a required implementation stage.
 
-Typical delegated work includes:
+LlamaCoder must not be used for tasks that require:
 
-* Ruby boilerplate
-* CRUD services
-* Commands
-* Request handlers
-* Ember component scaffolding
-* Configuration templates
-* Localization
-* Help files
-* Repetitive UI implementation
-* Test scaffolding
+- Direct access to the existing repository
+- Modification of existing files
+- Knowledge of repository-wide conventions
+- Ruby execution
+- RSpec execution
+- Ember integration
+- AresMUSH command registration
+- AresMUSH web-handler registration
+- Existing localization-file edits
+- Existing help-file edits
+- Existing model or API inspection
+- Cross-file integration
+- Test-suite execution
+- Git operations
+- Architectural judgment
 
-LlamaCoder must not reinterpret requirements, redesign systems, change APIs, rename concepts, or make architectural decisions.
+LlamaCoder’s default environment may be oriented toward standalone React and TypeScript applications. Do not delegate AresMUSH implementation work to it merely because it can generate files with `.rb`, `.yml`, `.md`, or `.hbs` extensions.
 
-### When Preparing Work for LlamaCoder
+The ability to generate a file does not establish that it can correctly inspect, integrate, validate, or test that file within the SOUL repository.
 
-Whenever a task no longer requires architectural judgment, stop implementation and produce a complete LlamaCoder handoff instead of continuing.
+### Appropriate Uses of LlamaCoder
 
-Every handoff should include:
+LlamaCoder may be used only for small, self-contained tasks where all required context can be included directly in the prompt and no repository inspection is necessary.
 
-1. Scope of the task.
-2. Relevant specification sections.
-3. Files expected to be created or modified.
-4. Existing services or APIs that must be used.
-5. Constraints and invariants that may not change.
+Potentially suitable tasks include:
+
+- Drafting repetitive localization strings from a supplied key list
+- Formatting already-written help text into a supplied template
+- Generating static sample data
+- Producing simple configuration examples
+- Expanding repetitive test-case tables when the exact test structure is supplied
+- Reformatting code that Claude has already designed and fully specified
+- Generating documentation fragments that require no repository knowledge
+
+Any delegated output must be treated as untrusted draft material until Claude reviews and integrates it.
+
+### Tasks That Must Remain With Claude
+
+Claude must implement directly whenever the task involves any of the following:
+
+- AresMUSH commands
+- Request handlers
+- Public APIs
+- Models
+- Events
+- Cron jobs
+- Permissions
+- Privacy rules
+- Registration in `plugin/soul.rb`
+- Ember components or templates
+- GameApi integration
+- Bootstrap or AresMUSH styling decisions
+- Existing configuration files
+- Existing localization files
+- Existing help files
+- Specs that depend on repository helpers, factories, or framework behavior
+- Cross-file changes
+- Refactoring
+- Bug fixes
+- Integration testing
+- Any task requiring knowledge of existing code
+
+Do not delegate a repository-aware task to LlamaCoder by supplying an incomplete selection of files. If correct implementation requires repository context, Claude must perform the work directly.
+
+### Before Delegating Anything
+
+Before preparing a LlamaCoder task, Claude must confirm all of the following:
+
+1. The task is self-contained.
+2. No existing repository file must be inspected or modified.
+3. No AresMUSH, Ruby, Ember, RSpec, or Git execution is required.
+4. All necessary context can be embedded in the prompt.
+5. The output can be reviewed as standalone draft material.
+6. Failure cannot damage or misrepresent the repository.
+7. The task does not invite creation of a standalone React application.
+8. Delegation will save meaningful effort compared with implementing directly.
+
+If any condition is not met, do not delegate.
+
+### Required LlamaCoder Guardrails
+
+Every LlamaCoder prompt must state:
+
+- This is not a standalone application.
+- Do not create React, TypeScript, `App.tsx`, `src/`, Vite, Tailwind, shadcn/ui, or a new application scaffold.
+- Produce only the explicitly requested output.
+- Do not invent APIs, files, architecture, or requirements.
+- Do not claim repository integration or successful testing.
+- Stop and report a limitation rather than substituting a different technology.
+- Creating unrelated files constitutes failure.
+
+Where possible, request plain text or a single explicitly named file rather than a multi-file archive.
+
+### LlamaCoder Handoff Contents
+
+When delegation is appropriate, the handoff must include:
+
+1. A narrowly defined scope.
+2. The exact output requested.
+3. All source text or structures needed to complete the task.
+4. Any fixed naming, formatting, or ordering requirements.
+5. Explicit exclusions.
 6. Acceptance criteria.
-7. Testing requirements.
-8. Explicit statement that LlamaCoder must not make architectural changes.
+7. A statement that the result is draft material for Claude to review.
+8. A statement that LlamaCoder must not make architectural decisions.
 
-The handoff should be detailed enough that LlamaCoder can implement it without guessing.
+Do not ask LlamaCoder to infer repository conventions.
+
+Do not ask it to inspect GitHub or external source code unless its environment has explicitly demonstrated that capability.
+
+Do not request a ZIP unless multiple standalone files are genuinely necessary.
 
 ### After LlamaCoder Finishes
 
 Assume nothing.
 
-Review every change for:
+Claude must review every delegated output for:
 
-* Specification compliance
-* AresMUSH convention compliance
-* Architectural correctness
-* Authorization and privacy
-* Configuration
-* Localization
-* Duplication
-* Edge cases
-* Web/MUSH parity
-* Tests
-* Documentation
+- Specification compliance
+- Accuracy
+- Completeness
+- Unsupported assumptions
+- Invented APIs
+- Invented files
+- Technology mismatch
+- Terminology consistency
+- Formatting
+- Duplication
+- Privacy implications
+- Documentation accuracy
 
-Correct any deficiencies yourself before accepting the implementation.
+Claude must integrate, correct, or discard the result as appropriate.
+
+LlamaCoder output must never be accepted merely because it generated plausible-looking files.
 
 ### Architectural Rule
 
-If, while preparing a handoff, you discover an unresolved design question, do not delegate it. Stop and bring the issue back for architectural review. Only fully specified work may be handed to LlamaCoder.
+If an unresolved design question, missing API, repository dependency, framework uncertainty, or integration concern is discovered, do not delegate it.
 
+Claude must resolve the issue through architectural review and repository inspection.
+
+Only fully specified, self-contained, repository-independent tasks may be handed to LlamaCoder.
+
+### Default Rule
+
+When uncertain, Claude should implement the work directly.
+
+Delegation is optional.
+
+Correct repository-aware implementation takes priority over preserving a two-stage workflow.
 ---
 
 ## Next Steps
