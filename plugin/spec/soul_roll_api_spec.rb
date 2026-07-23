@@ -4,6 +4,7 @@ module AresMUSH
   describe SoulRollApi do
     let(:character) { Fabricate(:character) }
     let(:other_character) { Fabricate(:character) }
+    let(:gm) { Fabricate(:character) }
     let(:skill) { { key: "strength", name: "Strength", aspect_key: "body", order: 1 } }
     let(:degrees) do
       {
@@ -22,12 +23,20 @@ module AresMUSH
       allow(character).to receive(:has_permission?).with("play").and_return(true)
       allow(other_character).to receive(:has_permission?).with("play").and_return(true)
       allow(Global).to receive(:read_config).with("soul", "rolls", "max_pending_rolls_per_player").and_return(1)
+      allow(Global).to receive(:read_config).with("soul", "rolls", "max_pending_rolls_per_player_gm").and_return(2)
       allow(Global).to receive(:read_config).with("soul", "rolls", "pending_roll_timeout_hours").and_return(720)
+      allow(Global).to receive(:read_config).with("soul", "rolls", "gm_scene_policy").and_return("optional")
       allow(Global).to receive(:read_config).with("soul", "rolls", "difficulties").and_return("standard" => 13)
       allow(Global).to receive(:read_config).with("soul", "rolls", "degrees_of_success").and_return(degrees)
       allow(Global).to receive(:read_config).with("soul", "rolls", "extraordinary_result_threshold").and_return(0.0001)
+      allow(Global).to receive(:read_config).with("soul", "privacy", "gm_reveal_categories").and_return(
+        ["name", "public_description"]
+      )
       allow(SoulFrameworkApi).to receive(:get_skill).with("strength").and_return(skill)
       allow(SoulCharacterApi).to receive(:get_effective_base).and_return(3)
+      allow(Soul).to receive(:can_review_rolls?).and_return(false)
+      allow(Soul).to receive(:can_manage_soul?).and_return(false)
+      allow(Login).to receive(:notify)
       allow(Global.dispatcher).to receive(:queue_event)
     end
 
@@ -116,6 +125,184 @@ module AresMUSH
         expect(pending.system_suggested_entries).to eq([])
         expect(selection[:success]).to be true
         expect(pending.manually_identified_entries).to eq([manual.id.to_s])
+      end
+
+      it "always starts a GM-assisted roll under the required policy" do
+        scene = Fabricate(:scene, owner: gm)
+        allow(Global).to receive(:read_config).with("soul", "rolls", "gm_scene_policy").and_return("required")
+
+        without_request = SoulRollApi.start_roll(
+          character, "strength", context: { difficulty: "standard", scene_id: scene.id }
+        )
+        with_request = SoulRollApi.start_roll(
+          character, "strength",
+          context: { difficulty: "standard", scene_id: scene.id },
+          gm_requested: true
+        )
+
+        expect(without_request[:success]).to be true
+        expect(with_request[:success]).to be true
+        expect(without_request[:pending_roll].gm_assisted).to eq("true")
+        expect(with_request[:pending_roll].gm_assisted).to eq("true")
+        expect(without_request[:pending_roll].status).to eq("awaiting_gm")
+      end
+
+      it "rejects a GM-assisted roll without a resolvable scene" do
+        result = SoulRollApi.start_roll(
+          character, "strength", context: { difficulty: "standard" }, gm_requested: true
+        )
+        expect(result[:error]).to match(/valid scene/i)
+      end
+
+      it "starts a standard roll under the optional policy when GM help was not requested" do
+        result = SoulRollApi.start_roll(character, "strength", context: { difficulty: "standard" })
+        expect(result[:pending_roll].gm_assisted).to eq("false")
+        expect(result[:pending_roll].status).to eq("awaiting_selection")
+      end
+
+      it "starts a GM-assisted roll under the optional policy when requested" do
+        scene = Fabricate(:scene, owner: gm)
+        result = SoulRollApi.start_roll(
+          character, "strength",
+          context: { difficulty: "standard", scene_id: scene.id },
+          gm_requested: true
+        )
+        expect(result[:pending_roll].gm_assisted).to eq("true")
+        expect(result[:pending_roll].status).to eq("awaiting_gm")
+      end
+
+      it "falls back to a standard roll under the unavailable policy" do
+        allow(Global).to receive(:read_config).with("soul", "rolls", "gm_scene_policy").and_return("unavailable")
+        with_request = SoulRollApi.start_roll(
+          character, "strength", context: { difficulty: "standard" }, gm_requested: true
+        )
+        without_request = SoulRollApi.start_roll(
+          other_character, "strength", context: { difficulty: "standard" }
+        )
+        expect(with_request[:success]).to be true
+        expect(without_request[:success]).to be true
+        expect(with_request[:pending_roll].gm_assisted).to eq("false")
+        expect(without_request[:pending_roll].gm_assisted).to eq("false")
+      end
+
+      it "enforces standard and GM-assisted limits independently" do
+        pending_for
+        scene = Fabricate(:scene, owner: gm)
+
+        result = SoulRollApi.start_roll(
+          character, "strength",
+          context: { difficulty: "standard", scene_id: scene.id },
+          gm_requested: true
+        )
+        expect(result[:success]).to be true
+        expect(SoulRollApi.get_open_pending_count(character, gm_assisted: false)).to eq(1)
+        expect(SoulRollApi.get_open_pending_count(character, gm_assisted: true)).to eq(1)
+
+        pending_for(other_character, status: "awaiting_gm", gm_assisted: "true")
+        reverse_result = SoulRollApi.start_roll(
+          other_character, "strength", context: { difficulty: "standard" }
+        )
+        expect(reverse_result[:success]).to be true
+      end
+    end
+
+    describe ".get_gm_candidate_view" do
+      it "returns only the configured privacy fields" do
+        entry = owned_entry("private")
+        entry.update(character_explanation: "Private explanation", gm_notes: "Private notes")
+        scene = Fabricate(:scene, owner: gm)
+        pending = pending_for(
+          character,
+          status: "awaiting_gm",
+          gm_assisted: "true",
+          scene_id: scene.id,
+          system_suggested_entries: [entry.id.to_s]
+        )
+        allow(Soul).to receive(:can_review_rolls?).with(gm).and_return(true)
+
+        candidate = SoulRollApi.get_gm_candidate_view(pending.id, gm)[:candidates].first
+        expect(candidate).to include(id: entry.id.to_s, tag: "private", name: "Private")
+        expect(candidate).to include(public_description: "Test private")
+        expect(candidate).not_to have_key(:mechanical_effect)
+        expect(candidate).not_to have_key(:character_explanation)
+        expect(candidate).not_to have_key(:gm_notes)
+      end
+
+      it "rejects a reviewer who is not a scene participant" do
+        scene = Fabricate(:scene, owner: character)
+        pending = pending_for(character, status: "awaiting_gm", gm_assisted: "true", scene_id: scene.id)
+        allow(Soul).to receive(:can_review_rolls?).with(gm).and_return(true)
+
+        expect(SoulRollApi.get_gm_candidate_view(pending.id, gm)[:error]).to match(/permission/i)
+      end
+
+      it "rejects a participant without the GM review permission" do
+        scene = Fabricate(:scene, owner: gm)
+        pending = pending_for(character, status: "awaiting_gm", gm_assisted: "true", scene_id: scene.id)
+
+        expect(SoulRollApi.get_gm_candidate_view(pending.id, gm)[:error]).to match(/permission/i)
+      end
+    end
+
+    describe ".gm_submit_selections" do
+      def gm_pending(entries)
+        scene = Fabricate(:scene, owner: gm)
+        allow(Soul).to receive(:can_review_rolls?).with(gm).and_return(true)
+        pending_for(
+          character,
+          status: "awaiting_gm",
+          gm_assisted: "true",
+          scene_id: scene.id,
+          system_suggested_entries: entries.map { |entry| entry.id.to_s }
+        )
+      end
+
+      it "partitions candidates and advances to player selection" do
+        mandatory = owned_entry("mandatory")
+        optional = owned_entry("optional")
+        pending = gm_pending([mandatory, optional])
+
+        result = SoulRollApi.gm_submit_selections(
+          pending.id, gm, mandatory_ids: [mandatory.id], optional_ids: [optional.id]
+        )
+        expect(result[:success]).to be true
+        expect(pending.gm_mandatory_entries).to eq([mandatory.id.to_s])
+        expect(pending.gm_suggested_entries).to eq([optional.id.to_s])
+        expect(pending.status).to eq("awaiting_selection")
+      end
+
+      it "rejects an entry outside the pending candidate list" do
+        candidate = owned_entry("candidate")
+        outside = owned_entry("outside")
+        pending = gm_pending([candidate])
+
+        result = SoulRollApi.gm_submit_selections(pending.id, gm, mandatory_ids: [outside.id])
+        expect(result[:error]).to match(/candidate list/i)
+      end
+
+      it "rejects overlap between mandatory and optional entries" do
+        candidate = owned_entry("candidate")
+        pending = gm_pending([candidate])
+
+        result = SoulRollApi.gm_submit_selections(
+          pending.id, gm, mandatory_ids: [candidate.id], optional_ids: [candidate.id]
+        )
+        expect(result[:error]).to match(/both mandatory and optional/i)
+      end
+
+      it "rejects a caller without scene-GM authority" do
+        candidate = owned_entry("candidate")
+        scene = Fabricate(:scene, owner: character)
+        pending = pending_for(
+          character,
+          status: "awaiting_gm",
+          gm_assisted: "true",
+          scene_id: scene.id,
+          system_suggested_entries: [candidate.id.to_s]
+        )
+
+        result = SoulRollApi.gm_submit_selections(pending.id, gm, optional_ids: [candidate.id])
+        expect(result[:error]).to match(/permission/i)
       end
     end
 
@@ -207,6 +394,24 @@ module AresMUSH
         expect(roll.dice_result["segments"]).to eq([{ "d1" => 7, "d2" => 8 }])
       end
 
+      it "applies a GM-mandatory entry after the player declines all optional entries" do
+        mandatory = owned_entry("mandatory", kind: "boon")
+        pending = pending_for(
+          character,
+          gm_assisted: "true",
+          gm_mandatory_entries: [mandatory.id.to_s],
+          gm_suggested_entries: []
+        )
+
+        SoulRollApi.select_entries(pending.id, character, none: true)
+        roll = SoulRollApi.resolve_pending(pending.id, character)[:roll]
+
+        expect(pending.player_selected_entries).to eq([])
+        expect(roll.net_modifier).to eq(1)
+        expect(roll.gm_assisted).to eq("true")
+        expect(roll.applied_modifiers.first["source"]).to eq("gm_mandatory")
+      end
+
       it "fails cleanly for an Epic entry without a configured modifier" do
         epic = owned_entry("epic", level: "epic")
         pending = pending_for(character, player_selected_entries: [epic.id.to_s])
@@ -272,17 +477,77 @@ module AresMUSH
         expect(pending.status).to eq("aborted")
         expect(SoulAuditEntry.find(action: "roll_abort").to_a.length).to eq(1)
       end
+
+      it "allows a player to abort while awaiting GM review" do
+        pending = pending_for(character, status: "awaiting_gm", gm_assisted: "true")
+        result = SoulRollApi.abort_pending(pending.id, character, reason: "Changed approach")
+        expect(result[:success]).to be true
+        expect(pending.status).to eq("aborted")
+      end
+
+      it "rejects a player abort after the GM has submitted" do
+        pending = pending_for(character, status: "awaiting_selection", gm_assisted: "true")
+        result = SoulRollApi.abort_pending(pending.id, character, reason: "Changed approach")
+        expect(result[:error]).to match(/allowed status/i)
+        expect(pending.status).to eq("awaiting_selection")
+      end
+
+      it "continues to allow standard-roll aborts during player selection" do
+        pending = pending_for(character, status: "awaiting_selection", gm_assisted: "false")
+        result = SoulRollApi.abort_pending(pending.id, character, reason: "Changed approach")
+        expect(result[:success]).to be true
+      end
+    end
+
+    describe ".force_abort_pending" do
+      it "allows a scene GM to force-abort either open status and notifies once" do
+        scene = Fabricate(:scene, owner: gm)
+        allow(Soul).to receive(:can_review_rolls?).with(gm).and_return(true)
+
+        ["awaiting_gm", "awaiting_selection"].each do |status|
+          pending = pending_for(character, status: status, gm_assisted: "true", scene_id: scene.id)
+          result = SoulRollApi.force_abort_pending(pending.id, gm, reason: "Scene ruling")
+
+          expect(result[:success]).to be true
+          expect(pending.status).to eq("aborted")
+          expect(Login).to have_received(:notify).with(
+            character, :soul, a_string_including("Scene ruling"), pending.id
+          ).once
+        end
+      end
+
+      it "requires a reason" do
+        pending = pending_for(character, status: "awaiting_gm", gm_assisted: "true")
+        result = SoulRollApi.force_abort_pending(pending.id, gm, reason: " ")
+        expect(result[:error]).to match(/reason/i)
+      end
+
+      it "rejects a caller without staff or scene-GM authority" do
+        scene = Fabricate(:scene, owner: character)
+        pending = pending_for(character, status: "awaiting_gm", gm_assisted: "true", scene_id: scene.id)
+
+        result = SoulRollApi.force_abort_pending(pending.id, gm, reason: "No authority")
+        expect(result[:error]).to match(/permission/i)
+        expect(Login).not_to have_received(:notify)
+      end
     end
 
     describe ".expire_stale_pending_rolls" do
-      it "expires only stale open rolls without creating completed rolls" do
+      it "expires both stale open statuses without creating completed rolls" do
         stale = pending_for(character, expires_at: Time.now - 60)
+        stale_gm = pending_for(
+          other_character,
+          status: "awaiting_gm",
+          gm_assisted: "true",
+          expires_at: Time.now - 60
+        )
         fresh = pending_for(other_character, expires_at: Time.now + 60)
         resolved = pending_for(character, status: "resolved", expires_at: Time.now - 60)
 
         count = SoulRollApi.expire_stale_pending_rolls(Time.now)
-        expect(count).to eq(1)
+        expect(count).to eq(2)
         expect(stale.status).to eq("expired")
+        expect(stale_gm.status).to eq("expired")
         expect(fresh.status).to eq("awaiting_selection")
         expect(resolved.status).to eq("resolved")
         expect(Roll.all.to_a).to be_empty
