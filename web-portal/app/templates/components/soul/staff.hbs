@@ -1,0 +1,92 @@
+<section class="soul-staff card card-body mt-4">
+  <h3>SOUL Staff Administration</h3>
+  {{#if isLoading}}<p class="text-muted">Working…</p>{{/if}}
+
+  <details class="mb-3"><summary>Framework and configuration</summary>
+    <button class="btn btn-secondary m-2" type="button" onclick={{action "loadFramework"}}>View Framework</button>
+    <button class="btn btn-secondary m-2" type="button" onclick={{action "reloadConfig"}}>Validate Configuration</button>
+    {{#if framework}}<pre>{{framework}}</pre>{{/if}}
+    {{#if reloadResult.errors}}<ul>{{#each reloadResult.errors as |error|}}<li>{{error}}</li>{{/each}}</ul>{{/if}}
+  </details>
+
+  <details class="mb-3"><summary>Resonance and audit</summary>
+    <Input @value={{resonanceCharacter}} class="form-control my-2" placeholder="Character" />
+    <Input @type="number" @value={{resonanceValue}} class="form-control my-2" placeholder="Resonance" />
+    <Input @value={{resonanceReason}} class="form-control my-2" placeholder="Reason" />
+    <button class="btn btn-primary" type="button" onclick={{action "correctResonance"}}>Correct Resonance</button>
+    <hr>
+    <Input @value={{auditCharacter}} class="form-control my-2" placeholder="Character for audit" />
+    <button class="btn btn-secondary" type="button" onclick={{action "loadAudit"}}>Load Audit</button>
+    {{#if auditResult.entries}}<ul>{{#each auditResult.entries as |entry|}}
+      <li>{{entry.created_at}} — {{entry.action}} — {{entry.reason}}</li>
+    {{/each}}</ul>{{/if}}
+  </details>
+
+  <details class="mb-3"><summary>Experience</summary>
+    <Input @value={{xpCharacter}} class="form-control my-2" placeholder="Character" />
+    <Input @type="number" @value={{xpAmount}} class="form-control my-2" placeholder="Amount" />
+    <Input @value={{xpReason}} class="form-control my-2" placeholder="Reason" />
+    <Input @type="number" @value={{xpSceneId}} class="form-control my-2" placeholder="Scene ID" />
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-primary" type="button" onclick={{action "xpAward" false}}>Award</button>
+      <button class="btn btn-primary" type="button" onclick={{action "xpAward" true}}>Award + Catch-up</button>
+      <button class="btn btn-secondary" type="button" onclick={{action "xpScene" false}}>Preview/Confirm Scene</button>
+      <button class="btn btn-secondary" type="button" onclick={{action "xpScene" true}}>Preview/Confirm Scene + Catch-up</button>
+      <button class="btn btn-warning" type="button" onclick={{action "xpCorrect"}}>Correct</button>
+    </div>
+    {{#if scenePreview.recipients}}<p>Recipients: {{scenePreview.recipients}}</p>{{/if}}
+  </details>
+
+  <details class="mb-3"><summary>Boon &amp; Bane management</summary>
+    <Input @value={{bnbCharacter}} class="form-control my-2" placeholder="Character" />
+    <Input @value={{bnbReference}} class="form-control my-2" placeholder="Catalogue ID or tag" />
+    <Input @value={{bnbEntryId}} class="form-control my-2" placeholder="Character entry ID" />
+    <Input @value={{bnbLevel}} class="form-control my-2" placeholder="Level" />
+    <Input @value={{bnbExplanation}} class="form-control my-2" placeholder="Explanation" />
+    <Input @value={{bnbReason}} class="form-control my-2" placeholder="Reason" />
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-primary" type="button" onclick={{action "bnbGrant"}}>Grant</button>
+      <button class="btn btn-secondary" type="button" onclick={{action "bnbTransition" "soulBnbProgress"}}>Progress</button>
+      <button class="btn btn-secondary" type="button" onclick={{action "bnbTransition" "soulBnbResolve"}}>Resolve</button>
+      <button class="btn btn-secondary" type="button" onclick={{action "bnbTransition" "soulBnbRestore"}}>Restore</button>
+    </div>
+    <div class="form-check mt-3">
+      <Input @type="checkbox" @checked={{deleteConfirmOne}} class="form-check-input"
+        id="soul-delete-confirm-one" />
+      <label class="form-check-label" for="soul-delete-confirm-one">
+        I understand this permanently deletes the record.
+      </label>
+    </div>
+    <div class="form-check">
+      <Input @type="checkbox" @checked={{deleteConfirmTwo}} class="form-check-input"
+        id="soul-delete-confirm-two" />
+      <label class="form-check-label" for="soul-delete-confirm-two">
+        I confirm again; resolving or negating is not appropriate.
+      </label>
+    </div>
+    <button class="btn btn-danger mt-2" type="button"
+      disabled={{not (and deleteConfirmOne deleteConfirmTwo)}}
+      onclick={{action "bnbTransition" "soulBnbDelete"}}>Permanently Delete</button>
+    <hr>
+    <Input @value={{bnbName}} class="form-control my-2" placeholder="New catalogue name" />
+    <Input @value={{bnbTag}} class="form-control my-2" placeholder="Tag" />
+    <Input @value={{bnbKind}} class="form-control my-2" placeholder="boon or bane" />
+    <Textarea @value={{bnbDescription}} class="form-control my-2" placeholder="Description" />
+    <button class="btn btn-primary" type="button" onclick={{action "bnbCreate"}}>Create Catalogue Entry</button>
+  </details>
+
+  <details><summary>Culminations</summary>
+    <Input @value={{culminationCharacter}} class="form-control my-2" placeholder="Character" />
+    <Input @value={{culminationId}} class="form-control my-2" placeholder="Culmination ID" />
+    <Input @value={{culminationTitle}} class="form-control my-2" placeholder="Title" />
+    <Textarea @value={{culminationDescription}} class="form-control my-2" placeholder="Description" />
+    <Input @value={{culminationReason}} class="form-control my-2" placeholder="Reason" />
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-primary" type="button" onclick={{action "culmination" "soulCulminationPropose"}}>Propose</button>
+      <button class="btn btn-success" type="button" onclick={{action "culmination" "soulCulminationApprove"}}>Approve</button>
+      <button class="btn btn-secondary" type="button" onclick={{action "culmination" "soulCulminationDeny"}}>Deny</button>
+      <button class="btn btn-secondary" type="button" onclick={{action "culmination" "soulCulminationRevoke"}}>Revoke</button>
+      <button class="btn btn-warning" type="button" onclick={{action "culmination" "soulCulminationCorrect"}}>Correct</button>
+    </div>
+  </details>
+</section>
