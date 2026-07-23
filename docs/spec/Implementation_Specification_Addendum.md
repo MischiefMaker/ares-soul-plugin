@@ -477,69 +477,35 @@ rolls:
 
 ## 7. Aspect Contribution Rounding
 
-**Status:** Pending Decision
+**Status:** ✅ Approved
 
-**Question (from Review):**
-How are fractional Aspect contributions rounded?
+**Decision:**
+Fractional Aspect contributions are rounded to the nearest integer using standard rounding rules (0.5 and above rounds up, below 0.5 rounds down).
 
-**Specification Reference:** REQ-009
-
-**Current Formula:** Aspect Contribution = Aspect Rating × 0.20
+**Formula:**
+```
+Aspect Contribution = round_nearest(Aspect Rating × 0.20)
+```
 
 **Examples:**
-- Aspect 1 → 1 × 0.20 = 0.20 → rounds to ?
-- Aspect 3 → 3 × 0.20 = 0.60 → rounds to ?
-- Aspect 5 → 5 × 0.20 = 1.00 → rounds to 1 (exact)
+```
+Aspect 1 = 1 × 0.20 = 0.20 → 0
+Aspect 2 = 2 × 0.20 = 0.40 → 0
+Aspect 3 = 3 × 0.20 = 0.60 → 1
+Aspect 4 = 4 × 0.20 = 0.80 → 1
+Aspect 5 = 5 × 0.20 = 1.00 → 1
+```
 
-**Options Under Consideration:**
+**Rationale:**
+- **Standard behavior:** Round nearest follows familiar mathematical convention; intuitive for players
+- **Balanced scaling:** Aspects 1-2 provide no contribution, Aspect 3+ provide +1, creating a natural threshold without being punitive
+- **Simplicity:** Easy to compute and explain without special-case handling
 
-### Option A: Floor (Round Down)
-```
-Aspect 1 = 0.20 → 0
-Aspect 3 = 0.60 → 0
-Aspect 5 = 1.00 → 1
-```
-- **Effect:** Only Aspect 5 provides a bonus; lower aspects provide no contribution
-- **Rationale:** Simplicity; clear thresholds
-- **Concern:** Aspect 1-4 feel useless; discourages diverse aspect investment
-
-### Option B: Ceiling (Round Up)
-```
-Aspect 1 = 0.20 → 1
-Aspect 3 = 0.60 → 1
-Aspect 5 = 1.00 → 1
-```
-- **Effect:** All aspects provide +1 contribution; no differentiation
-- **Rationale:** Encourages broad aspect investment
-- **Concern:** Removes scaling incentive; aspect rating becomes binary (you have it / you don't)
-
-### Option C: Round Half-Up
-```
-Aspect 1 = 0.20 → 0
-Aspect 3 = 0.60 → 1
-Aspect 5 = 1.00 → 1
-```
-- **Effect:** Aspect 3+ provides +1; Aspect 1-2 provides 0
-- **Rationale:** Balanced scaling; encourages Aspect 3+ investment
-- **Concern:** Still binary at key threshold (Aspect 2 vs. 3)
-
-### Option D: Banked Accumulation (No Rounding)
-```
-Track fractional contribution; only apply as integer when added to roll
-Aspect 1 (0.20) + Aspect 2 (0.40) = 0.60 → 1 on roll
-```
-- **Effect:** Fractional bonuses accumulate across multiple aspects
-- **Rationale:** Rewards diverse aspect investment; most nuanced
-- **Concern:** Complex to communicate to players; harder to track
-
-**Recommendation:**
-*Awaiting project-owner decision.* Implementation will use **Option C (Round Half-Up)** as default, with configuration to switch mechanisms.
-
-**Provisional Configuration:**
+**Configuration:**
 ```yaml
 aspects:
   contribution_formula: "aspect_rating * 0.20"
-  contribution_rounding: "half_up"  # alternatives: floor, ceiling, banker's
+  contribution_rounding: "nearest"  # Standard mathematical rounding
 ```
 
 ---
@@ -774,12 +740,12 @@ The configured prefix is used with the outcome appended:
 | Difficulty Scale | ✅ Approved | See Table in §1 |
 | Random Model | ✅ Approved | 2d10 open-ended (§2) |
 | XP Advancement Cost | ✅ Approved | Algebraic model (§3) |
+| Chargen B&Bs | ✅ Approved | 2:1 Boon-to-Bane ratio, per-R-level config (§5) |
+| Aspect Rounding | ✅ Approved | Round Nearest (§7) |
 | Degrees of Success | ✅ Approved | Six degrees with GM-less/GM-led output (§8.1) |
 | Extraordinary Luck Messaging | ✅ Approved | Probability-based (<0.5%) (§9) |
-| Chargen B&Bs | ✅ Approved | 2:1 Boon-to-Bane ratio, per-R-level config (§5) |
 | Modifier Bounds | ⏳ Pending | ±10 (provisional) |
 | Pending Roll Expiry | ⏳ Pending | 24h auto-fail (provisional) |
-| Aspect Rounding | ⏳ Pending | Round Half-Up (provisional) |
 | Catch-Up Edge Cases | ⏳ Pending | 7d grace, 3-char minimum (provisional) |
 
 ---
