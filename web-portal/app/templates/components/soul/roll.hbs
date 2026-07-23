@@ -1,0 +1,292 @@
+<li>
+  <button type="button" class="dropdown-item" onclick={{action "openRoll"}}>
+    SOUL Roll
+  </button>
+</li>
+
+{{#if canReview}}
+  <li>
+    <button type="button" class="dropdown-item" onclick={{action "openGmReview"}}>
+      Review SOUL Rolls
+    </button>
+  </li>
+{{/if}}
+
+<BsModalSimple
+  @title="SOUL Roll"
+  @closeTitle="Close"
+  @submitTitle={{null}}
+  @size="lg"
+  @fade={{true}}
+  @open={{rollOpen}}
+  @onHide={{action "closeRoll"}}
+>
+  {{#if isLoading}}
+    <p>Loading SOUL roll…</p>
+  {{else if (eq rollStage "setup")}}
+    <p>Select the ability and difficulty for this roll.</p>
+
+    <div class="mb-3">
+      <label class="form-label">Skill</label>
+      <PowerSelect
+        @selected={{selectedSkill}}
+        @options={{skills}}
+        @searchField="name"
+        @onChange={{action "selectSkill"}}
+        as |skill|
+      >
+        {{skill.name}} — rating {{skill.rating}}
+      </PowerSelect>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Difficulty</label>
+      <PowerSelect
+        @selected={{selectedDifficulty}}
+        @options={{difficulties}}
+        @searchField="name"
+        @onChange={{action "selectDifficulty"}}
+        as |difficulty|
+      >
+        {{difficulty.name}} — target {{difficulty.target}}
+      </PowerSelect>
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap">
+      <button
+        type="button"
+        class="btn btn-primary"
+        onclick={{action "startRoll" false}}
+      >
+        Start Standard Roll
+      </button>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        onclick={{action "startRoll" true}}
+      >
+        Request GM Assistance
+      </button>
+    </div>
+  {{else if (eq rollStage "awaiting_gm")}}
+    <h4>Waiting for GM Review</h4>
+    <p>
+      Roll #{{pendingRoll.id}} for {{pendingRoll.skill_key}} is waiting for
+      a scene GM to review its Boons and Banes.
+    </p>
+    <button
+      type="button"
+      class="btn btn-primary"
+      onclick={{action "refreshPendingRoll"}}
+    >
+      Refresh
+    </button>
+  {{else if (eq rollStage "selection")}}
+    <h4>Choose Boons and Banes</h4>
+    {{#if candidates}}
+      <p>
+        Checked optional entries will be included. Mandatory entries were
+        selected by the GM and are always applied.
+      </p>
+      <div class="list-group mb-3">
+        {{#each candidates as |candidate|}}
+          <label class="list-group-item">
+            <input
+              type="checkbox"
+              class="form-check-input me-2"
+              checked={{candidate.selected}}
+              disabled={{candidate.mandatory}}
+              onchange={{action "togglePlayerCandidate" candidate}}
+            >
+            <strong>{{candidate.name}}</strong> [{{candidate.tag}}]
+            — {{candidate.level_state}}
+            {{#if candidate.modifier}}
+              ({{candidate.modifier}})
+            {{/if}}
+            {{#if candidate.mandatory}}
+              <span class="badge bg-secondary">Mandatory</span>
+            {{/if}}
+          </label>
+        {{/each}}
+      </div>
+      <div class="d-flex gap-2 mb-3">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={{action "selectAllCandidates"}}
+        >
+          Select All Suggested
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={{action "clearOptionalCandidates"}}
+        >
+          Clear Optional
+        </button>
+      </div>
+    {{else}}
+      <p>No matching Boons or Banes were suggested.</p>
+    {{/if}}
+
+    <div class="mb-3">
+      <label for="soul-roll-extra-tags" class="form-label">
+        Other applicable owned tags
+      </label>
+      <Input
+        @id="soul-roll-extra-tags"
+        @type="text"
+        @value={{additionalTags}}
+        class="form-control"
+        placeholder="Optional, separated by spaces"
+      />
+    </div>
+
+    <button
+      type="button"
+      class="btn btn-primary"
+      onclick={{action "resolvePlayerSelection"}}
+    >
+      Confirm and Roll
+    </button>
+  {{else if (eq rollStage "result")}}
+    <h4>Private Roll Result</h4>
+    <dl class="row">
+      <dt class="col-sm-4">Skill</dt>
+      <dd class="col-sm-8">{{rollResult.skill_key}}</dd>
+      <dt class="col-sm-4">Final result</dt>
+      <dd class="col-sm-8">{{rollResult.final_result}}</dd>
+      <dt class="col-sm-4">Degree</dt>
+      <dd class="col-sm-8">{{rollResult.degree_of_success}}</dd>
+      <dt class="col-sm-4">Difficulty</dt>
+      <dd class="col-sm-8">{{rollResult.difficulty}}</dd>
+      {{#if (eq rollResult.extraordinary "true")}}
+        <dt class="col-sm-4">Extraordinary</dt>
+        <dd class="col-sm-8">Yes</dd>
+      {{/if}}
+    </dl>
+
+    {{#if rollResult.applied_modifiers}}
+      <h5>Applied Boons and Banes</h5>
+      <ul>
+        {{#each rollResult.applied_modifiers as |modifier|}}
+          <li>
+            {{modifier.name}} [{{modifier.tag}}] —
+            {{modifier.level_state}} ({{modifier.modifier}})
+          </li>
+        {{/each}}
+      </ul>
+    {{/if}}
+
+    <p>
+      This result has not been posted to the scene. Pose or describe it
+      yourself if you want the other participants to see it.
+    </p>
+    <button type="button" class="btn btn-secondary" onclick={{action "newRoll"}}>
+      Start Another Roll
+    </button>
+  {{/if}}
+</BsModalSimple>
+
+{{#if canReview}}
+  <BsModalSimple
+    @title="Review SOUL Rolls"
+    @closeTitle="Close"
+    @submitTitle={{null}}
+    @size="lg"
+    @fade={{true}}
+    @open={{gmReviewOpen}}
+    @onHide={{action "closeGmReview"}}
+  >
+    {{#if gmIsLoading}}
+      <p>Loading pending rolls…</p>
+    {{else if (eq gmReviewStage "list")}}
+      {{#if gmPendingRolls}}
+        <div class="list-group">
+          {{#each gmPendingRolls as |pending|}}
+            <button
+              type="button"
+              class="list-group-item list-group-item-action"
+              onclick={{action "loadGmCandidates" pending}}
+            >
+              Roll #{{pending.id}} — {{pending.character}} —
+              {{pending.skill_key}}
+            </button>
+          {{/each}}
+        </div>
+      {{else}}
+        <p>No GM-assisted SOUL rolls are waiting in this scene.</p>
+      {{/if}}
+    {{else if (eq gmReviewStage "candidates")}}
+      <h4>
+        Roll #{{selectedGmRoll.id}} — {{selectedGmRoll.character}} —
+        {{selectedGmRoll.skill_key}}
+      </h4>
+      <p>
+        Mark each candidate mandatory, optional, or leave both boxes clear
+        to exclude it.
+      </p>
+
+      {{#if gmCandidates}}
+        <div class="list-group mb-3">
+          {{#each gmCandidates as |candidate|}}
+            <div class="list-group-item">
+              <div>
+                <strong>{{candidate.name}}</strong> [{{candidate.tag}}]
+              </div>
+              {{#if candidate.public_description}}
+                <p>{{candidate.public_description}}</p>
+              {{/if}}
+              {{#if candidate.mechanical_effect}}
+                <p>Mechanical effect: {{candidate.mechanical_effect}}</p>
+              {{/if}}
+              {{#if candidate.character_explanation}}
+                <p>Character explanation: {{candidate.character_explanation}}</p>
+              {{/if}}
+              {{#if candidate.gm_notes}}
+                <p>GM notes: {{candidate.gm_notes}}</p>
+              {{/if}}
+              <label class="me-3">
+                <input
+                  type="checkbox"
+                  class="form-check-input me-1"
+                  checked={{candidate.mandatory}}
+                  onchange={{action "toggleGmMandatory" candidate}}
+                >
+                Mandatory
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  class="form-check-input me-1"
+                  checked={{candidate.optional}}
+                  onchange={{action "toggleGmOptional" candidate}}
+                >
+                Optional
+              </label>
+            </div>
+          {{/each}}
+        </div>
+      {{else}}
+        <p>No matching Boons or Banes were found for this roll.</p>
+      {{/if}}
+
+      <div class="d-flex gap-2">
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick={{action "submitGmSelections"}}
+        >
+          Submit Selections
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={{action "backToGmList"}}
+        >
+          Back
+        </button>
+      </div>
+    {{/if}}
+  </BsModalSimple>
+{{/if}}

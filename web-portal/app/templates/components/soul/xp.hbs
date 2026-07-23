@@ -1,18 +1,83 @@
-<section class="soul-xp">
-  <h3>Experience</h3>
-  {{#if isLoading}}
-    <div class="text-muted">Loading XP…</div>
-  {{else}}
-    <div class="row g-2 mb-3">
-      <div class="col"><div class="card card-body">Available: {{xp.available}}</div></div>
-      <div class="col"><div class="card card-body">Earned: {{xp.earned}}</div></div>
-      <div class="col"><div class="card card-body">Spent: {{xp.spent}}</div></div>
-      <div class="col"><div class="card card-body">Catch-up: {{xp.catchup}}</div></div>
-    </div>
-    <ul class="list-group soul-xp-history">
-      {{#each xp.history as |entry|}}
-        <li class="list-group-item">{{entry.direction}} {{entry.base_amount}} — {{entry.source}}</li>
-      {{/each}}
-    </ul>
-  {{/if}}
-</section>
+{{#if isSelf}}
+  <section class="soul-xp">
+    <h3>Experience</h3>
+    {{#if isLoading}}
+      <div class="text-muted">Loading XP…</div>
+    {{else}}
+      <div class="row g-2 mb-3">
+        <div class="col"><div class="card card-body">Available: {{xp.available}}</div></div>
+        <div class="col"><div class="card card-body">Earned: {{xp.earned}}</div></div>
+        <div class="col"><div class="card card-body">Spent: {{xp.spent}}</div></div>
+        <div class="col"><div class="card card-body">Catch-up: {{xp.catchup}}</div></div>
+      </div>
+
+      <div class="card card-body mb-3">
+        <h4>Advance a Skill</h4>
+        <div class="row g-3 align-items-end">
+          <div class="col-md-7">
+            <label for="soul-xp-skill" class="form-label">Skill</label>
+            <select
+              id="soul-xp-skill"
+              class="form-select"
+              onchange={{action (mut selectedSkill) value="target.value"}}
+            >
+              <option value="">Choose a Skill</option>
+              {{#each skills as |skill|}}
+                <option value={{skill.key}}>{{skill.name}} — current rating {{skill.rating}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="soul-xp-amount" class="form-label">Increase by</label>
+            {{input
+              id="soul-xp-amount"
+              type="number"
+              min="1"
+              step="1"
+              class="form-control"
+              value=spendAmount
+            }}
+          </div>
+          <div class="col-md-2">
+            <button
+              type="button"
+              class="btn btn-primary w-100"
+              disabled={{or (not selectedSkill) (not spendAmount)}}
+              onclick={{action "previewSpend" selectedSkill spendAmount}}
+            >
+              Preview
+            </button>
+          </div>
+        </div>
+
+        {{#if spendPreview}}
+          <div class="border-start border-3 ps-3 mt-3">
+            <p>
+              This increases
+              <strong>{{spendPreview.skill_key}}</strong>
+              to rating <strong>{{spendPreview.target_rating}}</strong>
+              for <strong>{{spendPreview.cost}} XP</strong>.
+            </p>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick={{action
+                "confirmSpend"
+                spendPreview.skill_key
+                spendPreviewAmount
+              }}
+            >
+              Confirm Spend
+            </button>
+          </div>
+        {{/if}}
+      </div>
+
+      <ul class="list-group soul-xp-history">
+        {{#each xp.history as |entry|}}
+          <li class="list-group-item">{{entry.direction}} {{entry.base_amount}} — {{entry.source}}</li>
+        {{/each}}
+      </ul>
+    {{/if}}
+  </section>
+{{/if}}

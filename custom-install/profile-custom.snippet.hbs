@@ -1,0 +1,61 @@
+<!--
+  PROFILE CUSTOM CONTENT SNIPPET
+
+  Adds SOUL content to the character profile page.
+
+  FILE: ares-webportal/app/components/profile-custom.hbs
+
+  INSTALLATION:
+
+  1. Open your game's ares-webportal/app/components/profile-custom.hbs.
+  2. Copy the code block below this comment:
+     - If the file is empty or nearly empty, paste it as-is.
+     - If it already has other tab panes, add this after another pane's
+       closing </div>.
+
+  ID MATCHING:
+  - id="soul-tab-pane" must match the href in
+    profile-custom-tabs.snippet.hbs.
+
+  PROPERTY NAMES:
+  - These examples use "char", matching the standard profile component.
+  - If your profile uses "character" instead, update every "this.char".
+  - If the target file is empty, check the template that invokes
+    <ProfileCustom>. The argument passed there is the property available
+    here.
+
+  REQUIRED BACKEND SETUP:
+  - Install custom-install/custom_char_fields.snippet.rb first.
+  - Approval status and viewer identity are not part of the base profile
+    payload. They must be read from this.char.custom, as shown below.
+  - There is no separate this.viewer object in this component.
+
+  SHARED FIELD NAMES:
+  - This snippet uses the shared is_approved and viewer_id keys from the
+    custom-fields snippet.
+  - If another plugin already supplies equivalent keys under different
+    names, reuse those keys and update both profile snippets accordingly.
+
+  AUTHORIZATION:
+  - The visibility check below keeps the tab out of the interface when
+    SOUL is disabled or the character is neither approved nor being viewed
+    by SOUL staff.
+  - Each SOUL web operation performs its own server-side authorization.
+    These client-side checks are presentation only.
+  - XP is self-service. The isSelf argument prevents the XP component from
+    loading or displaying the viewer's XP on somebody else's profile.
+
+  WEB PORTAL OPTIONAL:
+  - This integration is optional. SOUL remains usable through MUSH commands
+    without these snippets.
+-->
+
+{{#if (and this.char.custom.soul_enabled (or this.char.custom.is_approved this.char.custom.can_manage_soul))}}
+  <div class="tab-pane fade" id="soul-tab-pane">
+    {{soul/sheet character=this.char.name}}
+    {{soul/xp character=this.char.name isSelf=(eq this.char.id this.char.custom.viewer_id)}}
+    {{soul/bnb}}
+    {{soul/culmination character=this.char.name}}
+    {{soul/history character=this.char.name}}
+  </div>
+{{/if}}

@@ -15,6 +15,25 @@
         </ul>
       </div>
     {{/each}}
+    <h4>Boons &amp; Banes</h4>
+    {{#if sheet.bnb}}
+      <ul class="list-group mb-3 soul-sheet-bnb">
+        {{#each sheet.bnb as |entry|}}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>
+              #{{entry.id}} {{entry.name}} [{{entry.tag}}]
+              {{#if entry.resolved}}— Resolved{{/if}}
+            </span>
+            <span>
+              <span class="badge bg-secondary">{{entry.kind}}</span>
+              <span class="badge bg-secondary">{{entry.level_state}}</span>
+            </span>
+          </li>
+        {{/each}}
+      </ul>
+    {{else}}
+      <p>No Boons or Banes recorded.</p>
+    {{/if}}
     <p class="soul-sheet-xp">XP: {{sheet.xp.available}} available / {{sheet.xp.earned}} earned / {{sheet.xp.spent}} spent</p>
     <p class="soul-sheet-resonance">Resonance: {{sheet.resonance}}</p>
   </section>

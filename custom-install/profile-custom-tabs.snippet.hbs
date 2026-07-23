@@ -1,0 +1,30 @@
+<!--
+  PROFILE CUSTOM TABS SNIPPET
+
+  Adds the "SOUL" tab to the character profile page tab list.
+
+  FILE: ares-webportal/app/components/profile-custom-tabs.hbs
+
+  INSTALLATION:
+
+  1. Open your game's ares-webportal/app/components/profile-custom-tabs.hbs
+  2. Copy the code block below this comment:
+     - If the file is empty or nearly empty, paste it as-is.
+     - If the file already has other tabs, add it after another tab's
+       closing </li>.
+
+  IMPORTANT:
+  - Do not change href="#soul-tab-pane". It must match the pane id in
+    profile-custom.snippet.hbs.
+  - Install custom_char_fields.snippet.rb before using this block. The
+    custom fields provide the enabled, approval, and staff checks below.
+  - If your game reuses different shared field names for is_approved or
+    viewer_id, update this snippet and profile-custom.snippet.hbs to match.
+  - The web portal integration is optional. MUSH commands work without it.
+-->
+
+{{#if (and this.char.custom.soul_enabled (or this.char.custom.is_approved this.char.custom.can_manage_soul))}}
+  <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="tab" href="#soul-tab-pane">SOUL</a>
+  </li>
+{{/if}}

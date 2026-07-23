@@ -6,15 +6,39 @@ export default Component.extend({
   api: service('game-api'),
   isLoading: false,
 
-  didInsertElement() {
+  didReceiveAttrs() {
     this._super(...arguments);
-    this.loadXp();
+    if (this.isSelf) {
+      this.loadXp();
+    } else {
+      this.setProperties({
+        xp: null,
+        skills: [],
+        spendPreview: null,
+        isLoading: false
+      });
+    }
   },
 
   async loadXp() {
     this.set('isLoading', true);
     try {
-      this.set('xp', await this.api.requestOne('soulXp', {}));
+      let [xp, sheet] = await Promise.all([
+        this.api.requestOne('soulXp', {}),
+        this.api.requestOne('soulSheet', { character: this.character })
+      ]);
+      if (xp.error || sheet.error) {
+        return;
+      }
+
+      let skills = [];
+      (sheet.aspects || []).forEach((aspect) => {
+        (aspect.skills || []).forEach((skill) => {
+          skills.push(skill);
+        });
+      });
+
+      this.setProperties({ xp, skills });
     } finally {
       this.set('isLoading', false);
     }
@@ -26,7 +50,12 @@ export default Component.extend({
         skill_key: skillKey,
         amount
       });
-      this.set('spendPreview', preview);
+      if (!preview.error) {
+        this.setProperties({
+          spendPreview: preview,
+          spendPreviewAmount: amount
+        });
+      }
     },
 
     async confirmSpend(skillKey, amount) {
@@ -37,7 +66,10 @@ export default Component.extend({
       });
       if (!result.error) {
         await this.loadXp();
-        this.set('spendPreview', null);
+        this.setProperties({
+          spendPreview: null,
+          spendPreviewAmount: null
+        });
       }
     }
   }

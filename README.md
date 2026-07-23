@@ -106,12 +106,34 @@ This step does nothing if Resonance is disabled, and is safe to run on every app
 ### Step 4: Mount the Web Portal Components (Optional)
 
 The components (`soul/sheet`, `soul/bnb`, `soul/xp`, `soul/culmination`,
-`soul/history`) are copied into your `ares-webportal` checkout by Step 1, but still
-need to be added to your character profile page or a dedicated SOUL route — this
-depends on your game's specific portal layout. If you skip this, SOUL remains fully
-usable through in-game commands alone.
+`soul/history`) are copied into your `ares-webportal` checkout by Step 1. Install
+the three merge-safe profile snippets to make them reachable:
 
-After adding them, rebuild and deploy the portal:
+1. Add `custom-install/profile-custom-tabs.snippet.hbs` to the matching
+   `profile-custom-tabs.hbs` file in your web portal.
+2. Add `custom-install/profile-custom.snippet.hbs` to the matching
+   `profile-custom.hbs` file in your web portal.
+3. Merge `custom-install/custom_char_fields.snippet.rb` into
+   `aresmush/plugins/profile/custom_char_fields.rb`, then restart the game.
+4. Add `custom-install/live-scene-custom-play.snippet.hbs` to the matching
+   web portal file to put SOUL rolls in a live scene's **Play** menu.
+5. Merge `custom-install/custom_scene_data.snippet.rb` into
+   `aresmush/plugins/scenes/custom_scene_data.rb`, then restart the game.
+
+Read the comments at the top of each snippet before copying it. They explain how to
+coexist with other profile plugins, including Inklings, without duplicating the
+shared approval-status and viewer-ID fields.
+
+The scene widget opens rolls in a private modal. Players select suggested
+Boons and Banes with checkboxes, and authorized scene GMs use a similar modal
+to mark entries mandatory or optional. Results are not automatically posted
+to the scene transcript.
+
+If your game uses different profile property names or shared custom-field keys,
+adjust the snippets as their comments describe. If you skip this optional step,
+SOUL remains usable through in-game commands.
+
+After adding the components, rebuild and deploy the portal:
 
 ```
 website/deploy

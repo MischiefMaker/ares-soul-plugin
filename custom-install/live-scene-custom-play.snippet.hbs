@@ -1,0 +1,26 @@
+<!--
+  LIVE SCENE CUSTOM PLAY SNIPPET
+
+  Adds SOUL rolling to the Play menu on the live scene page.
+
+  FILE: ares-webportal/app/components/live-scene-custom-play.hbs
+
+  CONFIRMED EXTENSION POINT:
+  AresMUSH's LiveSceneControl invokes LiveSceneCustomPlay inside the Play
+  dropdown and passes it the current scene and custom scene data. The
+  standard live-scene-custom-play.hbs file is empty and intended for game
+  additions like this one.
+
+  INSTALLATION:
+
+  1. Open the file named above in your ares-webportal checkout.
+  2. Paste the component invocation below into it.
+  3. Also install custom-install/custom_scene_data.snippet.rb in the game
+     server checkout. Its flags control whether the GM review entry appears.
+  4. Rebuild and deploy the web portal.
+
+  The component displays results privately. It never adds a roll result to
+  the scene transcript.
+-->
+
+{{soul/roll scene=this.scene custom=this.custom}}

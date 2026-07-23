@@ -51,6 +51,26 @@ Name collisions return matching names, IDs, and tags for disambiguation (GL-10).
 
 Rolling mechanics (dice model, difficulty scale, degrees of success, extraordinary luck) are specified in `docs/spec/Implementation_Specification_Addendum.md` §1–§2, §8.1, §9.
 
+### Scene Page Roll Widget
+
+The optional web portal component provides the same conversational workflow
+from a live scene's **Play** menu:
+
+1. Select a configured Skill and difficulty.
+2. Start a standard roll or request GM assistance.
+3. Review suggested Boons and Banes in a modal, select the optional entries,
+   and confirm the roll.
+4. View the completed result privately.
+
+Authorized scene GMs receive a second Play-menu entry for reviewing pending
+GM-assisted rolls. They mark candidate entries mandatory or optional in a
+modal before returning the roll to the player.
+
+The widget never posts a result to the scene transcript. The player decides
+how and whether to narrate the result. Installation requires
+`custom-install/live-scene-custom-play.snippet.hbs` and
+`custom-install/custom_scene_data.snippet.rb`.
+
 **Scene-GM authority for `+roll/review`/`+roll/mark`/`+roll/forceabort`:** `Soul.can_review_rolls?(enactor) && scene.is_participant?(enactor)`, or `Soul.can_manage_soul?(enactor)` unconditionally — see `docs/handoffs/Phase_5_GM_Assisted_Rolls.md` §5.1 for why this is the authorization rule rather than a dedicated Scene GM field (none exists on the real AresMUSH `Scene` model).
 
 **Difficulty default:** FINAL's canonical `+roll <skill>` syntax has no difficulty argument. Standard difficulty is the default when none is given — a reasonable, low-stakes assumption for an unassisted roll — with the `=<difficulty>` extension above as a Proposed way to choose a harder or easier tier explicitly.
