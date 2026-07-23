@@ -1,3 +1,7 @@
+> **DO NOT DELETE OR EDIT THIS FILE WITHOUT EXPLICIT INSTRUCTION FROM THE PROJECT OWNER.**
+> This document is creator-built. Claude may read and cite it, but SHALL NOT modify,
+> delete, or rewrite any part of it absent explicit owner permission for that specific change.
+
 # SOUL LLM Implementation Specification
 
 **Version:** 2.0 canonical working draft  

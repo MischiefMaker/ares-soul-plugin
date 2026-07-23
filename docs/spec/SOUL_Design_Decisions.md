@@ -1,3 +1,7 @@
+> **DO NOT DELETE OR EDIT THIS FILE WITHOUT EXPLICIT INSTRUCTION FROM THE PROJECT OWNER.**
+> This document is creator-built. Claude may read and cite it, but SHALL NOT modify,
+> delete, or rewrite any part of it absent explicit owner permission for that specific change.
+
 # SOUL Design Decisions
 
 A long-term record of why SOUL was designed the way it is. This document captures the reasoning behind architectural choices, trade-offs considered, and rejected alternatives.
