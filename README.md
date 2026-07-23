@@ -51,10 +51,9 @@ test your configuration before opening it to players.
 SOUL includes web portal components for the character sheet, Boons and Banes, XP,
 Culminations, and Narrative History. These install automatically with the plugin.
 
-Mounting them onto your game's character profile page still requires manual setup
-(see Installation below) — SOUL doesn't yet ship a ready-made snippet for this the
-way some other plugins do. Until that's done, everything in SOUL is fully usable
-through in-game commands.
+Mounting them onto your game's profile, chargen, and live-scene pages requires the
+supplied merge-safe snippets described below. Everything is also usable through
+in-game commands.
 
 ## Installation
 
@@ -88,20 +87,22 @@ and catch-up policy, Boon/Bane levels, roll difficulties, and staff permissions.
 Reload your game's configuration (or restart) once you're done. SOUL will report any
 invalid references, such as a Skill assigned to an Aspect that doesn't exist.
 
-### Step 3: Add the Approval Hook (Required if you use Resonance)
+### Step 3: Add the Approval Hook
 
-This locks a character's Resonance when they're approved.
+This locks Resonance and finalizes the history for starting Boons and Banes when a
+character is approved.
 
 1. Open `plugins/chargen/custom_approval.rb` in your **aresmush** folder
 2. Inside the `custom_approval` method, add:
    ```ruby
    AresMUSH::Soul::SoulResonanceApi.lock_at_approval(char)
+   AresMUSH::Soul::SoulBnbApi.finalize_chargen_grants(char)
    ```
 3. From the MUSH, run: `load chargen`
 
 An example is provided in
 [`custom-install/custom_approval.snippet.rb`](custom-install/custom_approval.snippet.rb).
-This step does nothing if Resonance is disabled, and is safe to run on every approval.
+Both calls are safe to run on every approval.
 
 ### Step 4: Mount the Web Portal Components (Optional)
 
@@ -119,6 +120,10 @@ the three merge-safe profile snippets to make them reachable:
    web portal file to put SOUL rolls in a live scene's **Play** menu.
 5. Merge `custom-install/custom_scene_data.snippet.rb` into
    `aresmush/plugins/scenes/custom_scene_data.rb`, then restart the game.
+6. Add `custom-install/chargen-custom-tabs.snippet.hbs` and
+   `custom-install/chargen-custom.snippet.hbs` to their matching web portal files.
+7. Merge `custom-install/chargen_stage.snippet.yml` into `game/config/chargen.yml`
+   to introduce the MUSH-side SOUL chargen stage.
 
 Read the comments at the top of each snippet before copying it. They explain how to
 coexist with other profile plugins, including Inklings, without duplicating the
@@ -168,8 +173,6 @@ use it, and reload or restart the game.
 ## Known Limitations
 
 - Pre-release: migration from FS3 hasn't completed final production validation
-- No dedicated character-generation UI yet for Resonance/Skill/Boon selection during
-  chargen — games must decide how starting choices are entered for now
 - The web portal profile tab requires manual placement (see Step 4 above)
 - The Inklings integration needs a companion update in Inklings before approved
   outcomes flow automatically into SOUL
