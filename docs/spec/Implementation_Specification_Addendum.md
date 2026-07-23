@@ -551,29 +551,23 @@ Catastrophic Failure: (same as Failure, but distinguished by narrative weight)
 
 **Output Format - GM-Less (Player Authority):**
 
-Player receives an active-voice prompt with explicit authority to continue the story:
+Player receives a prompt calibrated to the narrative weight of the outcome:
 
-```
-Exceptional Success
-You succeed. Introduce an additional benefit resulting from your success.
+| Result | Player Output |
+|--------|---------------|
+| **Exceptional Success** | **You succeed, and may introduce an additional benefit resulting from your success.** |
+| **Success** | **You succeed.** |
+| **Complicated Success** | **You succeed, but should introduce an additional complication resulting from your success.** |
+| **Lucky Failure** | **You fail, but may introduce an additional benefit despite your failure.** |
+| **Failure** | **You fail.** |
+| **Catastrophic Failure** | **You fail, and should introduce an additional complication resulting from your failure.** |
 
-Success
-You succeed.
-
-Complicated Success
-You succeed. Introduce an additional complication resulting from your success.
-
-Lucky Failure
-You fail. Introduce an additional benefit despite your failure.
-
-Failure
-You fail.
-
-Catastrophic Failure
-You fail. Introduce an additional complication resulting from your failure.
-```
-
-**Rationale:** Active voice ("Introduce...") gives the player explicit authority and clear expectations about their next narrative action.
+**Rationale:**
+- **"May"** (Exceptional Success, Lucky Failure): Optional flourish—pure player choice. Extra benefit is narrative dessert, not obligation.
+- **"Should"** (Complicated Success, Catastrophic Failure): Encouraged narrative element. Complications are earned consequences of the roll; players are expected to articulate them.
+- **"And"** (Exceptional/Catastrophic): Forward momentum—success/failure propels the story forward with added weight.
+- **"But"** (Complicated/Lucky): Tension—primary outcome contradicted or complicated by secondary element.
+- **Plain statement** (Success/Failure): Straightforward outcomes require no embellishment; player may continue describing action or RP.
 
 **Output Format - GM-Led (GM Discretion):**
 
