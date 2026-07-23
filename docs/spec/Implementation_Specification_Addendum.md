@@ -54,72 +54,122 @@ rolls:
 **Status:** ✅ Approved
 
 **Decision:**
-Rolls use a base 2d10 mechanic with open-ended explosions on doubles. The outcome is the sum of all rolled dice (including rerolls from explosions).
+Rolls use an open-ended 2d20 mechanic with explosion/implosion chains and Boon/Bane-driven die rerolls. Boons and Banes influence luck (die outcomes) rather than applying flat bonuses, ensuring no automatic success and no character power ceiling.
 
-**Base Mechanic:**
+**Rolling Sequence:**
 
-1. **Initial Roll:** Roll 2d10, sum the result (range: 2-20)
+### Step 1: Explosion Chain (Determine all dice before any rerolls)
 
-2. **Explosion on Double 10:** 
-   - If both dice show 10 (double 10):
-     - Roll another 2d10
-     - Add `(reroll_sum - 2)` to the total (where reroll_sum is 2-20)
-     - Continue rerolling if the new reroll is also a double 10
-   - Example: Roll 2d10 → [10, 10] (sum 20) → reroll [9, 8] (sum 17) → add (17 - 2) = 15 → total 35
+1. **Initial Roll:** Roll 2d20, sum the result (range: 2-40)
 
-3. **Implosion on Double 1:**
+2. **Upward Explosion on Double 20:**
+   - If both dice show 20 (double 20):
+     - Roll another 2d20
+     - Add this new result to the total
+     - Check if the new roll is also a double 20; if so, repeat
+   - Explosions chain indefinitely (rare but unbounded)
+   - Example: [20, 20] (40) + [18, 17] (35) + [20, 20] (40) + [14, 9] (23) = 138
+
+3. **Downward Implosion on Double 1:**
    - If both dice show 1 (double 1):
-     - Roll another 2d10
-     - Subtract `(reroll_sum - 2)` from the total
-     - Continue rerolling if the new reroll is also a double 1
-   - Example: Roll 2d10 → [1, 1] (sum 2) → reroll [4, 5] (sum 9) → subtract (9 - 2) = 7 → total 2 - 7 = -5
+     - Roll another 2d20
+     - Subtract this new result from the total
+     - Check if the new roll is also a double 1; if so, repeat
+   - Implosions chain indefinitely (rare but unbounded)
+   - Example: [1, 1] (2) - [8, 7] (15) - [1, 1] (2) - [16, 11] (27) = -42
 
-4. **Final Result:** Sum of all rolls (initial + all explosions/implosions, clamped to minimum of -20 if needed)
+4. **No Partial Explosions:** Explosions are only triggered by the original natural dice rolls, never by rerolled dice (Step 2). Once the complete explosion chain is determined, no more dice rolls occur until Step 2.
 
-**Rationale:**
-- 2d10 base provides intuitive central tendency (expected value ~11, matching "Standard" difficulty)
-- Open-ended explosions reward exceptional luck without hard caps
-- Symmetry between double-10 (good luck) and double-1 (bad luck)
-- Explosion bonus/penalty of `(reroll_sum - 2)` creates meaningful differentiation (explosions can add 0-18 per reroll)
-- Repeating explosions allow for truly extraordinary outcomes (rare but memorable)
+### Step 2: Boon/Bane Die Rerolls (Modify luck, not the explosion chain)
+
+Calculate the net Boon/Bane modifier (sum of all Boon and Bane effects):
+
+**Positive Modifier (Boons, +1 to +N):**
+- **+1:** Reroll every die showing 1
+- **+2:** Reroll every die showing 1–2
+- **+3:** Reroll every die showing 1–3
+- **+N:** Reroll every die showing 1–N
+
+**Negative Modifier (Banes, −1 to −N):**
+- **−1:** Reroll every die showing 20
+- **−2:** Reroll every die showing 19–20
+- **−3:** Reroll every die showing 18–20
+- **−N:** Reroll every die showing (21−N)–20
+
+**Reroll Mechanics:**
+- Apply rerolls to **every die rolled during the entire explosion chain** (initial dice + all explosion dice)
+- If a rerolled die lands within the reroll band again, it is rerolled repeatedly until it lands outside that band
+- Rerolls **never create, remove, or extend explosions** — they only change final die values
+- After all rerolls, recalculate the total using the modified dice, preserving original explosion directions
+
+**Example:**
+```
+Net modifier: +2 (reroll 1–2)
+Original roll: [20, 20] + [18, 2] + [4, 1] = 65
+Reroll band 1–2: 
+  - [20, 20] → no change
+  - [18, 2] → 2 rerolls to 14 → [18, 14]
+  - [4, 1] → 1 rerolls to 16 → [4, 16]
+Final: 20 + 20 + 18 + 14 + 4 + 16 = 92
+```
+
+### Step 3: Apply Mechanical Ability Modifiers
+
+Add non-Boon/Bane modifiers:
+- Skill rating (typically +0 to +5)
+- Aspect contribution (Aspect × configurable weight, typically 0.20, rounded nearest)
+- Other mechanical effects (scene policies, temporary buffs, etc.)
+
+```
+final_total = dice_sum + skill + (aspect × weight) + other_modifiers
+```
+
+No cap on total modifiers; unbounded scaling is intentional.
+
+### Step 4: Compare Against Difficulty & Determine Outcome
+
+- Success: `final_total ≥ difficulty`
+- Failure: `final_total < difficulty`
+- Calculate margin: `margin = final_total - difficulty`
+
+Determine narrative degree (see §8.1: Degrees of Success).
+
+### Step 5: Probability-Based Extraordinary Luck Marking
+
+After rolling and resolving outcome:
+1. Calculate pre-roll success probability using the complete 2d20 distribution, all modifiers, and difficulty
+2. If the achieved outcome had probability ≤ 0.01% (1 in 10,000), mark roll as **EXTRAORDINARY**
+3. Display extraordinary luck message (see §9)
 
 **Configuration:**
 ```yaml
 rolls:
-  random_model: "d10_open_ended"
+  random_model: "d20_open_ended"
   explosion:
     enabled: true
-    trigger: "double_10"
-    bonus_formula: "reroll_sum - 2"  # reroll_sum = sum of the 2d10 reroll
+    trigger: "double_20"
     
   implosion:
     enabled: true
     trigger: "double_1"
-    penalty_formula: "reroll_sum - 2"
-    
-  # Customization options
-  explosion_bonus_min: 0    # Minimum bonus per explosion
-  explosion_bonus_max: 18   # Maximum bonus per explosion (2d10 = 2-20, minus 2 = 0-18)
-  implosion_penalty_min: 0
-  implosion_penalty_max: 18
+  
+  boon_bane:
+    # Boons/Banes modify luck via die rerolls, not flat bonuses
+    # Net modifier determines reroll band; configurable per-game
+    max_positive_modifier: null    # No cap; intentional
+    max_negative_modifier: null    # No cap; intentional
+  
+  extraordinary_threshold: 0.0001  # 0.01% probability
 ```
 
-**Examples:**
+**Design Rationale:**
 
-| Roll | Result | Notes |
-|------|--------|-------|
-| [5, 7] | 12 | Normal roll, no explosion/implosion |
-| [10, 10] then [8, 6] | 20 + (14-2) = 32 | Explosion on double 10; reroll added |
-| [10, 10] then [10, 10] then [6, 4] | 20 + (20-2) + (10-2) = 46 | Chained explosions |
-| [1, 1] then [7, 3] | 2 - (10-2) = -6 | Implosion on double 1; reroll subtracted |
-| [1, 1] then [1, 1] then [5, 5] | 2 - (2-2) - (10-2) = -8 | Chained implosions |
-
-**Design Rationale for 2d10:**
-- **Smooth, understandable bell curve:** 2d10 produces a natural distribution centered on 11, familiar to players and intuitive to explain
-- **Skill matters:** Every skill point shifts the entire probability curve; no threshold effects or dead values
-- **Distinct difficulties:** Eight discrete difficulty targets (11-40) provide clear separation; no confusion about target ranges
-- **Rare tails without caps:** Open-ended explosions create statistically rare but unbounded high rolls; open-ended implosions create rare negative rolls; both feel exceptional without artificial ceilings
-- **Narrative degrees:** Tails produce meaningful story outcomes even when pass/fail doesn't change (e.g., exceptional success vs. success both win, but with different narrative weight)
+1. **2d20 Range (2-40):** Wider base than 2d10; provides more granularity and higher base difficulty anchors (matching difficulties in §1)
+2. **Explosions & Implosions:** Open-ended with no hard caps; allows unbounded extraordinary outcomes
+3. **Boons/Banes as Luck Modifiers:** Rerolling dice is mechanically cleaner than flat bonuses; preserves skill differentiation while making Boons/Banes mechanically meaningful
+4. **No Automatic Success/Failure:** Even with max positive modifiers, a terrible roll (like [1,1]) cannot guarantee success; even with max negative modifiers, exceptional rolls (like [20,20]) cannot guarantee failure
+5. **Explosion Chains Determined Early:** Prevents Boon/Bane rerolls from accidentally triggering new explosions
+6. **Probability-Based Extraordinary:** Captures statistically unlikely outcomes regardless of dice mechanics; aligns narrative weight with actual rarity
 
 ---
 
@@ -176,67 +226,18 @@ Characters earning catch-up XP spend with the same cost table; catch-up only acc
 
 ---
 
-## 4. Global Modifier Bounds
+## 4. Modifier Bounds (Removed)
 
-**Status:** Pending Decision
+**Status:** ✅ Archived
 
-**Question:**
-What are the minimum and maximum modifiers that can be applied to a roll?
+**Decision:** Global modifier bounds are eliminated. The 2d20 open-ended rolling system (§2) with Boon/Bane-driven die rerolls achieves balance through mechanics, not caps:
 
-**Specification Requirement (REQ-030):**
-"Modifiers SHALL have global bounds to prevent unbounded scaling and maintain meaningful skill differentiation."
+- **No Automatic Success:** Even +N rerolls cannot guarantee success against high difficulties; the [1,1] implosion chain can reduce even high rolls to failure
+- **No Automatic Failure:** Even −N rerolls cannot guarantee failure against low difficulties; the [20,20] explosion chain can boost even low rolls to success
+- **Skill Still Matters:** Mechanical modifiers (Skill + Aspect) stack unbounded but are secondary to dice luck; a character with +10 modifiers still needs good rolls
+- **Boons/Banes Influence Luck:** Rerolling dice is mathematically different from flat bonuses; a character with +5 Boons rerolls more dice but doesn't guarantee outcomes
 
-**Modifier Sources (Cumulative):**
-- Skill rating: +0 to +5 (rating-to-bonus)
-- Aspect contribution: +0 to +1 (from Aspect × 0.20, rounded)
-- Boon/Bane effects: TBD per B&B instance
-- Scene policy: TBD (optional GM override)
-- Resonance spend (future): TBD
-
-**Options Under Consideration:**
-
-### Option A: Tight Bounds (±5)
-```yaml
-rolls:
-  modifier_min: -5
-  modifier_max: +5
-```
-- **Effect:** Typical pool of 4 + skill 3 + aspect 1 = 8 base; bounds cap effective pool
-- **Design:** Modifiers matter but don't overshadow pool; caps runaway B&B stacking
-- **Concern:** B&B design becomes constrained; difficult to award "powerful" bonuses
-
-### Option B: Moderate Bounds (±10)
-```yaml
-rolls:
-  modifier_min: -10
-  modifier_max: +10
-```
-- **Effect:** Allows meaningful B&B effects (+3 is substantial but not overwhelming)
-- **Design:** A character with pool 5, skill 3, aspect 1, and two +2 Boons = 8 + 4 = 12 effective
-- **Balance:** At Difficult (17), this shifts 50% → 25% success; meaningful but not dominant
-
-### Option C: Permissive Bounds (±15)
-```yaml
-rolls:
-  modifier_min: -15
-  modifier_max: +15
-```
-- **Effect:** Allows powerful B&B effects (+5 is achievable)
-- **Design:** Supports magical/enhancement-heavy systems; rewards long-term B&B accumulation
-- **Concern:** High-end characters may become too powerful; Difficulty scaling must adjust
-
-**Recommendation:**
-*Awaiting project-owner decision.* Implementation will use **Option B (±10)** as default, balancing B&B impact against skill differentiation and difficulty scaling.
-
-**Provisional Configuration:**
-```yaml
-rolls:
-  modifier_min: -10
-  modifier_max: +10
-```
-
-**B&B Effect Constraints:**
-Individual B&B effects SHALL NOT exceed ±5. If a B&B grants +3, and a character has two instances, the second instance is NOT stacked (as per REQ-022's "no duplicates" default). Staff may override this rule per-character via admin approval.
+**Rationale:** The removal of hard caps allows both extraordinary success stories and crushing failures, preserving narrative weight across the full range of outcomes.
 
 ---
 
@@ -708,14 +709,14 @@ The configured prefix is used with the outcome appended:
 | Decision | Status | Default Value |
 |----------|--------|----------------|
 | Difficulty Scale | ✅ Approved | See Table in §1 |
-| Random Model | ✅ Approved | 2d10 open-ended (§2) |
+| Random Model | ✅ Approved | 2d20 open-ended with Boon/Bane die rerolls (§2) |
 | XP Advancement Cost | ✅ Approved | Algebraic model (§3) |
+| Modifier Bounds | ✅ Archived | No cap; Boons/Banes modify luck via rerolls (§4) |
 | Chargen B&Bs | ✅ Approved | 2:1 Boon-to-Bane ratio, per-R-level config (§5) |
 | Pending Roll Expiry | ✅ Approved | ~30 days wall-clock (§6) |
 | Aspect Rounding | ✅ Approved | Round Nearest (§7) |
 | Degrees of Success | ✅ Approved | Six degrees with GM-less/GM-led output (§8.1) |
-| Extraordinary Luck Messaging | ✅ Approved | Probability-based (<0.5%) (§9) |
-| Modifier Bounds | ⏳ Pending | ±10 (provisional) |
+| Extraordinary Luck Messaging | ✅ Approved | Probability-based (<0.01%) (§9) |
 | Catch-Up Edge Cases | ⏳ Pending | 7d grace, 3-char minimum (provisional) |
 
 ---
