@@ -91,6 +91,20 @@ All 10 core mechanical decisions are locked in. See Implementation_Specification
 
 ✅ **GM-Assisted Rolls:** Approval workflow for pending rolls; 720-hour (30-day) expiry; configurable per-player open roll cap.
 
+## Implementation Guidance
+
+### Probability Engine (§2 & §9)
+The extraordinary luck threshold requires calculating pre-roll success probability for a 2d20 open-ended system with explosion/implosion and Boon/Bane die rerolls. This is computationally expensive to recalculate on every roll.
+
+**Recommended approach:**
+- Pre-compute and cache probability distributions for common modifier combinations
+- Cache keyed by: (base_roll_pool, difficulty, net_modifier, explosion_enabled, implosion_enabled)
+- Use analytic approximation or Monte Carlo simulation during character load
+- Validate cache hit rates and implement LRU eviction if memory-constrained
+- Consider pre-generating distribution tables for common base pools (2-10) and difficulties (11-40)
+
+This is an implementation detail not specified in the architectural requirements but important for performance.
+
 ## Outstanding Implementation Design
 
 ### Before Implementation Begins
@@ -98,8 +112,12 @@ All 10 core mechanical decisions are locked in. See Implementation_Specification
 - [ ] Decide on Boon & Bane seeding strategy (command-based, README examples, or YAML seed data)
 - [ ] Define Permission model (who can create B&Bs, approve rolls, set Resonance, etc.)
 - [ ] Plan database indexing strategy for roll queries and character lookups
-- [ ] Design cron/scheduler approach for weekly catch-up calculation
+- [ ] Design cron/scheduler approach for weekly catch-up calculation (see §8)
 - [ ] Finalize API contracts between Ruby backend and Ember web portal
+
+### Editorial Cleanup (Applied 2026-07-23)
+- ✅ Removed duplicate Degrees of Success YAML configuration
+- ✅ Standardized `extraordinary_result_threshold` configuration naming across all sections
 
 ## Session Notes
 

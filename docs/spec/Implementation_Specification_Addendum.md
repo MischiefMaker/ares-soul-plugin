@@ -159,7 +159,7 @@ rolls:
     max_positive_modifier: null    # No cap; intentional
     max_negative_modifier: null    # No cap; intentional
   
-  extraordinary_threshold: 0.0001  # 0.01% probability
+  extraordinary_result_threshold: 0.0001  # 0.01% probability (1 in 10,000)
 ```
 
 **Design Rationale:**
@@ -691,20 +691,6 @@ Failure with an additional complication.
 - Adjust or ignore the suggested degree if dramatically appropriate
 
 **Rationale:** Passive voice reports what happened mechanically without prescribing authority or narrative direction, preserving GM discretion in story-focused systems.
-
-**Configuration:**
-
-```yaml
-rolls:
-  degrees_of_success: true
-  margin_thresholds:
-    exceptional_success_min: 10
-    complicated_success_max: -0.01  # Just below zero
-    lucky_failure_max: -5
-    catastrophic_failure_min: -10
-  
-  output_mode: "gm_led"  # alternatives: "gm_less", "hybrid"
-```
 
 ---
 
