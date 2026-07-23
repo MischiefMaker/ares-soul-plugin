@@ -32,7 +32,8 @@ module AresMUSH
             idempotency_key: "scene:#{scene.id}:#{character.id}:#{request.args['reason']}",
             apply_catchup: request.args['apply_catchup'].to_s == "true")
         end
-        { success: results.none? { |result| result[:error] }, results: results }
+        error = results.find { |result| result[:error] }
+        error || { success: true, results: results }
       when "soulXpCorrect"
         character = Character.find_one_by_name(request.args['character'])
         SoulXpApi.correct(character, request.args['amount'], reason: request.args['reason'], actor: enactor)
