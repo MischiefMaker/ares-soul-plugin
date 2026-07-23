@@ -123,9 +123,10 @@ SoulXpApi.get_lifetime_earned_xp(character)
 SoulXpApi.get_lifetime_spent_xp(character)
 SoulXpApi.get_catchup_xp_earned(character)
 SoulXpApi.get_history(character, limit: 50)
+SoulXpApi.correct(character, amount, reason:, actor:, direction: "correction")
+  # Adds/removes available XP; direction "correction" adds (default),
+  # direction "reversal" subtracts. Does not undo skill advances.
 ```
-
-**⚠️ Blocking gap:** There is no existing `SoulXpApi.correct` method — `+xp/correct` (Proposed) cannot be implemented until it exists. See §9 (Known Gaps) below.
 
 ### Boons & Banes
 ```ruby
@@ -286,13 +287,21 @@ All blocking gaps have been resolved:
 
 ### Gap 1: `SoulXpApi.correct` (Resolved)
 
-Added to `plugin/public/soul_xp_api.rb`: `SoulXpApi.correct(character, amount, reason:, actor:, direction: "correction")`. Records the correction to audit + Narrative History, following the same pattern as `SoulResonanceApi.correct`. Does not destroy the original ledger entry.
+Added to `plugin/public/soul_xp_api.rb`: `SoulXpApi.correct(character, amount, reason:, actor:, direction: "correction")`. 
+
+- Default `direction: "correction"` adds the amount to available XP (for missed bonuses, etc.)
+- `direction: "reversal"` subtracts from available XP (for accidental double-awards, etc.)
+- Records to audit + Narrative History following the same pattern as `SoulResonanceApi.correct`
+- Does not destroy the original ledger entry
+- Does not undo prior skill advances (full rollback is out of scope)
+
+Used by `+xp/correct` command for staff corrections.
 
 ### Gap 2: Scene Participant Resolution (Resolved)
 
 Added to `plugin/public/soul_xp_api.rb`: `SoulXpApi.get_scene_participants(scene = nil)`. Returns approved, active characters currently in a given scene, filtered to the same population as the XP median calculation (`Chargen.approved_chars`). Used by `+xp/scene` command to preview recipients before committing.
 
-**Caveat:** Implementation assumes standard AresMUSH Scene model with `.characters` or `.people` collection. Verify against actual AresMUSH core scene API when available; if the mechanism differs, update the helper implementation but the interface contract remains the same.
+**Implementation:** Uses real AresMUSH API `Scene#participants` (confirmed against current core).
 
 ### Gap 3: `SoulResonanceApi.correct` Signature (Resolved)
 

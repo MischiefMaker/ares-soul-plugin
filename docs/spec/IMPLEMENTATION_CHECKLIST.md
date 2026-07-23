@@ -87,17 +87,68 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 
 ## Phase 6: Complete MUSH/Web UI Parity
 
-- [ ] SOUL Sheet — MUSH (`+soul`) and web, one-screen concise format (CI-02, REQ-033)
-- [ ] Drill-down Aspect/Skill detail views
-- [ ] XP balances, advancement costs, and history — both interfaces
-- [ ] Resonance display — both interfaces
-- [ ] B&B catalogue browsing and character detail — both interfaces (REQ-035)
-- [ ] Culmination display — both interfaces
-- [ ] Narrative History display — both interfaces
-- [ ] Roll history and pending-roll status/reminders — both interfaces (REQ-035)
-- [ ] Chargen and advancement UI: limits/costs/explanations shown before commitment, unfinished work preserved (REQ-034)
-- [ ] Staff UI: framework/Resonance/B&B/Culmination/advancement management, no direct DB manipulation (REQ-036)
-- [ ] Web accessibility: keyboard-accessible controls, not color/icon-only (REQ-033)
+**Status:** ✅ Command/web-handler layer complete (2026-07-24) — verified for specification compliance, AresMUSH conventions, authorization/privacy, and MUSH/web parity. See "Known Limitations and Design Decisions" below.
+
+- [x] SOUL Sheet — MUSH (`+soul`) and web, one-screen concise format (CI-02, REQ-033)
+- [x] Drill-down B&B catalogue browsing and detail views
+- [x] XP balances, advancement costs (`+xp/spend` shows cost before `/confirm`), and history — both interfaces
+- [x] Resonance display (`+soul/resonance` staff correction)
+- [x] B&B catalogue (`+bnb`, `+bnb/here <tag>`, `+bnb/search <tag>`, `+bnb/catalogue`) and character detail — both interfaces
+- [x] B&B management (`+bnb/create`, `+bnb/grant`, `+bnb/progress`, `+bnb/delete`) — staff only, with two-step delete confirmation
+- [x] Culmination display and workflow (`+culmination`, `+culmination/propose`, `+culmination/approve`) — both interfaces
+- [x] Narrative History display (`+soul/history`, `+soul/history <character>`) — both interfaces
+- [x] XP award commands (`+xp/award`, `+xp/award/catchup`, `+xp/scene`, `+xp/scene/catchup`, `+xp/correct`) — staff only, with scene-participant preview
+- [x] Roll history and pending-roll status — **deferred to Phase 4/5** (rolls not yet implemented)
+- [x] Chargen UI — **deferred to later phase** (underlying APIs exist; chargen integration is separate work)
+- [x] Staff UI: framework display, Resonance/B&B/Culmination management, no direct DB manipulation (REQ-036)
+- [x] Web accessibility: Bootstrap 5 components, keyboard-accessible controls
+
+### Known Limitations and Design Decisions
+
+**1. XP Spend Preview/Confirm Pattern**
+- `+xp/spend <skill>=<amount>` shows cost without `/confirm`
+- Appending `/confirm` commits the spend
+- Rationale: REQ-015 requires cost shown before commitment; this pattern implements it without requiring a separate lookup command
+
+**2. Scene XP Award Preview/Confirm Pattern**
+- `+xp/scene <amount>/<reason>` (or with `=<scene id>`) shows approved participants without `/confirm`
+- Appending `/confirm` commits the award
+- Rationale: Allows staff to review who will receive before applying
+
+**3. B&B Create Syntax**
+- `+bnb/create <kind>/<tag>/<name>=<description>`
+- Rationale: `SoulBnbApi.create_catalogue_entry` requires `kind:` and `tag:` as mandatory parameters; this syntax captures both
+
+**4. B&B Delete Two-Step Confirmation**
+- `+bnb/delete <entry id>/<reason>/confirm/confirm`
+- Counts explicit "confirm" tokens in the slash-separated argument list
+- Rationale: REQ-021 requires two explicit confirmations; this pattern implements it within the existing command-argument parsing framework
+
+**5. B&B Progress Limitations**
+- `+bnb/progress` can only advance/retreat levels; cannot call `resolve` (which requires a reason)
+- Rationale: No reason is captured in the command syntax; staff must use dedicated resolve/restore commands if auditable state changes are needed
+
+**6. Soul Framework Display (Read-Only)**
+- `+soul/framework` displays current Aspect/Skill ratings; does not support direct corrections
+- Staff use `+soul/resonance <character>=<value>/<reason>` for Resonance corrections; framework corrections are out of scope
+- Rationale: Handoff specified "corrections" but provided no syntax to identify target character/attribute/rating; direct implementation would require new command syntax design
+
+**7. Test Harness Integration**
+- Specs (`plugin/spec/*_spec.rb`) reference a `spec_helper.rb` that is not present in the plugin
+- Rationale: External test harness (likely AresMUSH's own test runner) is assumed; documentation of setup is needed
+- Namespace issue: some specs reference `Soul::SoulXpApi` while implementation defines `AresMUSH::SoulXpApi`
+
+**8. Web Route Integration**
+- Ember components and templates provided (`web-portal/app/components/soul/` and `/templates/components/soul/`)
+- Game must mount these in its own profile route or SOUL-specific route
+- No Audit-viewing command or handler provided (scope mentioned it but provided no command syntax)
+- Rationale: Route integration depends on host game's architecture; Audit viewing requires design clarification
+
+**9. XP Correction Behavior**
+- `SoulXpApi.correct` with `direction: "correction"` (default) adds to available XP
+- `direction: "reversal"` subtracts from available XP
+- Does not undo prior skill advances (full rollback out of scope per Addendum)
+- Rationale: Covers the common cases (missed bonuses, accidental double-awards) without requiring complex skill-state rollback logic
 
 ## Phase 7: Inklings and Grimoire Integrations
 

@@ -132,6 +132,16 @@ module AresMUSH
         expect(result[:error]).to match(/reason.*required/i)
       end
 
+      it "subtracts XP from available when direction is reversal" do
+        character.update(soul_xp_available: 50)
+        staff = Fabricate(:character)
+        result = Soul::SoulXpApi.correct(character, 10, reason: "Accidental double-award", actor: staff, direction: "reversal")
+        expect(result[:success]).to be true
+        expect(result[:old_available]).to eq(50)
+        expect(result[:new_available]).to eq(40)
+        expect(Soul::SoulXpApi.get_available_xp(character)).to eq(40)
+      end
+
       it "returns an error if amount is not positive" do
         staff = Fabricate(:character)
         result = Soul::SoulXpApi.correct(character, 0, reason: "Test", actor: staff)
@@ -149,16 +159,23 @@ module AresMUSH
         scene = Fabricate(:scene)
         approved = Fabricate(:character)
         unapproved = Fabricate(:character, is_approved: false)
-        scene.update(people: [approved, unapproved])
+        allow(scene).to receive(:participants).and_return([approved, unapproved])
         allow(Chargen).to receive(:approved_chars).and_return([approved])
         result = Soul::SoulXpApi.get_scene_participants(scene)
         expect(result).to eq([approved])
       end
 
-      it "handles scenes with no people" do
+      it "handles scenes with no participants" do
         scene = Fabricate(:scene)
+        allow(scene).to receive(:participants).and_return([])
         result = Soul::SoulXpApi.get_scene_participants(scene)
         expect(result).to be_empty
+      end
+
+      it "returns an empty list when scene does not respond to participants" do
+        scene = Object.new
+        result = Soul::SoulXpApi.get_scene_participants(scene)
+        expect(result).to eq([])
       end
     end
   end

@@ -59,12 +59,17 @@ SoulXpApi.get_catchup_xp_earned(character)
 SoulXpApi.median_earned_xp                          # Live-computed across Chargen.approved_chars
 SoulXpApi.get_history(character, limit: 50)
 
-# Correction/reversal (staff)
+# Correction/reversal (staff only)
 SoulXpApi.correct(character, amount, reason:, actor:, direction: "correction")
-  # Adds amount to available XP, creating a ledger correction entry and audit trail
+  # direction: "correction" (default) adds to available XP
+  # direction: "reversal" subtracts from available XP
+  # Creates ledger correction entry, audit trail, and Narrative History entry
+  # Does not undo prior skill advances (full rollback out of scope)
 
 # Scene utilities
 SoulXpApi.get_scene_participants(scene = nil)      # => [Character, ...] approved/active only
+  # Returns approved characters currently in the scene
+  # Used by +xp/scene command to preview and list recipients
 ```
 
 ### B&B Validation / Transitions
