@@ -62,5 +62,43 @@ module AresMUSH
       end
       nil
     end
+
+    def self.get_cmd_handler(client, cmd, enactor)
+      case cmd.root
+      when "soul"
+        case cmd.switch
+        when "history"
+          SoulHistoryCmd
+        when "framework", "resonance", "reload"
+          SoulStaffCmd
+        when nil
+          SoulSheetCmd
+        end
+      when "bnb"
+        SoulBnbCmd
+      when "xp"
+        SoulXpCmd
+      when "culmination"
+        SoulCulminationCmd
+      end
+    end
+
+    def self.get_web_request_handler(request)
+      case request.cmd
+      when "soulSheet"
+        SoulSheetWebHandler
+      when "soulBnb", "soulBnbCatalogue", "soulBnbCreate", "soulBnbGrant",
+           "soulBnbProgress", "soulBnbDelete"
+        SoulBnbWebHandler
+      when "soulXp", "soulXpSpend", "soulXpAward", "soulXpScene", "soulXpCorrect"
+        SoulXpWebHandler
+      when "soulCulminations", "soulCulminationPropose", "soulCulminationApprove"
+        SoulCulminationWebHandler
+      when "soulHistory"
+        SoulHistoryWebHandler
+      when "soulFramework", "soulResonance", "soulReload"
+        SoulStaffWebHandler
+      end
+    end
   end
 end

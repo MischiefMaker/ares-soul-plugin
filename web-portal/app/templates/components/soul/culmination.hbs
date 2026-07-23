@@ -1,0 +1,15 @@
+<section class="soul-culminations">
+  <h3>Culminations</h3>
+  {{#if isLoading}}
+    <div class="text-muted">Loading Culminations…</div>
+  {{else}}
+    {{#each entries as |entry|}}
+      <article class="card mb-3 soul-culmination">
+        <div class="card-body">
+          <h5>{{entry.title}} <span class="badge bg-secondary">{{entry.status}}</span></h5>
+          <p>{{entry.description}}</p>
+        </div>
+      </article>
+    {{/each}}
+  {{/if}}
+</section>
