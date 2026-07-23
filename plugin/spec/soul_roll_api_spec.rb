@@ -244,6 +244,51 @@ module AresMUSH
       end
     end
 
+    describe ".get_player_candidate_view" do
+      it "returns the standard roll's system-suggested entries, none flagged mandatory" do
+        entry = owned_entry("lucky")
+        pending = pending_for(character, system_suggested_entries: [entry.id.to_s])
+
+        result = SoulRollApi.get_player_candidate_view(pending.id, character)
+        expected = SoulBnbApi.get_character_entry_public(character, entry.id).merge(mandatory: false)
+        expect(result[:candidates]).to eq([expected])
+      end
+
+      it "returns a GM-assisted roll's GM-suggested/mandatory entries instead of the original system suggestions" do
+        suggested = owned_entry("suggested")
+        mandatory = owned_entry("mandatory")
+        excluded = owned_entry("excluded")
+        pending = pending_for(
+          character,
+          gm_assisted: "true",
+          system_suggested_entries: [suggested.id.to_s, mandatory.id.to_s, excluded.id.to_s],
+          gm_suggested_entries: [suggested.id.to_s],
+          gm_mandatory_entries: [mandatory.id.to_s]
+        )
+
+        candidates = SoulRollApi.get_player_candidate_view(pending.id, character)[:candidates]
+        ids_and_flags = candidates.map { |c| [c[:id], c[:mandatory]] }.to_h
+        expect(ids_and_flags).to eq(suggested.id => false, mandatory.id => true)
+        expect(ids_and_flags.keys).not_to include(excluded.id)
+      end
+
+      it "rejects a roll that does not belong to the requester" do
+        pending = pending_for(character)
+        expect(SoulRollApi.get_player_candidate_view(pending.id, other_character)[:error]).to be_present
+      end
+
+      it "rejects a roll that is not awaiting selection" do
+        pending = pending_for(character, status: "awaiting_gm", gm_assisted: "true")
+        expect(SoulRollApi.get_player_candidate_view(pending.id, character)[:error]).to be_present
+      end
+    end
+
+    describe ".get_difficulty_options" do
+      it "returns the configured difficulty table" do
+        expect(SoulRollApi.get_difficulty_options).to eq("standard" => 13)
+      end
+    end
+
     describe ".gm_submit_selections" do
       def gm_pending(entries)
         scene = Fabricate(:scene, owner: gm)

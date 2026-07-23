@@ -95,5 +95,31 @@ module AresMUSH
         "12", character, mandatory_ids: ["1"], optional_ids: ["2"]
       )
     end
+
+    it "delegates the player candidate view" do
+      allow(SoulRollApi).to receive(:get_player_candidate_view).and_return(success: true, candidates: [])
+      result = subject.handle(request("soulRollCandidates", 'pending_roll_id' => '12'))
+      expect(SoulRollApi).to have_received(:get_player_candidate_view).with("12", character)
+      expect(result).to eq(success: true, candidates: [])
+    end
+
+    it "rejects candidate/difficulty requests without play permission" do
+      allow(Soul).to receive(:can_play?).and_return(false)
+      expect(subject.handle(request("soulRollCandidates"))[:error]).to be_present
+      expect(subject.handle(request("soulRollDifficulties"))[:error]).to be_present
+    end
+
+    it "returns configured difficulty options" do
+      allow(SoulRollApi).to receive(:get_difficulty_options).and_return("standard" => 13)
+      expect(subject.handle(request("soulRollDifficulties"))).to eq(difficulties: { "standard" => 13 })
+    end
+
+    it "includes the rolling character in pending-roll payloads" do
+      pending = double(id: 12, character: character, skill_key: "strength", aspect_key: "body",
+        scene_id: nil, difficulty: 13, status: "awaiting_selection", gm_assisted: "false", expires_at: nil)
+      allow(SoulRollApi).to receive(:get_open_pending_rolls).and_return([pending])
+      result = subject.handle(request("soulRollPending"))
+      expect(result[:pending_rolls].first).to include(character_id: character.id, character: character.name)
+    end
   end
 end

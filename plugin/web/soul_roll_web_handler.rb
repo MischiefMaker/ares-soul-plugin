@@ -7,7 +7,7 @@ module AresMUSH
       enactor = request.enactor
       player_commands = %w[
         soulRoll soulRollStart soulRollGm soulRollSelect soulRollAbort
-        soulRollPending soulRollHistory
+        soulRollPending soulRollHistory soulRollCandidates soulRollDifficulties
       ]
       if player_commands.include?(request.cmd) && !Soul.can_play?(enactor)
         return { error: t('soul.permission_denied') }
@@ -36,6 +36,10 @@ module AresMUSH
         review(request)
       when "soulRollMark"
         mark(request)
+      when "soulRollCandidates"
+        SoulRollApi.get_player_candidate_view(request.args['pending_roll_id'], enactor)
+      when "soulRollDifficulties"
+        { difficulties: SoulRollApi.get_difficulty_options }
       end
     end
 
@@ -124,7 +128,8 @@ module AresMUSH
 
     def pending_hash(pending)
       {
-        id: pending.id, skill_key: pending.skill_key, aspect_key: pending.aspect_key,
+        id: pending.id, character_id: pending.character.id, character: pending.character.name,
+        skill_key: pending.skill_key, aspect_key: pending.aspect_key,
         scene_id: pending.scene_id, difficulty: pending.difficulty, status: pending.status,
         gm_assisted: pending.gm_assisted, expires_at: pending.expires_at
       }

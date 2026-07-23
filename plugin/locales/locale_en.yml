@@ -60,6 +60,7 @@ en:
     roll_candidate_line: "#%{id} [%{tag}] %{details}"
     roll_candidates: "%xhRoll Candidates%xn%r%{entries}"
     roll_candidate_not_found: "No candidate tagged '%{tag}' on this roll."
+    roll_no_candidates: "No matching Boons or Banes were found. Roll 'none' to proceed without modifiers, or name one manually."
     audit_line: "%{at}: %{action} by %{actor} — %{reason}"
     audit: "%xhSOUL Audit: %{name}%xn%r%{entries}"
     system_actor: "System"

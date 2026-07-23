@@ -114,6 +114,13 @@ module AresMUSH
         end
         client.emit t('soul.roll_pending_line', id: pending.id, skill: pending.skill_key,
           status: pending.status, gm_assisted: pending.gm_assisted)
+        return unless pending.status == "awaiting_selection"
+
+        view = SoulRollApi.get_player_candidate_view(pending.id, enactor)
+        return if view[:error]
+        lines = view[:candidates].map { |candidate| candidate_line(candidate) }
+        client.emit t('soul.roll_candidates',
+          entries: lines.empty? ? t('soul.roll_no_candidates') : lines.join("%r"))
       end
 
       def show_pending

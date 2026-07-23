@@ -103,7 +103,8 @@ module AresMUSH
         SoulStaffWebHandler
       when "soulRoll", "soulRollStart", "soulRollGm", "soulRollSelect",
            "soulRollAbort", "soulRollForceAbort", "soulRollPending",
-           "soulRollHistory", "soulRollReview", "soulRollMark"
+           "soulRollHistory", "soulRollReview", "soulRollMark",
+           "soulRollCandidates", "soulRollDifficulties"
         SoulRollWebHandler
       end
     end

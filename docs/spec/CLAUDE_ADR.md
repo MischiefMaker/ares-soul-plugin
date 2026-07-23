@@ -72,7 +72,19 @@ Wrote `docs/handoffs/Phase_9_Profile_Tab_and_XP_Spend_UI.md`, resolving the desi
 
 Wrote `docs/handoffs/Phase_9_Scene_Page_Roll_Widget.md`.
 
-**Next:** await Codex's implementation of all four open Phase 9 handoffs; review and merge per the established discipline (read the actual diff, not just the completion summary).
+**Codex reviewed that handoff and correctly refused to implement it as written.** Verified each of Codex's four points directly against the source rather than taking the correction on faith:
+1. **Confirmed real:** no player-facing operation or MUSH display ever showed suggested B&B candidates — `+roll`'s own bare-status display and every player-facing web operation showed only id/skill/status. This turned out to be a genuine, product-wide violation of FINAL REQ-028 step 4 ("Present concise suggestions or state that none matched"), not just a blocker for the new widget — only the GM's own review view ever showed candidates, to the GM. Fixed with a new `SoulRollApi.get_player_candidate_view` (mirroring `select_entries`'s own suggested-set branching between standard and GM-assisted rolls) plus a new `soulRollCandidates` web operation, and extended `+roll`'s own bare-status MUSH display to use it too, since the gap affected both interfaces equally.
+2. **Confirmed real:** no player-accessible operation exposed configured difficulty names; hardcoding the shipped defaults would have gone stale the moment a game customized `game/config/soul.yml`. Fixed with `SoulRollApi.get_difficulty_options` (trivial config passthrough) and a new `soulRollDifficulties` web operation.
+3. **Confirmed real:** the web `pending_hash` helper never included the rolling character, while the MUSH `+roll/review` view already does (`pending.character.name`, inline) — a genuine CP-05 parity bug in already-"complete" Phase 6 work, not a hypothetical. Fixed by adding `character_id`/`character` to the shared `pending_hash` helper.
+4. **Agreed the originally-proposed authorization approach was a real UX problem:** probing `soulRollReview` speculatively and treating a permission error as "hide the panel" would flash a visible error to ordinary players. Resolved with the same mechanism already established for the profile tab: a new `custom-install/custom_scene_data.snippet.rb` adding `soul_can_review_rolls`/`soul_can_manage_soul` to the real, bundled-core `Scenes.custom_scene_data(viewer)` hook — UI-gating only, the real authorization stays entirely server-side and unchanged.
+
+Also accepted Codex's confirmed real scene mounting point, `ares-webportal/app/components/live-scene-custom-play.hbs` (invoked in the scene's Play menu) — not independently re-verified in this environment (no `ares-webportal` checkout available here), but a concrete, checkable finding rather than a guess, so accepted as-is per the established trust-but-verify posture (verify what can be verified directly; accept what genuinely requires access this environment doesn't have).
+
+**One discrepancy noted, not glossed over:** Codex's message referenced a rebased commit `a8aec66` for the previously-handed-off profile/XP tab work. That commit does not appear in this repository's `Codex` branch, `main`, or any fetched ref as of this session — flagged to the user rather than assumed to exist.
+
+Revised `docs/handoffs/Phase_9_Scene_Page_Roll_Widget.md` in place with all four fixes and the confirmed mounting point. All backend changes have specs (`plugin/spec/soul_roll_api_spec.rb`, `soul_roll_web_handler_spec.rb`) and pass `ruby -c`.
+
+**Next:** await Codex's implementation of the (now-unblocked) scene-widget handoff and the two still-open Phase 9 handoffs (Automatic XP Award Sources, Character Generation UI); review and merge per the established discipline.
 
 ### Phase 8: Documentation Currency, Spec Correctness, and Release Review (2026-07-24)
 

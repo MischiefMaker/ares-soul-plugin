@@ -89,6 +89,45 @@ module AresMUSH
       { success: true, candidates: candidates }
     end
 
+    # Player-facing candidate view (REQ-028 step 4: "Present concise
+    # suggestions or state that none matched"). Unlike get_gm_candidate_view,
+    # there is no privacy-category filtering - these are the roller's own
+    # B&B entries, already fully visible to them via +bnb. Mirrors
+    # select_entries's own suggested-set branching exactly: a standard
+    # roll's candidates are system_suggested_entries; a GM-assisted roll's
+    # (once the GM has reviewed - status awaiting_selection) are the GM's
+    # own gm_suggested_entries/gm_mandatory_entries, not the original
+    # system suggestions the GM may have narrowed.
+    def self.get_player_candidate_view(pending_roll_id, character)
+      pending = PendingRoll[pending_roll_id]
+      pending_error = validate_owned_open_pending(pending, character, allowed_statuses: ["awaiting_selection"])
+      return { error: pending_error } if pending_error
+
+      if pending.gm_assisted == "true"
+        mandatory_ids = pending.gm_mandatory_entries.map(&:to_s)
+        suggested_ids = pending.gm_suggested_entries.map(&:to_s)
+      else
+        mandatory_ids = []
+        suggested_ids = pending.system_suggested_entries.map(&:to_s)
+      end
+
+      candidates = (mandatory_ids + suggested_ids).uniq.map do |id|
+        data = SoulBnbApi.get_character_entry_public(character, id)
+        next if data.nil?
+        data.merge(mandatory: mandatory_ids.include?(id))
+      end.compact
+
+      { success: true, candidates: candidates }
+    end
+
+    # Configured difficulty names (REQ-026's `+roll <skill>=<difficulty>`
+    # extension). Read-only config passthrough - no privacy concern, no
+    # authorization beyond ordinary play access, since these are the same
+    # names anyone can already pass to start_roll.
+    def self.get_difficulty_options
+      Global.read_config("soul", "rolls", "difficulties") || {}
+    end
+
     def self.gm_submit_selections(pending_roll_id, gm, mandatory_ids: [], optional_ids: [])
       pending = PendingRoll[pending_roll_id]
       return { error: "Pending roll not found." } unless pending
