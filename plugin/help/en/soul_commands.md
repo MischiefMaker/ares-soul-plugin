@@ -1,0 +1,20 @@
+---
+title: SOUL Commands
+aliases:
+  - soul_commands
+---
+
+# SOUL Commands
+
+`+soul [character]` — View an authorized SOUL Sheet.
+
+`+soul/history [character]` — View authorized Narrative History.
+
+`+xp` / `+xp/history` — View your XP and ledger.
+
+`+xp/spend <skill>=<amount>` — Preview advancement cost. Repeat with
+`/confirm` to spend the XP.
+
+`+culmination [character]` — View Culminations.
+
+See `help soul_bnb` for Boons and Banes and `help manage soul` for staff tools.

@@ -1,0 +1,15 @@
+<section class="soul-history">
+  <h3>Narrative History</h3>
+  {{#if isLoading}}
+    <div class="text-muted">Loading history…</div>
+  {{else}}
+    <div class="list-group">
+      {{#each entries as |entry|}}
+        <article class="list-group-item soul-history-entry">
+          <span class="badge bg-secondary">{{entry.event_type}}</span>
+          {{entry.narrative}}
+        </article>
+      {{/each}}
+    </div>
+  {{/if}}
+</section>

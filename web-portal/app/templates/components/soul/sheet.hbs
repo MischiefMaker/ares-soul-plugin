@@ -1,0 +1,21 @@
+{{#if isLoading}}
+  <div class="text-muted">Loading SOUL sheet…</div>
+{{else}}
+  <section class="soul-sheet">
+    <h3>{{sheet.character}}</h3>
+    {{#each sheet.aspects as |aspect|}}
+      <div class="card mb-3 soul-sheet-aspect">
+        <div class="card-header">{{aspect.name}} <span class="badge bg-secondary">{{aspect.rating}}</span></div>
+        <ul class="list-group list-group-flush">
+          {{#each aspect.skills as |skill|}}
+            <li class="list-group-item d-flex justify-content-between">
+              <span>{{skill.name}}</span><span>{{skill.rating}} ({{skill.effective_base}} effective)</span>
+            </li>
+          {{/each}}
+        </ul>
+      </div>
+    {{/each}}
+    <p class="soul-sheet-xp">XP: {{sheet.xp.available}} available / {{sheet.xp.earned}} earned / {{sheet.xp.spent}} spent</p>
+    <p class="soul-sheet-resonance">Resonance: {{sheet.resonance}}</p>
+  </section>
+{{/if}}

@@ -1,0 +1,18 @@
+<section class="soul-xp">
+  <h3>Experience</h3>
+  {{#if isLoading}}
+    <div class="text-muted">Loading XP…</div>
+  {{else}}
+    <div class="row g-2 mb-3">
+      <div class="col"><div class="card card-body">Available: {{xp.available}}</div></div>
+      <div class="col"><div class="card card-body">Earned: {{xp.earned}}</div></div>
+      <div class="col"><div class="card card-body">Spent: {{xp.spent}}</div></div>
+      <div class="col"><div class="card card-body">Catch-up: {{xp.catchup}}</div></div>
+    </div>
+    <ul class="list-group soul-xp-history">
+      {{#each xp.history as |entry|}}
+        <li class="list-group-item">{{entry.direction}} {{entry.base_amount}} — {{entry.source}}</li>
+      {{/each}}
+    </ul>
+  {{/if}}
+</section>
