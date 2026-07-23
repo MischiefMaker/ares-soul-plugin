@@ -43,4 +43,21 @@ module AresMUSH
       self.approved_at = Time.now
     end
   end
+
+  class SoulRollResolvedEvent
+    attr_accessor :character_id, :roll_id, :skill_key, :final_result,
+                  :degree_of_success, :extraordinary, :gm_assisted, :resolved_at
+
+    def initialize(character_id, roll_id, skill_key, final_result,
+                   degree_of_success, extraordinary, gm_assisted)
+      self.character_id = character_id
+      self.roll_id = roll_id
+      self.skill_key = skill_key
+      self.final_result = final_result
+      self.degree_of_success = degree_of_success
+      self.extraordinary = extraordinary
+      self.gm_assisted = gm_assisted
+      self.resolved_at = Time.now
+    end
+  end
 end
