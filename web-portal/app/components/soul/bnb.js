@@ -11,13 +11,28 @@ export default Component.extend({
     this.loadCatalogue();
   },
 
-  async loadCatalogue() {
+  async loadCatalogue(query) {
     this.set('isLoading', true);
     try {
-      let result = await this.api.requestOne('soulBnbCatalogue', {});
+      let result = await this.api.requestOne('soulBnbCatalogue', { query });
       this.set('entries', result.entries);
     } finally {
       this.set('isLoading', false);
+    }
+  },
+
+  actions: {
+    search() {
+      return this.loadCatalogue(this.query);
+    },
+    async showDetail(entry) {
+      let result = await this.api.requestOne('soulBnb', { reference: entry.id });
+      if (!result.error) {
+        this.set('detail', result);
+      }
+    },
+    closeDetail() {
+      this.set('detail', null);
     }
   }
 });
