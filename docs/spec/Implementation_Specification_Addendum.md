@@ -782,6 +782,270 @@ The configured prefix is used with the outcome appended:
 
 ## SOUL Implementation and Delegation Instructions
 
+### Codex
+
+## SOUL Codex Handoff Instructions
+
+This project uses a two-stage AI workflow.
+
+Claude is the project architect and implementation lead. Codex is the implementation engineer.
+
+### Claude's Role
+
+You (Claude) remain responsible for the complete SOUL project.
+
+You are responsible for:
+
+- Architecture
+- System design
+- Implementation planning
+- API design
+- Repository organization
+- Integration strategy
+- AresMUSH convention compliance
+- Design decisions
+- Code review
+- Documentation
+- Final acceptance of all code
+
+Claude remains accountable for the implementation even when portions are delegated to Codex.
+
+Claude must review every change before it is accepted.
+
+---
+
+## Codex's Role
+
+Codex is responsible for implementing well-defined portions of the project inside the existing repository.
+
+Codex may perform substantial implementation work, including:
+
+- Ruby implementation
+- Commands
+- Request handlers
+- Public APIs
+- Services
+- Models
+- Events
+- Cron jobs
+- Ember components
+- Ember templates
+- GameApi integration
+- Configuration
+- Localization
+- Help files
+- Tests
+- Refactoring
+- Multi-file repository changes
+
+Codex should implement using existing AresMUSH conventions whenever possible instead of inventing new patterns.
+
+---
+
+## Before Beginning Any Work
+
+Before implementing a handoff, Codex must review the project documentation.
+
+Unless the handoff explicitly states otherwise, read the following documents first:
+
+1. **SOUL Implementation Specification**
+   - Canonical implementation requirements.
+
+2. **SOUL Design Decisions**
+   - Architectural rationale.
+   - Explains *why* systems work the way they do.
+
+3. **Implementation Specification Addendum**
+   - Final architectural decisions.
+   - Overrides any earlier unresolved design questions.
+
+4. **Inklings Development Guide**
+   - AresMUSH conventions.
+   - Repository structure.
+   - Command patterns.
+   - Request handler patterns.
+   - GameApi usage.
+   - Testing conventions.
+   - Lessons learned during the Inklings implementation.
+
+These documents together form the architectural contract for SOUL.
+
+If any document appears to conflict with another:
+
+1. The Implementation Specification Addendum takes precedence.
+2. The Implementation Specification takes precedence over Design Decisions.
+3. Design Decisions explain intent but do not override the specification.
+4. The Inklings Development Guide governs implementation conventions unless the specification explicitly states otherwise.
+
+---
+
+## Repository Expectations
+
+Codex is working inside an existing AresMUSH plugin.
+
+Do not create:
+
+- standalone applications
+- replacement web portals
+- duplicate plugins
+- duplicate APIs
+- duplicate services
+- custom frameworks
+- unnecessary abstractions
+
+Reuse existing AresMUSH systems wherever possible.
+
+Follow existing repository patterns before introducing new ones.
+
+When modifying existing code:
+
+- preserve style
+- preserve naming
+- preserve conventions
+- minimize unrelated changes
+
+---
+
+## Architecture
+
+Architecture has already been completed.
+
+Codex must not:
+
+- redesign systems
+- reinterpret requirements
+- rename concepts
+- simplify mechanics
+- remove functionality
+- invent new APIs
+- replace approved designs
+
+If implementation reveals a missing API, ambiguous requirement, or architectural problem:
+
+Stop implementation.
+
+Document the issue clearly.
+
+Return it to Claude for resolution.
+
+Do not invent a solution.
+
+---
+
+## Preparing Work
+
+Claude should delegate work in logical implementation units.
+
+Each handoff should include:
+
+1. Scope.
+2. Relevant specification sections.
+3. Repository files expected to change.
+4. Existing APIs and services to use.
+5. Constraints and invariants.
+6. Acceptance criteria.
+7. Testing requirements.
+8. Known exclusions.
+9. Any existing repository conventions relevant to the task.
+
+Codex should inspect the repository as needed to understand surrounding code before making changes.
+
+---
+
+## During Implementation
+
+Codex should:
+
+- follow AresMUSH conventions
+- prefer existing framework functionality
+- keep commands and handlers thin
+- place business logic in services/APIs
+- avoid duplication
+- preserve audit history
+- preserve localization
+- preserve permission checks
+- preserve MUSH/Web parity
+- write tests alongside implementation whenever practical
+
+If repository conventions differ from assumptions in the handoff, follow the repository and report the discrepancy.
+
+---
+
+## After Implementation
+
+Codex should provide:
+
+- summary of completed work
+- files modified
+- files created
+- architectural issues discovered
+- APIs that appear to be missing
+- tests added or updated
+- manual testing performed
+- remaining known issues
+
+Codex should clearly distinguish:
+
+- completed implementation
+- assumptions made
+- unresolved questions
+- recommendations
+
+---
+
+## Claude Review
+
+After Codex completes a task, Claude must review every change.
+
+Claude must verify:
+
+- specification compliance
+- design compliance
+- AresMUSH convention compliance
+- architectural correctness
+- API correctness
+- repository consistency
+- localization
+- permissions
+- privacy
+- configuration
+- event flow
+- web/MUSH parity
+- tests
+- documentation
+- edge cases
+
+Claude should correct any deficiencies before accepting the implementation.
+
+Codex output is not considered accepted until Claude has completed this review.
+
+---
+
+## Architectural Rule
+
+If implementation reveals a design question that is not already answered by:
+
+- the Implementation Specification,
+- the Design Decisions,
+- the Implementation Specification Addendum, or
+- the Inklings Development Guide,
+
+Codex must stop and report the issue rather than making an architectural decision.
+
+Only Claude may resolve architectural questions.
+
+---
+
+## Default Rule
+
+Codex implements.
+
+Claude designs, reviews, integrates, and accepts.
+
+When uncertainty exists, preserve the architecture and return questions to Claude rather than making new design decisions.
+
+### LlamaCoder
+
 This project uses Claude as the primary implementation agent. LlamaCoder may be used only for narrowly bounded, self-contained support tasks when its environment is demonstrably suitable.
 
 ### Claude’s Role
