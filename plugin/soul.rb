@@ -69,7 +69,7 @@ module AresMUSH
         case cmd.switch
         when "history"
           SoulHistoryCmd
-        when "framework", "resonance", "reload"
+        when "framework", "resonance", "reload", "audit"
           SoulStaffCmd
         when nil
           SoulSheetCmd
@@ -80,6 +80,8 @@ module AresMUSH
         SoulXpCmd
       when "culmination"
         SoulCulminationCmd
+      when "roll"
+        SoulRollCmd
       end
     end
 
@@ -96,8 +98,12 @@ module AresMUSH
         SoulCulminationWebHandler
       when "soulHistory"
         SoulHistoryWebHandler
-      when "soulFramework", "soulResonance", "soulReload"
+      when "soulFramework", "soulResonance", "soulReload", "soulAudit"
         SoulStaffWebHandler
+      when "soulRoll", "soulRollStart", "soulRollGm", "soulRollSelect",
+           "soulRollAbort", "soulRollForceAbort", "soulRollPending",
+           "soulRollHistory", "soulRollReview", "soulRollMark"
+        SoulRollWebHandler
       end
     end
   end
