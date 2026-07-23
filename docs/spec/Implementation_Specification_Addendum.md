@@ -415,62 +415,32 @@ chargen:
 
 ## 6. Pending Roll Expiry Mechanics
 
-**Status:** Pending Decision
+**Status:** ✅ Approved
 
-**Question (from Review):**
-What is the canonical duration, trigger (wall-clock vs. scene-end), and notification behavior for expired pending rolls?
+**Decision:**
+Pending rolls expire after approximately 30 days (720 hours) of wall-clock time. Expired rolls are marked as inactive and can no longer be approved/rejected by GMs. No automatic resolution occurs; players and staff can still manually resolve expired rolls if needed.
 
-**Specification Reference:** REQ-027, REQ-044
+**Mechanism:**
+- Wall-clock expiry: Rolls older than 720 hours are marked expired
+- No auto-resolve: Expired rolls remain in history but inactive
+- GM capacity management: Open roll cap (configurable) prevents queue buildup
 
-**Options Under Consideration:**
+**Rationale:**
+Since open rolls are already limited by configuration (per-player cap), individual rolls can afford longer expiry windows without creating system strain. A 30-day window accommodates asynchronous play patterns, scene delays, and multi-week narratives while still eventually clearing old rolls from active queues.
 
-### Option A: Wall-Clock Duration (Silent Expiry)
+**Player Experience:**
+- Players can still view expired rolls in their history
+- GMs can still manually approve/reject expired rolls if narrative resolution is needed
+- Automatic marking prevents confusion (expired rolls clearly distinguished)
+
+**Configuration:**
 ```yaml
 rolls:
-  pending_roll_timeout_hours: 24
-  expiry_notification: false
-  auto_failure_on_expiry: false  # Roll remains pending indefinitely; marked as "stale"
-```
-- **Mechanism:** Pending rolls older than 24 hours are marked expired; GM can no longer approve/reject
-- **Player Experience:** Player receives no notification; must check `+pending` to see status
-- **Admin Burden:** Staff must periodically clean expired rolls
-
-### Option B: Scene-End Trigger (Player Notification)
-```yaml
-rolls:
-  pending_roll_trigger: "scene_end"
-  expiry_notification: true
-  auto_failure_on_expiry: false
-```
-- **Mechanism:** When the scene ends, all pending rolls from that scene auto-expire
-- **Player Experience:** Player receives notification: "Your pending roll in [Scene] has expired and is no longer valid"
-- **Admin Burden:** Low; automatic cleanup tied to scene lifecycle
-- **Concern:** Doesn't handle rolls from non-scene contexts (admin, OOC tests)
-
-### Option C: Grace-Period with Auto-Resolve (Configurable)
-```yaml
-rolls:
-  pending_roll_timeout_hours: 24
-  grace_period_hours: 2     # 2-hour grace before expiry
-  expiry_notification: true
-  auto_failure_on_expiry: true  # Automatic failure if not resolved within grace period
-```
-- **Mechanism:** Pending roll waits for GM for 24 hours; at 22 hours, player receives warning; at 24 hours, auto-fails
-- **Player Experience:** Player is notified at 22 hours; can reach out to staff or accept auto-failure
-- **Admin Burden:** Staff can still manually intervene; auto-resolve prevents stalls
-- **Concern:** Auto-failure is harsh; may require alternative (e.g., auto-approval)
-
-**Recommendation:**
-*Awaiting project-owner decision.* Implementation will use **Option C (Grace-Period with Auto-Resolve)** as default, balancing player agency with stall prevention.
-
-**Provisional Configuration:**
-```yaml
-rolls:
-  pending_roll_timeout_hours: 24
-  grace_period_hours: 2
-  expiry_notification: true
-  auto_failure_on_expiry: true
-  expiry_message: "Your pending roll has expired. It has been marked as failed. Contact staff if you believe this is in error."
+  pending_roll_timeout_hours: 720        # ~30 days
+  auto_failure_on_expiry: false          # Rolls expire silently, no auto-resolve
+  
+  # Hard cap on open rolls per player (separate config)
+  max_pending_rolls_per_player: 5        # Prevents unbounded queue growth
 ```
 
 ---
@@ -741,11 +711,11 @@ The configured prefix is used with the outcome appended:
 | Random Model | ✅ Approved | 2d10 open-ended (§2) |
 | XP Advancement Cost | ✅ Approved | Algebraic model (§3) |
 | Chargen B&Bs | ✅ Approved | 2:1 Boon-to-Bane ratio, per-R-level config (§5) |
+| Pending Roll Expiry | ✅ Approved | ~30 days wall-clock (§6) |
 | Aspect Rounding | ✅ Approved | Round Nearest (§7) |
 | Degrees of Success | ✅ Approved | Six degrees with GM-less/GM-led output (§8.1) |
 | Extraordinary Luck Messaging | ✅ Approved | Probability-based (<0.5%) (§9) |
 | Modifier Bounds | ⏳ Pending | ±10 (provisional) |
-| Pending Roll Expiry | ⏳ Pending | 24h auto-fail (provisional) |
 | Catch-Up Edge Cases | ⏳ Pending | 7d grace, 3-char minimum (provisional) |
 
 ---
