@@ -54,7 +54,7 @@
   <div class="tab-pane fade" id="soul-tab-pane">
     {{soul/sheet character=this.char.name}}
     {{soul/xp character=this.char.name isSelf=(eq this.char.id this.char.custom.viewer_id)}}
-    {{soul/bnb}}
+    {{soul/bnb canManage=this.char.custom.can_manage_soul}}
     {{soul/culmination character=this.char.name}}
     {{soul/history character=this.char.name}}
     {{#if this.char.custom.can_manage_soul}}
