@@ -1,0 +1,37 @@
+<li>
+  <button type="button" class="dropdown-item" data-bs-toggle="modal"
+    data-bs-target="#soul-scene-tools-modal">SOUL Scene Tools</button>
+</li>
+<div class="modal fade" id="soul-scene-tools-modal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">SOUL Scene Tools</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <h4>Find a Boon or Bane Here</h4>
+      <div class="input-group mb-3">
+        <Input @value={{bnbReference}} class="form-control" placeholder="Tag or catalogue ID" />
+        <button type="button" class="btn btn-secondary" onclick={{action "lookupBnb"}}>Look Up</button>
+      </div>
+      <ul>{{#each bnbMatches as |match|}}
+        <li>{{match.character}} — {{match.name}} ({{match.level_state}})</li>
+      {{/each}}</ul>
+
+      {{#if (or custom.soul_can_review_rolls custom.soul_can_manage_soul)}}
+        <hr><h4>View Participant Sheet</h4>
+        <PowerSelect @selected={{selectedParticipant}} @options={{scene.participants}}
+          @searchField="name" @onChange={{action "selectParticipant"}} as |participant|>
+          {{participant.name}}
+        </PowerSelect>
+        <button type="button" class="btn btn-secondary mt-2"
+          disabled={{not selectedParticipant}} onclick={{action "viewSheet"}}>View Sheet</button>
+        {{#if participantSheet}}
+          <h5 class="mt-3">{{participantSheet.character}}</h5>
+          {{#each participantSheet.aspects as |aspect|}}
+            <p><strong>{{aspect.name}} {{aspect.rating}}</strong>:
+              {{#each aspect.skills as |skill|}}{{skill.name}} {{skill.rating}}; {{/each}}</p>
+          {{/each}}
+        {{/if}}
+      {{/if}}
+    </div>
+  </div></div>
+</div>
