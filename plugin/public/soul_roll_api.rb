@@ -15,25 +15,35 @@ module AresMUSH
       end
     end
 
-    def self.get_open_pending_count(character)
+    def self.get_open_pending_count(character, gm_assisted: false)
       return 0 unless character
 
       expire_stale_pending_rolls
-      character.pending_rolls.to_a.count { |pending| pending.status == "awaiting_selection" }
+      expected_flag = gm_assisted ? "true" : "false"
+      character.pending_rolls.to_a.count do |pending|
+        open_status?(pending.status) && pending.gm_assisted == expected_flag
+      end
     end
 
-    def self.start_roll(character, skill_key, context: {})
+    def self.start_roll(character, skill_key, context: {}, gm_requested: false)
       return { error: "Character not found." } unless character
       skill = SoulFrameworkApi.get_skill(skill_key)
       return { error: "Unknown skill: #{skill_key}" } unless skill
       return { error: "You don't have permission to roll." } unless Soul.can_play?(character)
 
-      limit = Global.read_config("soul", "rolls", "max_pending_rolls_per_player") || 1
-      if get_open_pending_count(character) >= limit.to_i
+      normalized_context = normalize_context(context)
+      gm_assisted = gm_assisted?(gm_requested)
+      if gm_assisted && !load_scene(normalized_context["scene_id"])
+        return { error: "A valid scene is required for a GM-assisted roll." }
+      end
+
+      limit_key = gm_assisted ? "max_pending_rolls_per_player_gm" : "max_pending_rolls_per_player"
+      default_limit = gm_assisted ? 2 : 1
+      limit = Global.read_config("soul", "rolls", limit_key) || default_limit
+      if get_open_pending_count(character, gm_assisted: gm_assisted) >= limit.to_i
         return { error: "You already have the maximum number of open pending rolls (#{limit})." }
       end
 
-      normalized_context = normalize_context(context)
       difficulty_result = resolve_difficulty(normalized_context)
       return { error: difficulty_result[:error] } if difficulty_result[:error]
 
@@ -51,11 +61,61 @@ module AresMUSH
         gm_mandatory_entries: [],
         player_selected_entries: [],
         manually_identified_entries: [],
-        status: "awaiting_selection",
-        gm_assisted: "false",
+        status: gm_assisted ? "awaiting_gm" : "awaiting_selection",
+        gm_assisted: gm_assisted ? "true" : "false",
         expires_at: Time.now + (timeout_hours.to_i * 60 * 60)
       )
 
+      { success: true, pending_roll: pending }
+    end
+
+    def self.get_gm_candidate_view(pending_roll_id, gm)
+      pending = PendingRoll[pending_roll_id]
+      return { error: "Pending roll not found." } unless pending
+      return { error: "Pending roll is not awaiting GM review." } unless pending.status == "awaiting_gm"
+      if pending.expires_at && pending.expires_at < Time.now
+        expire_pending(pending, Time.now)
+        return { error: "Pending roll has expired." }
+      end
+      return { error: "You don't have permission to review this roll." } unless can_review_pending?(pending, gm)
+
+      entry_error = validate_entry_ids(pending.system_suggested_entries, pending.character)
+      return { error: entry_error } if entry_error
+
+      categories = Global.read_config("soul", "privacy", "gm_reveal_categories") || []
+      candidates = pending.system_suggested_entries.map do |id|
+        gm_candidate_hash(CharacterBnbEntry[id], categories)
+      end
+      { success: true, candidates: candidates }
+    end
+
+    def self.gm_submit_selections(pending_roll_id, gm, mandatory_ids: [], optional_ids: [])
+      pending = PendingRoll[pending_roll_id]
+      return { error: "Pending roll not found." } unless pending
+      return { error: "Pending roll is not awaiting GM review." } unless pending.status == "awaiting_gm"
+      if pending.expires_at && pending.expires_at < Time.now
+        expire_pending(pending, Time.now)
+        return { error: "Pending roll has expired." }
+      end
+      return { error: "You don't have permission to review this roll." } unless can_review_pending?(pending, gm)
+
+      mandatory = Array(mandatory_ids).map(&:to_s)
+      optional = Array(optional_ids).map(&:to_s)
+      return { error: "Duplicate GM selections are not allowed." } unless mandatory.uniq.length == mandatory.length && optional.uniq.length == optional.length
+      return { error: "An entry cannot be both mandatory and optional." } if (mandatory & optional).any?
+
+      candidates = pending.system_suggested_entries.map(&:to_s)
+      invalid = (mandatory + optional).reject { |id| candidates.include?(id) }
+      return { error: "GM selections must come from this roll's candidate list." } if invalid.any?
+
+      entry_error = validate_entry_ids(mandatory + optional, pending.character)
+      return { error: entry_error } if entry_error
+
+      pending.update(
+        gm_mandatory_entries: mandatory,
+        gm_suggested_entries: optional,
+        status: "awaiting_selection"
+      )
       { success: true, pending_roll: pending }
     end
 
@@ -71,10 +131,11 @@ module AresMUSH
       return { error: "Duplicate B&B tags are not allowed." } unless requested_tags.uniq.length == requested_tags.length
 
       if suggested
-        error = validate_entry_ids(pending.system_suggested_entries, character)
+        suggestions = pending.gm_assisted == "true" ? pending.gm_suggested_entries : pending.system_suggested_entries
+        error = validate_entry_ids(suggestions, character)
         return { error: error } if error
         pending.update(
-          player_selected_entries: pending.system_suggested_entries.map(&:to_s),
+          player_selected_entries: suggestions.map(&:to_s),
           manually_identified_entries: []
         )
       elsif none
@@ -83,7 +144,11 @@ module AresMUSH
         result = resolve_owned_tags(character, requested_tags)
         return { error: result[:error] } if result[:error]
 
-        suggested_ids = pending.system_suggested_entries.map(&:to_s)
+        suggested_ids = if pending.gm_assisted == "true"
+                          pending.gm_suggested_entries.map(&:to_s)
+                        else
+                          pending.system_suggested_entries.map(&:to_s)
+                        end
         selected = result[:entries].select { |entry| suggested_ids.include?(entry.id.to_s) }
         manual = result[:entries].reject { |entry| suggested_ids.include?(entry.id.to_s) }
         pending.update(
@@ -103,13 +168,15 @@ module AresMUSH
 
       selected_ids = pending.player_selected_entries.map(&:to_s)
       manual_ids = pending.manually_identified_entries.map(&:to_s)
-      all_ids = selected_ids + manual_ids
-      return { error: "Duplicate B&B selections are not allowed." } unless all_ids.uniq.length == all_ids.length
+      mandatory_ids = pending.gm_mandatory_entries.map(&:to_s)
+      player_ids = selected_ids + manual_ids
+      return { error: "Duplicate B&B selections are not allowed." } unless player_ids.uniq.length == player_ids.length
+      all_ids = (player_ids + mandatory_ids).uniq
 
-      entry_result = load_accepted_entries(character, selected_ids, manual_ids)
+      entry_result = load_accepted_entries(character, all_ids, [])
       return { error: entry_result[:error] } if entry_result[:error]
 
-      modifier_result = build_applied_modifiers(entry_result[:entries], selected_ids)
+      modifier_result = build_applied_modifiers(entry_result[:entries], selected_ids, mandatory_ids: mandatory_ids)
       return { error: modifier_result[:error] } if modifier_result[:error]
       net_modifier = modifier_result[:modifiers].sum { |modifier| modifier["modifier"] }
 
@@ -142,7 +209,7 @@ module AresMUSH
         success_probability: outcome_probability,
         degree_of_success: degree,
         extraordinary: extraordinary ? "true" : "false",
-        gm_assisted: "false",
+        gm_assisted: pending.gm_assisted,
         rolled_at: Time.now
       )
       pending.update(status: "resolved")
@@ -158,24 +225,62 @@ module AresMUSH
     def self.abort_pending(pending_roll_id, actor, reason:)
       return { error: "A reason is required to abort a pending roll." } if reason.to_s.blank?
       pending = PendingRoll[pending_roll_id]
-      pending_error = validate_owned_open_pending(pending, actor)
+      allowed_statuses = if pending && pending.gm_assisted == "true"
+                           ["awaiting_gm"]
+                         else
+                           ["awaiting_gm", "awaiting_selection"]
+                         end
+      pending_error = validate_owned_open_pending(pending, actor, allowed_statuses: allowed_statuses)
       return { error: pending_error } if pending_error
       return { error: "You don't have permission to abort this roll." } unless Soul.can_play?(actor)
 
+      old_status = pending.status
       pending.update(status: "aborted")
       SoulAuditApi.create(
         action: "roll_abort",
         character: pending.character,
         actor: actor,
         reason: reason,
-        before_state: { "status" => "awaiting_selection" },
+        before_state: { "status" => old_status },
         after_state: { "status" => "aborted" }
       )
       { success: true }
     end
 
+    def self.force_abort_pending(pending_roll_id, actor, reason:)
+      return { error: "A reason is required to force-abort a pending roll." } if reason.to_s.blank?
+      pending = PendingRoll[pending_roll_id]
+      return { error: "Pending roll not found." } unless pending
+      return { error: "Pending roll is not open." } unless open_status?(pending.status)
+      if pending.expires_at && pending.expires_at < Time.now
+        expire_pending(pending, Time.now)
+        return { error: "Pending roll has expired." }
+      end
+      return { error: "You don't have permission to force-abort this roll." } unless can_review_pending?(pending, actor)
+
+      old_status = pending.status
+      pending.update(status: "aborted")
+      SoulAuditApi.create(
+        action: "roll_force_abort",
+        character: pending.character,
+        actor: actor,
+        reason: reason,
+        before_state: { "status" => old_status },
+        after_state: { "status" => "aborted" }
+      )
+      Login.notify(
+        pending.character,
+        :soul,
+        "Your pending SOUL roll was force-aborted: #{reason}",
+        pending.id
+      )
+      { success: true }
+    end
+
     def self.expire_stale_pending_rolls(now = Time.now)
-      expired = PendingRoll.find(status: "awaiting_selection").to_a.select do |pending|
+      open_rolls = PendingRoll.find(status: "awaiting_gm").to_a +
+                   PendingRoll.find(status: "awaiting_selection").to_a
+      expired = open_rolls.select do |pending|
         pending.expires_at && pending.expires_at < now
       end
       expired.each { |pending| expire_pending(pending, now) }
@@ -207,13 +312,16 @@ module AresMUSH
     end
     private_class_method :resolve_difficulty
 
-    def self.validate_owned_open_pending(pending, character)
+    def self.validate_owned_open_pending(pending, character, allowed_statuses: ["awaiting_selection"])
       return "Pending roll not found." unless pending
       return "That pending roll does not belong to you." unless character && pending.character == character && pending.player == character
-      if pending.status == "awaiting_selection" && pending.expires_at && pending.expires_at < Time.now
+      if open_status?(pending.status) && pending.expires_at && pending.expires_at < Time.now
         expire_pending(pending, Time.now)
       end
-      return "Pending roll is not awaiting selection." unless pending.status == "awaiting_selection"
+      unless allowed_statuses.include?(pending.status)
+        return "Pending roll is not awaiting selection." if allowed_statuses == ["awaiting_selection"]
+        return "Pending roll is not in an allowed status."
+      end
       nil
     end
     private_class_method :validate_owned_open_pending
@@ -253,7 +361,7 @@ module AresMUSH
     end
     private_class_method :load_accepted_entries
 
-    def self.build_applied_modifiers(entries, selected_ids)
+    def self.build_applied_modifiers(entries, selected_ids, mandatory_ids: [])
       modifiers = []
       entries.each do |entry|
         magnitude = SoulBnbApi.level_modifier(entry.catalogue_entry, entry.level_state)
@@ -261,8 +369,15 @@ module AresMUSH
           return { error: "B&B entry ##{entry.id} (#{entry.catalogue_entry.name}) has no configured modifier for #{entry.level_state}." }
         end
         signed = magnitude.to_i * (entry.boon? ? 1 : -1)
+        source = if mandatory_ids.include?(entry.id.to_s)
+                   "gm_mandatory"
+                 elsif selected_ids.include?(entry.id.to_s)
+                   "system_suggested"
+                 else
+                   "manually_identified"
+                 end
         modifiers << {
-          "source" => selected_ids.include?(entry.id.to_s) ? "system_suggested" : "manually_identified",
+          "source" => source,
           "entry_id" => entry.id.to_s,
           "tag" => entry.catalogue_entry.tag,
           "name" => entry.catalogue_entry.name,
@@ -273,6 +388,47 @@ module AresMUSH
       { modifiers: modifiers }
     end
     private_class_method :build_applied_modifiers
+
+    def self.gm_assisted?(gm_requested)
+      policy = Global.read_config("soul", "rolls", "gm_scene_policy") || "optional"
+      policy == "required" || (policy == "optional" && gm_requested)
+    end
+    private_class_method :gm_assisted?
+
+    def self.load_scene(scene_id)
+      return nil if scene_id.to_s.blank?
+      Scene[scene_id]
+    end
+    private_class_method :load_scene
+
+    def self.can_review_pending?(pending, actor)
+      return false unless actor
+      return true if Soul.can_manage_soul?(actor)
+
+      scene = load_scene(pending.scene_id)
+      Soul.can_review_rolls?(actor) && scene && scene.is_participant?(actor)
+    end
+    private_class_method :can_review_pending?
+
+    def self.gm_candidate_hash(entry, categories)
+      catalogue = entry.catalogue_entry
+      candidate = { id: entry.id.to_s, tag: catalogue.tag }
+      candidate[:name] = catalogue.name if categories.include?("name")
+      candidate[:public_description] = catalogue.description if categories.include?("public_description")
+      if categories.include?("mechanical_effect")
+        magnitude = SoulBnbApi.level_modifier(catalogue, entry.level_state)
+        candidate[:mechanical_effect] = magnitude.nil? ? nil : magnitude.to_i * (entry.boon? ? 1 : -1)
+      end
+      candidate[:character_explanation] = entry.character_explanation if categories.include?("character_explanation")
+      candidate[:gm_notes] = entry.gm_notes if categories.include?("gm_notes")
+      candidate
+    end
+    private_class_method :gm_candidate_hash
+
+    def self.open_status?(status)
+      ["awaiting_gm", "awaiting_selection"].include?(status)
+    end
+    private_class_method :open_status?
 
     def self.degree_of_success(margin)
       config = Global.read_config("soul", "rolls", "degrees_of_success") || {}
@@ -305,6 +461,7 @@ module AresMUSH
     private_class_method :serialize_dice
 
     def self.expire_pending(pending, now)
+      old_status = pending.status
       pending.update(status: "expired")
       SoulAuditApi.create(
         action: "roll_expire",
@@ -312,7 +469,7 @@ module AresMUSH
         actor: nil,
         reason: "Pending roll expired at #{now}.",
         source: "system",
-        before_state: { "status" => "awaiting_selection" },
+        before_state: { "status" => old_status },
         after_state: { "status" => "expired" }
       )
     end
