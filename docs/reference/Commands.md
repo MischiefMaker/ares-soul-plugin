@@ -13,6 +13,20 @@ Command surface for SOUL, derived from `docs/spec/SOUL_LLM_Implementation_Specif
 
 The default Sheet fits roughly one MUSH screen (CI-02); drill-down commands below cover full detail.
 
+## Character Generation
+
+| Command | Purpose | Permission |
+|---|---|---|
+| `+chargen` | Review Resonance, Skill allocation, and starting B&B selections | unapproved player |
+| `+chargen/resonance <value>` | Select or change Resonance | unapproved player |
+| `+chargen/skill <key>=<rating>` | Set an absolute starting Skill rating | unapproved player |
+| `+chargen/bnb <id or tag>[/<level>]=<explanation>` | Add a chargen-available B&B | unapproved player |
+| `+chargen/drop <entry id>` | Remove a chargen-selected B&B | unapproved player |
+
+The optional web chargen tab provides the same actions. Install the two
+`chargen-custom` snippets and add the supplied `chargen_stage` entry to the
+game's chargen configuration.
+
 ## Boons & Banes
 
 | Command | Status | Purpose | Permission |
@@ -137,4 +151,4 @@ Staff tools SHALL NOT require direct database manipulation (REQ-036). `+soul/aud
 
 - All player commands are permission-gated via `game/config/soul.yml` (see `docs/reference/Permissions.md`).
 - Rolls automatically surface matching B&Bs — no manual +/- modifier entry (CI-03 conversational roll flow).
-- Web portal SHALL provide equivalent capability for every command family above (REQ-032, CP-05) — MUSH is the authoritative feature list. **As of 2026-07-24, this is not yet true in practice**: most staff workflows (B&B catalogue management, XP awards/corrections, Culmination approval, Resonance correction, Framework/Audit viewing) and several player workflows (B&B detail/search/scene lookup, roll abort/pending-list/history) have a working web *operation* but no Ember UI that invokes it, so they currently require MUSH commands. See `docs/handoffs/Phase_10_Web_Command_Parity_Completion.md` and `docs/spec/IMPLEMENTATION_CHECKLIST.md`'s Phase 10 section for the itemized gap list.
+- The optional web portal components provide equivalent controls for every command family above (REQ-032, CP-05). Install the supplied profile, scene, and chargen snippets to make those controls reachable in the game portal.
