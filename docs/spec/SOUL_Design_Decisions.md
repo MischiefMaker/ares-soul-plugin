@@ -8,35 +8,55 @@ SOUL is designed as a story-first character progression and narrative framework 
 
 ## Major Design Decisions
 
-### Story-First Mechanics
+### DD-01: Story-First Mechanics
 
 **Decision:** Mechanics are designed to enhance roleplay, not become the focus of play.
 
 **Rationale:** Players should gain more from good RP, Inklings, Boons & Banes, and long-term storytelling than from simply accumulating XP or grinding mechanics. The system rewards narrative investment.
 
-### On-Game Creation, Not Seeding
+### DD-02: On-Game Creation, Not Seeding
 
 **Decision:** Boons & Banes are created via in-game commands post-install; examples are provided in README, not pre-seeded into the database.
 
 **Rationale:** Follows established AresMUSH patterns where admins create data via commands. Keeps installation lightweight and transparent. Admins retain full control over what B&Bs exist in their world.
 
-### Hooks and Services for Plugins
+**Cross-Reference:** Implementation_Specification_Addendum §8 addresses B&B chargen limits and lifecycle.
+
+### DD-03: Hooks and Services for Plugins
 
 **Decision:** SOUL exposes hooks and services for optional plugins (Grimoire, Inklings) to integrate rather than duplicate functionality.
 
 **Rationale:** Avoids coupling between plugins while allowing them to extend SOUL. Future plugins can add features without reimplementing SOUL's core concerns.
 
-### Flexible B&Bs with Lifecycle
+**Cross-Reference:** `docs/architecture/API_and_Hooks.md` details all public APIs and event hooks.
+
+### DD-04: Flexible B&Bs with Lifecycle
 
 **Decision:** Boons & Banes are managed instances with reusable definitions, character-specific instances, mechanical effects, tags, sources, history, and active/resolved lifecycle.
 
 **Rationale:** Not static YAML lists. This gives admins the flexibility to model complex narrative effects and maintain history for storytelling purposes.
 
-### SOUL Owns Rolls
+### DD-05: SOUL Owns Rolls
 
 **Decision:** SOUL will eventually own character rolls, supporting normal player rolls, optional GM-assisted rolls, Boons & Banes, configurable scene policies, and asynchronous GM workflows.
 
 **Rationale:** Centralizes mechanics so other plugins can hook into roll resolution rather than implementing parallel systems. Enables consistent treatment of modifiers across plugins.
+
+**Cross-Reference:** Implementation_Specification_Addendum §2 (2d10 open-ended mechanics), §8.1 (six degrees of success), §9 (extraordinary luck messaging).
+
+### DD-06: Aspect Weight (Configurable)
+
+**Decision:** Aspects contribute a scaled modifier to rolls (default: Aspect Rating × 0.20), configurable for balance.
+
+**Rationale:** Aspects provide character flavor and framework without overshadowing Skill investment. Configurable weight allows games to tune how much Aspect matters relative to Skill.
+
+**Configuration:**
+```yaml
+aspect:
+  weight: 0.20   # Default. Subject to playtesting and balance.
+```
+
+**Cross-Reference:** Implementation_Specification_Addendum §8 addresses Aspect contribution rounding.
 
 ## Rejected Alternatives
 
@@ -83,3 +103,27 @@ The hook system should support integration from other plugins (Economy, etc.) wi
 ## Historical Notes
 
 This system was designed with lessons learned from the Inklings project and in preparation for its eventual replacement of FS3 in games that choose to use it. The architecture prioritizes compatibility with existing plugins and configurability for diverse game needs.
+
+---
+
+## Decision Index
+
+Quick reference for all major design decisions (DD-##):
+
+| Decision | Section | Status | Cross-Reference |
+|----------|---------|--------|-----------------|
+| DD-01 | Story-First Mechanics | ✅ Approved | Core philosophy |
+| DD-02 | On-Game Creation, Not Seeding | ✅ Approved | Implementation_Specification_Addendum §8 |
+| DD-03 | Hooks and Services for Plugins | ✅ Approved | docs/architecture/API_and_Hooks.md |
+| DD-04 | Flexible B&Bs with Lifecycle | ✅ Approved | docs/architecture/Data_Model.md |
+| DD-05 | SOUL Owns Rolls | ✅ Approved | Implementation_Specification_Addendum §2, §8.1, §9 |
+| DD-06 | Aspect Weight (Configurable) | ✅ Approved | Implementation_Specification_Addendum §8 |
+
+---
+
+## Recommended Reading Order
+
+1. **New to SOUL:** Start with Overview, then read Major Design Decisions (DD-01 through DD-06)
+2. **Implementation planning:** Cross-reference each DD with the linked documents for detailed specifications
+3. **Architecture questions:** See `docs/architecture/` for data models, API contracts, and integration patterns
+4. **Configuration details:** See `docs/reference/Configuration.md` and `Implementation_Specification_Addendum.md` for tunable parameters
