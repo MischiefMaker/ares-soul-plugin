@@ -91,16 +91,18 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 
 ## Phase 5: GM-Assisted Rolls and Scene Integration
 
-**Status:** 🔶 Handed to Codex (2026-07-24) — `docs/handoffs/Phase_5_GM_Assisted_Rolls.md`, extending the existing `plugin/public/soul_roll_api.rb` rather than new files. Pending implementation and review.
+**Status:** ✅ Complete (2026-07-24) — implemented by Codex against `docs/handoffs/Phase_5_GM_Assisted_Rolls.md` (extending the existing `plugin/public/soul_roll_api.rb`, no new files), reviewed and merged by Claude. One real gap found and fixed during review (see below).
 
-- [ ] Scene policy configuration: Required / Optional / Unavailable (REQ-029) — `rolls.gm_scene_policy` already shipped/validated (Phase 1); resolution logic in `start_roll` designed, handed to Codex
-- [ ] GM mandatory vs. optional B&B marking (REQ-029) — `gm_submit_selections`, restricted to the roll's own `system_suggested_entries`, designed, handed to Codex
-- [ ] Reveal-policy-scoped GM visibility (privacy-safe wording, REQ-029, REQ-005) — `get_gm_candidate_view`, category-to-field mapping fully specified in the handoff, designed, handed to Codex
-- [ ] Player abort before GM submission, with GM notification (REQ-029) — narrowed `abort_pending` window + new `force_abort_pending` using the real `Login.notify` mechanism, designed, handed to Codex
-- [ ] Staff force-abort with reason and audit (REQ-029) — same as above
+- [x] Scene policy configuration: Required / Optional / Unavailable (REQ-029) — `SoulRollApi.gm_assisted?`/`.start_roll`
+- [x] GM mandatory vs. optional B&B marking (REQ-029) — `SoulRollApi.gm_submit_selections`, restricted to the roll's own `system_suggested_entries`
+- [x] Reveal-policy-scoped GM visibility (privacy-safe wording, REQ-029, REQ-005) — `SoulRollApi.get_gm_candidate_view`/`.gm_candidate_hash`, filters to exactly the configured `gm_reveal_categories`
+- [x] Player abort before GM submission, with GM notification (REQ-029) — narrowed `abort_pending` window (`allowed_statuses:`) + new `force_abort_pending` using the real `Login.notify` mechanism
+- [x] Staff force-abort with reason and audit (REQ-029) — `SoulRollApi.force_abort_pending`
 - [ ] `+roll/gm`, `+roll suggested`, `+roll <tag>`, `+roll none` command implementations (REQ-026) — commands remain Phase 6, consistent with every other subsystem
 
-**Scene-GM authorization gap resolved:** FINAL/Permissions.md describe a "Scene-GM" permission tier scoped to "the active scene," but real AresMUSH's `Scene` model (confirmed against `plugins/scenes/public/scene.rb`) has no dedicated GM field — only `owner`/`participants`/`is_participant?`. Resolved as `Soul.can_review_rolls?(character) && scene.is_participant?(character)` — a real design decision recorded in the handoff (§5.1) and `Data_Model.md`, not a fabrication, since no more specific mechanism exists in core to check against.
+**Scene-GM authorization gap resolved:** FINAL/Permissions.md describe a "Scene-GM" permission tier scoped to "the active scene," but real AresMUSH's `Scene` model (confirmed against `plugins/scenes/public/scene.rb`) has no dedicated GM field — only `owner`/`participants`/`is_participant?`. Resolved as `Soul.can_review_rolls?(character) && scene.is_participant?(character)` (or `Soul.can_manage_soul?` as an always-sufficient alternative) — a real design decision recorded in the handoff (§5.1) and `Data_Model.md`, not a fabrication, since no more specific mechanism exists in core to check against. Implemented correctly by Codex as `SoulRollApi.can_review_pending?`.
+
+**Bug caught during review, fixed before merge:** the handoff's ambiguity note flagged by Codex ("`select_entries` unchanged" vs. limiting players to GM-approved entries) was resolved by Codex using `gm_suggested_entries` instead of `system_suggested_entries` for the bulk-`suggested` accept and the tag-partition source list on a GM-assisted roll — correct for the `suggested`/`none` forms. But the tag-selection (`tags:`) branch had a residual gap: naming a specific B&B by tag that *was* a system candidate but that the GM reviewed and did **not** mark mandatory or optional fell through to `manually_identified_entries` and was silently applied anyway — letting a player route around the GM's exclusion instead of being rejected. Per the handoff's §5.6 ("an id the GM doesn't mention is dropped from consideration, not implicitly optional"), this defeats the purpose of GM review. Fixed directly in `select_entries`: a GM-assisted roll's tag-selection now explicitly rejects any tag matching a *reviewed-and-excluded* candidate, while still allowing manual identification of B&Bs the system never proposed as candidates at all (unaffected, since those were never subject to GM review). Three new specs cover the rejection, the still-permitted genuinely-new-candidate case, and the still-permitted GM-approved-tag case.
 
 ## Phase 6: Complete MUSH/Web UI Parity
 

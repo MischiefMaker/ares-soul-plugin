@@ -352,6 +352,53 @@ module AresMUSH
         result = SoulRollApi.select_entries(pending.id, character, tags: ["tag"], none: true)
         expect(result[:error]).to match(/exactly one/i)
       end
+
+      it "rejects a tag naming a candidate the GM reviewed and excluded" do
+        excluded = owned_entry("excluded")
+        approved = owned_entry("approved")
+        pending = pending_for(
+          character,
+          gm_assisted: "true",
+          system_suggested_entries: [excluded.id.to_s, approved.id.to_s],
+          gm_suggested_entries: [approved.id.to_s],
+          gm_mandatory_entries: []
+        )
+
+        result = SoulRollApi.select_entries(pending.id, character, tags: ["excluded"])
+        expect(result[:error]).to match(/did not make/i)
+        expect(pending.player_selected_entries).to eq([])
+        expect(pending.manually_identified_entries).to eq([])
+      end
+
+      it "still allows manually identifying a B&B the system never proposed on a GM-assisted roll" do
+        never_suggested = owned_entry("fresh", modifier: "false")
+        pending = pending_for(
+          character,
+          gm_assisted: "true",
+          system_suggested_entries: [],
+          gm_suggested_entries: [],
+          gm_mandatory_entries: []
+        )
+
+        result = SoulRollApi.select_entries(pending.id, character, tags: ["fresh"])
+        expect(result[:success]).to be true
+        expect(pending.manually_identified_entries).to eq([never_suggested.id.to_s])
+      end
+
+      it "allows selecting a GM-approved optional tag on a GM-assisted roll" do
+        approved = owned_entry("approved")
+        pending = pending_for(
+          character,
+          gm_assisted: "true",
+          system_suggested_entries: [approved.id.to_s],
+          gm_suggested_entries: [approved.id.to_s],
+          gm_mandatory_entries: []
+        )
+
+        result = SoulRollApi.select_entries(pending.id, character, tags: ["approved"])
+        expect(result[:success]).to be true
+        expect(pending.player_selected_entries).to eq([approved.id.to_s])
+      end
     end
 
     describe ".resolve_pending" do

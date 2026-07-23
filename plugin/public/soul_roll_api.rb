@@ -144,11 +144,28 @@ module AresMUSH
         result = resolve_owned_tags(character, requested_tags)
         return { error: result[:error] } if result[:error]
 
-        suggested_ids = if pending.gm_assisted == "true"
-                          pending.gm_suggested_entries.map(&:to_s)
-                        else
-                          pending.system_suggested_entries.map(&:to_s)
-                        end
+        if pending.gm_assisted == "true"
+          suggested_ids = pending.gm_suggested_entries.map(&:to_s)
+          mandatory_ids = pending.gm_mandatory_entries.map(&:to_s)
+          reviewed_ids = pending.system_suggested_entries.map(&:to_s)
+
+          # A candidate the GM reviewed and did not mark mandatory or optional
+          # was deliberately excluded (handoff §5.6) - it must not become
+          # selectable again by naming it directly. Only entries the system
+          # never proposed at all (genuinely outside GM review) may still be
+          # manually identified.
+          rejected = result[:entries].select do |entry|
+            id = entry.id.to_s
+            reviewed_ids.include?(id) && !suggested_ids.include?(id) && !mandatory_ids.include?(id)
+          end
+          if rejected.any?
+            names = rejected.map { |entry| entry.catalogue_entry.tag }.join(", ")
+            return { error: "The GM did not make #{names} available for this roll." }
+          end
+        else
+          suggested_ids = pending.system_suggested_entries.map(&:to_s)
+        end
+
         selected = result[:entries].select { |entry| suggested_ids.include?(entry.id.to_s) }
         manual = result[:entries].reject { |entry| suggested_ids.include?(entry.id.to_s) }
         pending.update(

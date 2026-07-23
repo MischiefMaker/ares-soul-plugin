@@ -18,7 +18,7 @@ Claude's ongoing engineering notebook for SOUL implementation. Tracks current st
 
 **Branch:** `main`
 
-**Phase:** ✅ Phases 1-4 complete. 🔶 Phase 5 (GM-Assisted Rolls and Scene Integration) handed to Codex (`docs/handoffs/Phase_5_GM_Assisted_Rolls.md`), pending implementation and review.
+**Phase:** ✅ Phases 1-5 complete. Ready to begin Phase 6 (Complete MUSH/Web UI Parity).
 
 **Delegation model changed this session:** `Implementation_Specification_Addendum.md` was updated with a new, much broader Codex role (models, services, APIs, events, cron jobs, tests — not just command/web adapters as under the narrower LlamaCoder rules that preceded it). See the Addendum's "SOUL Codex Handoff Instructions" section. Claude's role is now consistently: architecture, mathematically/architecturally sensitive implementation, design-gap resolution, and review — with conventional CRUD/service implementation work delegated to Codex once the design is locked.
 
@@ -38,6 +38,16 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 **Lesson for future sessions:** Never write architecture/reference scaffolding without deriving it from the actual governing specification. If a specification file exists, read it fully before writing any supporting documentation — do not fill gaps with generic assumptions.
 
 ## Recent Changes
+
+### Phase 5 Review Findings (2026-07-24)
+
+Codex implemented `docs/handoffs/Phase_5_GM_Assisted_Rolls.md` in full and pushed to the `Codex` branch (merge base matched `main`'s tip exactly this time — no staleness issue like Phase 4's). Review found `gm_submit_selections`, scene-GM authorization (`can_review_pending?`), `force_abort_pending`, the narrowed `abort_pending` window, and the dual-status expiry sweep all implemented correctly and matching the handoff precisely, with thorough test coverage for each.
+
+**Codex flagged a real ambiguity in the handoff itself** rather than guessing silently: my instruction that "`select_entries` is unchanged" conflicted with the requirement that GM-assisted rolls limit players to GM-approved optional entries — if `select_entries`'s bulk-`suggested` accept still pulled from the full `system_suggested_entries` (not the GM-filtered `gm_suggested_entries`), the GM's review would be pointless. Codex resolved this correctly for the `suggested`/`none` forms by branching on `pending.gm_assisted`.
+
+**But one path was left open:** the `tags:` selection form still let a player name a specific B&B by tag that *was* a system candidate but that the GM reviewed and did not mark mandatory or optional — it fell through into `manually_identified_entries` and was silently applied, letting the player route around the GM's exclusion. Per the handoff's own §5.6 ("an id the GM doesn't mention is dropped from consideration, not implicitly optional"), this defeats the point of GM review. Fixed directly in `select_entries` after merge: a GM-assisted roll's tag-selection now explicitly rejects any tag matching a reviewed-and-excluded candidate (returns `{ error: }`), while still permitting manual identification of B&Bs the system never proposed as candidates at all — those were never subject to GM review to begin with, so the fix doesn't touch that path. Added three specs: the rejection case, the still-permitted genuinely-new-candidate case, and the still-permitted GM-approved-tag case.
+
+Phase 5 is complete. Phase 6 (Complete MUSH/Web UI Parity) is next — the full command/web-handler layer for every subsystem built so far, including rolls for the first time.
 
 ### Phase 5 Handoff: GM-Assisted Rolls (2026-07-24)
 

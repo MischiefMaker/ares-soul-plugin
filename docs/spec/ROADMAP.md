@@ -36,19 +36,23 @@ Each phase was implemented only after verifying its design against real, current
 
 The 2d20 open-ended dice engine, Boon/Bane die rerolls, degrees of success, extraordinary luck detection, and the standard (non-GM) pending-roll workflow. Roll-modifier contribution from other plugins remains out of scope, still pending a design against a confirmed dispatch point — the previously-assumed `get_hooks` mechanism was found to have no basis in real core (see Phase 3 notes in `CLAUDE_ADR.md`); B&B modifiers are the only modifier source this phase implements.
 
-## Current Milestone: Implementation, Phase 5
+## Completed Milestone: Implementation, Phase 5
 
-**Status:** 🔶 In progress. Handed to Codex (`docs/handoffs/Phase_5_GM_Assisted_Rolls.md`) — extends the existing `SoulRollApi` rather than adding new files. Pending implementation and Claude's review.
+**Status:** ✅ Complete (2026-07-24). Implemented by Codex against `docs/handoffs/Phase_5_GM_Assisted_Rolls.md` (extending the existing `SoulRollApi`, no new files) and reviewed/merged by Claude — one gap in the GM-exclusion enforcement for tag-based selection found and fixed during review.
 
 ### Phase 5 — GM-Assisted Rolls and Scene Integration
 
-Per-scene GM policy (Required/Optional/Unavailable), mandatory/optional B&B selection, abort/force-abort. Builds on Phase 4's `PendingRoll` model, which already reserves the `gm_suggested_entries`/`gm_mandatory_entries`/`gm_assisted` fields for this phase. Scene-GM authorization (no dedicated GM field exists on the real `Scene` model) is resolved as global `gm_review_permission` scoped to actual scene participation — see the handoff §5.1.
+Per-scene GM policy (Required/Optional/Unavailable), mandatory/optional B&B selection, abort/force-abort. Builds on Phase 4's `PendingRoll` model, which already reserved the `gm_suggested_entries`/`gm_mandatory_entries`/`gm_assisted` fields for this phase. Scene-GM authorization (no dedicated GM field exists on the real `Scene` model) is resolved as global `gm_review_permission` scoped to actual scene participation — see the handoff §5.1.
 
-## Future Phases
+## Current Milestone: Implementation, Phase 6
+
+**Status:** Ready to begin
 
 ### Phase 6 — Complete MUSH/Web UI Parity
 
-Every command family from `docs/reference/Commands.md` implemented equivalently on both interfaces (CP-05) — Sheet, B&B, Rolls, XP, History, and Staff UI.
+Every command family from `docs/reference/Commands.md` implemented equivalently on both interfaces (CP-05) — Sheet, B&B, Rolls, XP, History, and Staff UI. Rolls (`+roll`, `+roll/gm`, `+roll suggested`, `+roll <tag>`, `+roll none`, abort/force-abort) join the command surface already deferred from Phases 1-4.
+
+## Future Phases
 
 ### Phase 7 — Inklings and Grimoire Integrations
 
