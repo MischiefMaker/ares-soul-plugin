@@ -14,11 +14,13 @@ Claude's ongoing engineering notebook for SOUL implementation. Tracks current st
 
 ## Current Status
 
-**Session Date:** 2026-07-23
+**Session Date:** 2026-07-24
 
 **Branch:** `main`
 
-**Phase:** ✅ Phases 1-3 core models/APIs complete (Plugin Skeleton; Character Framework/Resonance/XP; Boons & Banes/Culminations/Narrative History/Audit). Commands and chargen/roll UI consistently deferred to Phase 6 across all three phases — see each phase's "Deferred to Later Phases" note in `IMPLEMENTATION_CHECKLIST.md`. Ready to begin Phase 4 (Standard Rolls and Pending-Roll Flow).
+**Phase:** ✅ Phases 1-3 complete, including the command/web-handler layer (implemented by Codex, reviewed and merged by Claude — see below). 🔶 Phase 4 (Standard Rolls and Pending-Roll Flow) in progress: the dice/probability engine is complete (Claude-implemented directly); the surrounding models/service API has been handed to Codex (`docs/handoffs/Phase_4_Roll_Service_and_Models.md`), pending implementation and review.
+
+**Delegation model changed this session:** `Implementation_Specification_Addendum.md` was updated with a new, much broader Codex role (models, services, APIs, events, cron jobs, tests — not just command/web adapters as under the narrower LlamaCoder rules that preceded it). See the Addendum's "SOUL Codex Handoff Instructions" section. Claude's role is now consistently: architecture, mathematically/architecturally sensitive implementation, design-gap resolution, and review — with conventional CRUD/service implementation work delegated to Codex once the design is locked.
 
 ## Reference Repositories in This Session
 
@@ -36,6 +38,24 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 **Lesson for future sessions:** Never write architecture/reference scaffolding without deriving it from the actual governing specification. If a specification file exists, read it fully before writing any supporting documentation — do not fill gaps with generic assumptions.
 
 ## Recent Changes
+
+### Phase 1-3 Command/Web-Handler Layer: Codex Implementation and Review (2026-07-23/24)
+
+Wrote a LlamaCoder-style handoff for the command/web-handler adapter layer covering Phases 1-3 (Sheet, XP, B&B, Culmination, History), then the project owner clarified Codex — not LlamaCoder — was already implementing it against a broader delegation model. Reviewed Codex's push to the `Codex` branch before merging:
+
+**Real bugs found and fixed before merge** (both in Claude's own Phase 3 API work, surfaced by Codex's implementation attempt): `SoulXpApi.get_scene_participants` assumed a nonexistent `Scene#characters`/`Scene#people` collection — real AresMUSH uses `Scene#participants`; fixed. `SoulXpApi.correct` only ever added to available XP despite being documented as able to "reverse a prior award or spend" — added a `direction:` parameter (`"correction"`/`"reversal"`) to cover both cases.
+
+**Design gaps Codex correctly declined to guess at, rather than inventing syntax:** `+soul/framework` correction syntax (target/attribute/value never specified — implemented read-only), `+bnb/progress` vs. `resolve` (the dedicated resolve API requires a `reason` the command syntax doesn't capture — implemented as level-progression only, not silently bypassing the audit requirement), Audit-viewing command surface (mentioned in scope, never given syntax — not implemented). All recorded in `IMPLEMENTATION_CHECKLIST.md` Phase 6.
+
+**Also surfaced, not yet resolved:** a pre-existing `Soul::` vs `AresMUSH::` namespace mismatch between some specs and the actual model/API namespace, and a missing `plugin/spec/spec_helper.rb` test harness (same gap noted independently by Codex in both the Phase 1-3 handoff and its own implementation notes — likely a repository-level setup step never completed, not a code bug).
+
+### Phase 4 In Progress: Dice/Probability Engine (Claude-implemented) + Roll Service Handoff (2026-07-24)
+
+Reviewed FINAL §6.4 and Addendum §§1-2, 6, 8.1, 9 (rolls, dice mechanics, expiry, degrees of success, extraordinary luck) before starting. Implemented `plugin/public/soul_dice_engine.rb` directly rather than delegating it, because getting the probability calculation right requires a subtlety the spec doesn't spell out: a chain segment's post-reroll contribution and whether that segment triggered continuation are **correlated** (both derive from the same pre-reroll dice), so naively treating them as independent would silently misestimate probability for any nonzero Boon/Bane modifier. Derived the correct approach: per-die post-reroll value converges to a uniform distribution over non-band values regardless of the original in-band value (memoryless resampling), which makes an exact recursive convolution over chain segments tractable — implemented with a bounded recursion depth (12 levels; truncated probability mass is on the order of (1/400)^12, unrepresentable in a Float). Chose exact analytical calculation over Monte Carlo specifically because FINAL REQ-030 requires deterministic, reproducible results across MUSH/web/tests/integrations, and Addendum §9 requires the probability to be calculated pre-roll and stored for audit — a randomly-varying estimate would satisfy neither. Validated the implementation against a 200,000-trial Monte Carlo simulation (0.835 analytical vs. 0.8347 empirical at Standard difficulty, no modifier) plus edge-case tests for near-maximal Boon/Bane modifiers (capped the reroll band at 19 of 20 faces — an implementation safety margin, not a spec rule, since a full-range band would make the reroll loop never terminate).
+
+**Found and resolved a genuine spec gap while designing the roll-resolution flow:** Addendum §8.1's degrees-of-success table gives Failure and Catastrophic Failure the identical `margin < -10` condition, unlike every other adjacent pair in the table. Resolved by mirroring the Success/Exceptional Success split (Failure becomes the mirrored 10-point band `-20 <= margin < -10`; Catastrophic Failure becomes `margin < -20`) — documented as an explicit implementation note in the Addendum itself, plus updated `game/config/soul.yml`'s `degrees_of_success` block with the new `failure_min`/`catastrophic_failure_min: -20` keys.
+
+Wrote `docs/handoffs/Phase_4_Roll_Service_and_Models.md` for the remaining Phase 4 work (`Roll`/`PendingRoll` models, `SoulRollApi` orchestration, cron-driven pending-roll expiry sweep) under the new, broader Codex delegation rules — this is conventional CRUD/service work following Phase 1-3's established shape, unlike the dice engine itself.
 
 ### Phase 3 Implementation: Boons & Banes, Culminations, Narrative History/Audit (2026-07-23)
 
@@ -119,14 +139,19 @@ The Addendum was drafted before this session's discovery of the fabricated docs,
 
 ### Before Phase 4 Begins
 
-- [x] ~~Finalize exact Ruby class names for services~~ — `SoulFrameworkApi`/`SoulCharacterApi`/`SoulResonanceApi`/`SoulXpApi`/`SoulBnbApi`/`SoulCulminationApi`/`SoulNarrativeHistoryApi`/`SoulAuditApi` all now exist; Phase 4 needs `SoulRollApi`
+- [x] ~~Finalize exact Ruby class names for services~~ — `SoulFrameworkApi`/`SoulCharacterApi`/`SoulResonanceApi`/`SoulXpApi`/`SoulBnbApi`/`SoulCulminationApi`/`SoulNarrativeHistoryApi`/`SoulAuditApi`/`SoulDiceEngine` all now exist; `SoulRollApi` handed to Codex, not yet implemented
 - [ ] Decide B&B catalogue seeding approach: command-based creation with README examples (per DD-02), confirmed still current — `SoulBnbApi.create_catalogue_entry` exists; no seed data has been created
 - [ ] Finalize non-canonical command syntax still open per REQ-037/REQ-045 (see `docs/reference/Commands.md` "Proposed" rows — e.g. exact abort-roll syntax)
 - [ ] Finalize API contracts between Ruby backend and Ember web portal for each REQ-046 required capability
-- [ ] **Design the roll-modifier contribution mechanism against a confirmed dispatch point** — the previously-assumed `get_hooks`/`:soul_roll_modifiers` design (documented in `API_and_Hooks.md`/`Integration_Guide.md`) has zero basis in real AresMUSH core; re-verify before Phase 4 implements it, per the Phase 3 finding above
-- [x] ~~Design cron/scheduler approach for weekly catch-up recalculation and weekly XP award~~ — done in Phase 2 (`plugin/events/soul_xp_cron_handler.rb`, real `Cron`/`CronEvent` mechanism)
+- [ ] **Design the roll-modifier contribution mechanism against a confirmed dispatch point** — still unresolved; the previously-assumed `get_hooks`/`:soul_roll_modifiers` design has zero basis in real AresMUSH core. Deliberately still out of scope for the Phase 4 roll-service handoff (see `docs/handoffs/Phase_4_Roll_Service_and_Models.md` §1) — B&B modifiers are the only modifier source Phase 4 implements; cross-plugin contribution needs its own design pass once an actual integration needs it.
+- [x] ~~Design cron/scheduler approach for weekly catch-up recalculation and weekly XP award~~ — done in Phase 2 (`plugin/events/soul_xp_cron_handler.rb`, real `Cron`/`CronEvent` mechanism); Phase 4's handoff extends the same handler for pending-roll expiry rather than registering a second `CronEvent` handler (the real `Dispatcher` only supports one handler per event name per plugin)
 - [x] ~~Re-verify the real `custom_approval.rb` snippet mechanism~~ — done in Phase 2 (`custom-install/custom_approval.snippet.rb`)
 - [x] ~~Backfill `SoulResonanceApi.lock_at_approval`'s `TODO(Phase 3)` marker~~ — done in Phase 3; `resonance_correction_log` was kept alongside the new `SoulAuditEntry`/`NarrativeHistoryEntry` writes (fast character-scoped access) rather than migrated away from, since removing it would cost a lookup with no real benefit
+
+### Before Phase 4 Is Considered Complete
+
+- [ ] Codex implements `docs/handoffs/Phase_4_Roll_Service_and_Models.md` (`Roll`/`PendingRoll` models, `SoulRollApi`, cron expiry sweep, specs)
+- [ ] Claude reviews the implementation per the Addendum's standing review checklist before merge
 
 ## Resolved Architecture Questions
 

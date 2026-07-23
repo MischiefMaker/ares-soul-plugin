@@ -210,36 +210,39 @@ The technical, staff-only operational record (`AresMUSH::SoulAuditEntry`, `plugi
 
 ## Rolls (GL-18/19, REQ-025 through REQ-031)
 
-### Roll (completed)
+### Roll (completed, `AresMUSH::Roll`)
 
-**Key Attributes (REQ-031):**
+**Key Attributes (REQ-031, Addendum §2/§8.1/§9):**
 - `character_id`
 - `skill_key`, `aspect_key`
 - `scene_id` / context
-- `difficulty`
-- `dice_result` — Raw 2d20 open-ended result including any explosion/implosion chain (Addendum §2)
-- `applied_modifiers` — Array with source categories (system-suggested, GM-mandatory, player-selected, manually-identified)
-- `final_result`
+- `difficulty` — the numeric target (from `rolls.difficulties`)
+- `dice_result` — Raw 2d20 open-ended result including any explosion/implosion chain (Addendum §2); stores the segment-by-segment detail `SoulDiceEngine.roll` returns, not just the summed total
+- `net_modifier` — the summed Boon/Bane modifier that drove the dice engine's reroll band (positive/negative/zero)
+- `applied_modifiers` — Array with source categories (system-suggested, GM-mandatory, player-selected, manually-identified); each entry records the B&B entry id, catalogue tag/name, level_state, and signed modifier value
+- `final_result` — dice total + effective base (Skill + Aspect contribution) per REQ-030
+- `success_probability` — the pre-roll probability calculated by `SoulDiceEngine.success_probability` (Addendum §9: "store calculated probability alongside roll record for audit/transparency"); this is the probability of the outcome that actually occurred (success chance if the roll succeeded, failure chance if it failed), not always "chance of success"
 - `degree_of_success` — One of six degrees (Addendum §8.1)
-- `extraordinary` — Boolean flag, set when pre-roll probability was ≤ 0.01% (Addendum §9)
+- `extraordinary` — Boolean flag, set when the relevant probability above was ≤ `extraordinary_result_threshold` (default 0.01%, Addendum §9)
+- `gm_assisted` — Boolean; always `false` in Phase 4 (no GM-assisted rolls exist yet), reserved for Phase 5
 - `rolled_at`
 
-### PendingRoll (REQ-027)
+### PendingRoll (REQ-027, `AresMUSH::PendingRoll`)
 
 **Key Attributes:**
 - `player_id`, `character_id`
 - `skill_key`, `aspect_key`
 - `scene_id` / context
 - `difficulty` and other validated inputs
-- `system_suggested_entries`
-- `gm_suggested_entries`
-- `gm_mandatory_entries`
+- `system_suggested_entries` — candidate B&B entry ids identified automatically (may be empty; REQ-028's "no candidates found" case is simply an empty list, not a distinct status)
+- `gm_suggested_entries`, `gm_mandatory_entries` — present in the schema per REQ-027's full field list, but unused/always empty until Phase 5 implements GM-assisted rolls
 - `player_selected_entries`
 - `manually_identified_entries` — distinct from system suggestions; a player may identify and add a relevant owned B&B the system did not suggest, marked as identified/override, never misreported as a system suggestion
-- `status` — waiting / GM-input / player-choice / resolved / aborted / expired
+- `status` — Phase 4 uses `awaiting_selection` / `resolved` / `aborted` / `expired` only; Phase 5 adds GM-assisted statuses (e.g. `gm_input`)
+- `gm_assisted` — Boolean; always `false` in Phase 4, reserved for Phase 5
 - `expires_at`
 
-Expiry (Addendum §6): 720 hours (~30 days) wall-clock. Expired rolls are marked inactive; no auto-resolution occurs. Pending-roll limits (REQ-044 canonical defaults): standard player rolls `1` open, GM-assisted rolls `2` open (configurable per Addendum §6).
+Expiry (Addendum §6): 720 hours (~30 days) wall-clock. Expired rolls are marked inactive; no auto-resolution occurs. Pending-roll limits (CI-04 canonical defaults): standard player rolls `1` open, GM-assisted rolls `2` open (configurable) — only the standard limit is enforced until Phase 5.
 
 ## Character Integration
 

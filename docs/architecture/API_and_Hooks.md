@@ -107,16 +107,40 @@ SoulCulminationApi.get_culminations(character, status: nil)
 
 Per REQ-023, an integrating plugin MAY propose a Culmination but SHALL NOT create the record directly — SOUL always owns creation after validation/approval.
 
-### Roll Initiation / Completion
+### Dice Engine (Addendum §2, implemented — `plugin/public/soul_dice_engine.rb`)
+
+Pure math/RNG, no model dependencies. `SoulRollApi` is the only expected caller.
 
 ```ruby
-SoulRollApi.start_roll(character, skill_key, context = {})
-  # Returns pending-roll state (REQ-027) or an immediate result if no GM-assist policy applies
+SoulDiceEngine.roll(net_modifier)
+  # => { total:, mode: (:normal/:explosion/:implosion), segments: [{d1:, d2:}, ...] }
+  # Real RNG - the actual dice portion of a live roll resolution.
 
-SoulRollApi.resolve_pending(pending_roll_id, selections)
-  # selections: { tags: [...], accept_suggested: bool, decline: bool }
+SoulDiceEngine.success_probability(net_modifier, required_dice_total)
+  # => Float 0.0..1.0. Pure/deterministic, no RNG (Addendum §9 requires the
+  # pre-roll probability to be calculable and stored, not estimated).
+```
 
-SoulRollApi.get_roll_history(character, limit: 50, options = {})
+### Roll Initiation / Completion (Phase 4 — standard rolls only; GM-assisted is Phase 5)
+
+```ruby
+SoulRollApi.get_candidate_bnbs(character, skill_key)
+  # => [CharacterBnbEntry, ...] owned, unresolved, modifier_eligible, skill-associated
+
+SoulRollApi.start_roll(character, skill_key, context: {})
+  # Creates a PendingRoll; system_suggested_entries may be empty (REQ-028's
+  # "no candidates found" case - not a distinct status)
+
+SoulRollApi.select_entries(pending_roll_id, character, tags: [], suggested: false, none: false)
+  # REQ-026's three selection forms (+roll <tag>, +roll suggested, +roll none)
+
+SoulRollApi.resolve_pending(pending_roll_id)
+  # Combines accepted entries -> net_modifier -> SoulDiceEngine -> degree of
+  # success (Addendum §8.1) -> extraordinary flag (Addendum §9) -> Roll record
+
+SoulRollApi.abort_pending(pending_roll_id, actor, reason:)
+SoulRollApi.expire_stale_pending_rolls(now = Time.now)   # cron-driven sweep, Addendum §6
+SoulRollApi.get_roll_history(character, limit: 50)
 ```
 
 ### Authorized History Queries

@@ -63,18 +63,24 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 
 ## Phase 4: Standard Rolls and Pending-Roll Flow
 
-- [ ] 2d20 open-ended dice engine: explosion on double-20, implosion on double-1, chained (Addendum §2 Steps 1)
-- [ ] Boon/Bane die reroll mechanics applied to the full explosion chain (Addendum §2 Step 2)
-- [ ] Mechanical modifier application (Skill + Aspect + other), no cap (Addendum §2 Step 3, §4)
-- [ ] Difficulty comparison and margin calculation (Addendum §1)
-- [ ] Six degrees of success determination and GM-less/GM-led output formatting (Addendum §8.1)
-- [ ] Pre-roll probability calculation and extraordinary-luck flagging (≤0.01%) (Addendum §9)
-- [ ] Pending-roll state model: player/character, Skill/Aspect, context, suggested/selected entries by category (REQ-027)
-- [ ] Standard roll flow: validate → candidates → pending → suggestions → selection → resolve → history (REQ-028)
-- [ ] "No candidates found" manual-identification fallback (REQ-028)
-- [ ] Pending-roll limits: 1 standard / 2 GM-assisted (CI-04)
-- [ ] Pending-roll expiry: 720 hours wall-clock, no auto-resolve (Addendum §6)
-- [ ] Roll history and completed-roll record (REQ-031)
+**Status:** 🔶 In progress (2026-07-24) — dice/probability engine complete and Claude-implemented directly (see rationale below); models/service API handed off to Codex (`docs/handoffs/Phase_4_Roll_Service_and_Models.md`), pending implementation and review.
+
+- [x] 2d20 open-ended dice engine: explosion on double-20, implosion on double-1, chained (Addendum §2 Step 1) — `plugin/public/soul_dice_engine.rb`
+- [x] Boon/Bane die reroll mechanics applied to the full explosion chain (Addendum §2 Step 2) — same file
+- [x] Pre-roll probability calculation (Addendum §9) — exact analytical calculation (not Monte Carlo, to satisfy REQ-030's determinism requirement), validated against 200k-trial Monte Carlo simulation during implementation; see `plugin/spec/soul_dice_engine_spec.rb`
+- [x] Degrees-of-success table gap resolved: the original Addendum §8.1 table gave Failure and Catastrophic Failure the identical `margin < -10` condition with no boundary between them. Resolved by mirroring the Success/Exceptional Success split (`-20` boundary added); see the Addendum's 2026-07-24 implementation note and `game/config/soul.yml`'s `degrees_of_success` block.
+- [ ] Mechanical modifier application (Skill + Aspect + other), no cap (Addendum §2 Step 3, §4) — designed, handed to Codex
+- [ ] Difficulty comparison and margin calculation (Addendum §1) — designed, handed to Codex
+- [ ] Six degrees of success determination and GM-less/GM-led output formatting (Addendum §8.1) — degree calculation designed/handed to Codex; output *formatting* is Phase 6 (command layer)
+- [ ] Extraordinary-luck flagging (≤0.01%) using the dice engine's probability — designed, handed to Codex
+- [ ] Pending-roll state model: player/character, Skill/Aspect, context, suggested/selected entries by category (REQ-027) — designed, handed to Codex
+- [ ] Standard roll flow: validate → candidates → pending → suggestions → selection → resolve → history (REQ-028) — designed, handed to Codex
+- [ ] "No candidates found" manual-identification fallback (REQ-028) — designed (not a distinct status; empty `system_suggested_entries`), handed to Codex
+- [ ] Pending-roll limits: 1 standard (Phase 4) / 2 GM-assisted (Phase 5, CI-04) — standard limit designed, handed to Codex
+- [ ] Pending-roll expiry: 720 hours wall-clock, no auto-resolve (Addendum §6) — designed as a cron sweep extending the existing `XpCronHandler`, handed to Codex
+- [ ] Roll history and completed-roll record (REQ-031) — designed, handed to Codex
+
+**Why the dice/probability engine was implemented directly rather than delegated:** exact analytical probability calculation for an open-ended, reroll-modified explosion/implosion chain requires correctly conditioning each chain segment's post-reroll contribution distribution on whether that segment's *original* (pre-reroll) dice triggered continuation — a subtlety easy to get silently wrong (e.g. naively treating trigger and post-reroll value as independent). This is squarely "architecture/design" work per the Addendum's Codex delegation rules, not well-defined implementation. The surrounding orchestration (models, candidate identification, pending-roll lifecycle, cron wiring) is conventional CRUD/service work matching Phase 1-3's precedent and was handed to Codex with the engine treated as a locked dependency.
 
 ## Phase 5: GM-Assisted Rolls and Scene Integration
 

@@ -12,7 +12,7 @@ High-level milestones for SOUL implementation, following the recommended order i
 
 ## Completed Milestone: Implementation, Phases 1-3
 
-**Status:** ✅ Core models and service APIs complete (2026-07-23). Commands and chargen/roll UI consistently deferred to Phase 6 across all three phases.
+**Status:** ✅ Complete, including the command/web-handler layer (2026-07-24). Core models/service APIs were Claude-implemented (2026-07-23); the command/web-handler/locale/help/Ember layer was implemented by Codex against a written handoff and reviewed/merged by Claude (`docs/handoffs/Phase_1-3_Commands_and_Web_Handlers.md`).
 
 ### Phase 1 — Plugin Skeleton, Configuration, Localization, Permissions ✅
 
@@ -30,11 +30,11 @@ Each phase was implemented only after verifying its design against real, current
 
 ## Current Milestone: Implementation, Phase 4
 
-**Status:** Ready to begin
+**Status:** 🔶 In progress. Dice/probability engine complete (`plugin/public/soul_dice_engine.rb`, Claude-implemented directly and validated against Monte Carlo simulation). Roll models and service API handed to Codex (`docs/handoffs/Phase_4_Roll_Service_and_Models.md`) under the project's broadened Codex delegation model — pending implementation and Claude's review before this phase is complete.
 
 ### Phase 4 — Standard Rolls and Pending-Roll Flow
 
-The 2d20 open-ended dice engine, Boon/Bane die rerolls, degrees of success, extraordinary luck detection, and the standard (non-GM) pending-roll workflow. Before implementing roll-modifier contribution from other plugins, design it against a confirmed dispatch point — the previously-assumed `get_hooks` mechanism was found to have no basis in real core (see Phase 3 notes in `CLAUDE_ADR.md`).
+The 2d20 open-ended dice engine, Boon/Bane die rerolls, degrees of success, extraordinary luck detection, and the standard (non-GM) pending-roll workflow. Roll-modifier contribution from other plugins remains out of scope, still pending a design against a confirmed dispatch point — the previously-assumed `get_hooks` mechanism was found to have no basis in real core (see Phase 3 notes in `CLAUDE_ADR.md`); B&B modifiers are the only modifier source this phase implements.
 
 ## Future Phases
 

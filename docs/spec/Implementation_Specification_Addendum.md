@@ -627,9 +627,11 @@ Exceptional Success:   margin >= +10
 Success:              margin >= +0 and margin < +10
 Complicated Success:  margin >= -5 and margin < +0
 Lucky Failure:        margin >= -10 and margin < -5
-Failure:              margin < -10
-Catastrophic Failure: (same as Failure, but distinguished by narrative weight)
+Failure:              margin >= -20 and margin < -10
+Catastrophic Failure: margin < -20
 ```
+
+**Implementation note (added during Phase 4 implementation, 2026-07-24):** The table above originally gave Failure and Catastrophic Failure the identical condition `margin < -10`, with no boundary between them — every other adjacent pair in the table is a distinct, non-overlapping band. This was a gap, not a deliberate design choice, and left unresolved would have blocked implementation (per this document's Codex delegation rules, an ambiguity like this must be resolved by Claude, not guessed by an implementer). Resolved by mirroring the Success/Exceptional Success split on the positive side: Success is a 10-point band immediately above the zero line (`margin >= 0 and < 10`), with Exceptional Success open-ended beyond it (`margin >= 10`). Failure is now the same 10-point band immediately below Lucky Failure (`margin >= -20 and < -10`), with Catastrophic Failure open-ended beyond it (`margin < -20`). This preserves the table's existing boundaries (`-10`, `-5`, `0`, `+10`) untouched and only adds the missing `-20` boundary.
 
 **Configuration:**
 ```yaml
@@ -639,7 +641,8 @@ rolls:
     success_min: 0
     complicated_success_min: -5
     lucky_failure_min: -10
-    catastrophic_failure_min: null  # Below lucky_failure_min threshold
+    failure_min: -20
+    catastrophic_failure_min: -20   # margin below this is Catastrophic Failure
 ```
 
 These thresholds are configurable per-game but locked to these defaults for SOUL.

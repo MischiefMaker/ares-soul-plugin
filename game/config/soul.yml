@@ -251,7 +251,14 @@ soul:
       success_min: 0
       complicated_success_min: -5
       lucky_failure_min: -10
-      catastrophic_failure_min: null
+      # Addendum §8.1's table gives Failure and Catastrophic Failure the same
+      # "margin < -10" condition with no boundary between them - a gap, not a
+      # locked decision (see CLAUDE_ADR.md). Resolved by mirroring the
+      # Success/Exceptional Success split: Success is a 10-point band above
+      # 0, so Failure is a 10-point band below lucky_failure_min, and
+      # Catastrophic Failure is whatever remains beyond that.
+      failure_min: -20
+      catastrophic_failure_min: -20
 
     output_mode: "gm_led"   # alternatives: "gm_less", "hybrid"
 
