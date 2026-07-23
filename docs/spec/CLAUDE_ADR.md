@@ -39,6 +39,10 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 
 ## Recent Changes
 
+### Phase 6 Handoff Correction: Missing resolve_pending Call (2026-07-24)
+
+A material omission was found in the Phase 6 handoff before Codex began implementation: §5.3's selection-disambiguation algorithm specified `select_entries` for the `suggested`/`none`/tag-list forms but never specified any call to `resolve_pending` — meaning a fully-selected pending roll would sit in `"awaiting_selection"` forever with no path to ever producing a completed `Roll`. Fixed by adding an explicit new §5.3.1: a successful `select_entries` must immediately trigger `resolve_pending` in the same command/web invocation, matching CI-03's conversational flow (selection flows directly into resolution, with no separate "now roll it" step described anywhere in the spec). A `select_entries` failure never attempts resolution; a `resolve_pending` failure after a successful selection leaves the pending roll selectable again rather than stuck. Command-surface table, acceptance criteria, and testing requirements all updated to reflect this.
+
 ### Phase 6 Handoff: Roll Commands and Audit Command (2026-07-24)
 
 Reviewed the existing Phase 1-3 command/web-handler layer (already complete under the "Phase 6" label in `IMPLEMENTATION_CHECKLIST.md`) to find the actual remaining gaps: Rolls (Phases 4-5) never got any command surface at all, and its own item 8 flagged that staff Audit-log viewing was never designed. Both closed in one handoff (`docs/handoffs/Phase_6_Roll_Commands_and_Audit.md`), extending existing files (`SoulStaffCmd`/`SoulStaffWebHandler` gain an `"audit"` switch) plus two new files (`SoulRollCmd`/`SoulRollWebHandler`).

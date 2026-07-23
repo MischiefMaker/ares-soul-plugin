@@ -118,6 +118,12 @@ Per `Commands.md`'s newly-added note: FINAL's canonical `+roll <skill>` has no d
 
 `+roll/gm <skill>[=<difficulty>]` (switch `"gm"`) only ever means **start** (§5.2's extension applies identically) — it does not participate in the selection-disambiguation above, since REQ-026 doesn't describe a "+roll/gm suggested" form and none is needed (once a GM-assisted roll exists, the player continues it via the same bare `+roll suggested`/`+roll none`/`+roll <tag>` forms as any other pending roll — `select_entries` already branches on `pending.gm_assisted` internally, per Phase 5). Parse `+roll/gm`'s argument the same way as step 6 (skill/difficulty split), then call `start_roll(enactor, skill, context: { difficulty: ... }, gm_requested: true)`.
 
+### 5.3.1 A successful selection must immediately resolve the roll — this was missing from the original handoff
+
+**Correction, added after initial review:** the original version of this handoff specified `select_entries` for steps 3-5 above but never specified any call to `SoulRollApi.resolve_pending` at all — leaving a fully-selected pending roll permanently stuck in `"awaiting_selection"` with no path to ever actually producing a `Roll` result. This is fixed as follows: whenever steps 3, 4, or 5 above (`suggested`, `none`, or a tag list) result in `select_entries` returning `{ success: true, ... }`, the command must **immediately**, in the same invocation, call `SoulRollApi.resolve_pending(pending.id, enactor)` and display its result — success (the full roll outcome: dice detail, final result, degree of success, extraordinary flag) or failure (e.g. an unconfigured Epic modifier, per Phase 4's existing error path) — rather than requiring a separate command to finalize. This matches CI-03's conversational flow, which describes selection flowing directly into resolution with no separate "now roll it" step, and it's the only way the advertised roll workflow can ever produce a completed `Roll` record.
+
+Apply the identical select-then-resolve sequencing to the equivalent web handler operation (`soulRollSelect`, §6) — call `select_entries` and, on success, `resolve_pending`, returning the roll result in the same response rather than requiring a second request. If `select_entries` itself fails (e.g. duplicate tags, ownership rejection), do not call `resolve_pending` — surface that error and leave the pending roll untouched, exactly as `select_entries` already behaves on its own. If `select_entries` succeeds but the immediately-following `resolve_pending` fails, surface `resolve_pending`'s error — the pending roll remains `"awaiting_selection"` (resolve_pending's own error paths never mutate status), so the player can correct the problem (if any) and try selecting again.
+
 ### 5.4 `+roll/review` has two forms — only one needs scene-GM authority checked by the command itself
 
 - `+roll/review` (no argument): lists open (`"awaiting_gm"`) pending rolls in the enactor's current scene (`enactor_room && enactor_room.scene`, same pattern as `soul_bnb_cmd.rb`'s `+bnb/here`). This is the one place the command layer itself gates on scene-GM authority (`Soul.can_manage_soul?(enactor) || (Soul.can_review_rolls?(enactor) && scene && scene.is_participant?(enactor))`) **before** calling `get_pending_gm_review(scene)`, since that query itself doesn't check authority (§4's note). If there's no active scene, return "No active scene." rather than an authority error.
@@ -156,9 +162,9 @@ SoulRollApi.get_pending_gm_review(scene)
 +roll <skill>                                -> start_roll(..., context: {difficulty: "standard"})
 +roll <skill>=<difficulty>                   -> start_roll(..., context: {difficulty: <difficulty>})
 +roll/gm <skill>[=<difficulty>]              -> start_roll(..., gm_requested: true)
-+roll suggested                              -> select_entries(..., suggested: true) on own open roll
-+roll none                                   -> select_entries(..., none: true) on own open roll
-+roll <tag> [<tag> ...]                      -> select_entries(..., tags: [...]) on own open roll
++roll suggested                              -> select_entries(..., suggested: true), then resolve_pending on success (§5.3.1)
++roll none                                   -> select_entries(..., none: true), then resolve_pending on success (§5.3.1)
++roll <tag> [<tag> ...]                      -> select_entries(..., tags: [...]), then resolve_pending on success (§5.3.1)
 +roll/abort <roll id>=<reason>               -> abort_pending
 +roll/forceabort <roll id>=<reason>          -> force_abort_pending
 +roll/pending                                -> get_open_pending_rolls(enactor)
@@ -177,6 +183,7 @@ Web handler (`soulRoll`, `soulRollStart`, `soulRollGm`, `soulRollSelect`, `soulR
 - Every row in `Commands.md`'s Rolls section and the new `+soul/audit` row has a working MUSH command and an equivalent web handler operation.
 - `+roll <skill>` with no existing pending roll starts one at Standard difficulty; `+roll <skill>=<difficulty>` overrides it; an invalid difficulty key surfaces `SoulRollApi`'s own error, not a new one.
 - Once a pending roll is `"awaiting_selection"`, `+roll <anything-that-isn't-suggested/none>` is treated as tag selection, never re-interpreted as starting a second roll.
+- A successful `+roll suggested`/`+roll none`/`+roll <tag>` (or the equivalent web operation) always produces a completed `Roll` in the same invocation — never leaves the pending roll sitting in `"awaiting_selection"` after a successful selection (§5.3.1). A `select_entries` failure does not attempt `resolve_pending`; a `select_entries` success followed by a `resolve_pending` failure surfaces that failure and leaves the pending roll selectable again.
 - `+roll/review` (no arg) requires scene-GM authority checked by the command; `+roll/review <id>` relies entirely on `get_gm_candidate_view`'s own authorization (no duplicate check in the command).
 - `+roll/mark` rejects an unrecognized tag before calling `gm_submit_selections`, and correctly handles an empty mandatory or optional half.
 - `+roll/abort`/`+roll/forceabort` without a reason fail via `required_args` with an actionable usage message, not a bare API error round-trip.
@@ -185,7 +192,7 @@ Web handler (`soulRoll`, `soulRollStart`, `soulRollGm`, `soulRollSelect`, `soulR
 
 ## 8. Testing Requirements
 
-- `plugin/spec/soul_roll_cmd_spec.rb`: cover every command form in §6, including the disambiguation precedence in §5.3 (a bare `+roll <word>` that would otherwise look like a skill name but resolves as tag-selection because a pending roll is open), the `+roll/mark` tag-resolution success/failure paths, and the `+roll/review` no-arg scene-authority gate.
+- `plugin/spec/soul_roll_cmd_spec.rb`: cover every command form in §6, including the disambiguation precedence in §5.3 (a bare `+roll <word>` that would otherwise look like a skill name but resolves as tag-selection because a pending roll is open), the `+roll/mark` tag-resolution success/failure paths, the `+roll/review` no-arg scene-authority gate, and the select-then-resolve sequencing from §5.3.1 — specifically a test asserting that `+roll none` (or `suggested`, or a tag) on a pending roll results in a `Roll` record existing afterward, not just a mutated `PendingRoll`, plus a test where `resolve_pending` fails after a successful selection (e.g. an Epic entry with no configured modifier) and the pending roll remains `"awaiting_selection"` rather than stuck in some other state.
 - `plugin/spec/soul_roll_web_handler_spec.rb`: authenticated success, unauthenticated rejection, and permission-denied paths for each `request.cmd` value.
 - `plugin/spec/soul_roll_api_spec.rb`: extend with specs for the three new query methods (empty results, correct filtering by character/scene/status).
 - `plugin/spec/soul_staff_cmd_spec.rb` / `soul_staff_web_handler_spec.rb`: extend with the new `"audit"` switch, asserting the subject character themselves cannot view their own audit log even with `manage_soul` absent.
