@@ -79,16 +79,22 @@ module AresMUSH
 
       resonance = get_resonance(character) || 0
       character.update(resonance: resonance.to_s, resonance_locked_at: Time.now)
-      # TODO(Phase 3): create a Narrative History entry for approved starting
-      # Resonance here once the Narrative History model exists (FINAL REQ-012:
-      # "Approval SHALL create a Narrative History entry for starting Resonance").
+
+      SoulNarrativeHistoryApi.create(
+        character,
+        event_type: "resonance_approved",
+        narrative: "Starting Resonance approved: R#{resonance >= 0 ? '+' : ''}#{resonance}."
+      )
     end
 
     # Staff correction of an already-locked Resonance value (FINAL REQ-012:
     # "Administrative correction SHALL preserve the original value, new
-    # value, actor, reason, and source"). Appends to the character's
-    # lightweight correction log pending the real Audit model (Phase 3) -
-    # see the attribute comment in character_soul_fields.rb.
+    # value, actor, reason, and source"). Writes to all three: the
+    # character's own lightweight correction_log (fast, character-scoped
+    # read), the real SoulAuditEntry (technical record, REQ-006), and a
+    # Narrative History correction entry (character-facing, REQ-024) - the
+    # first predates Phase 3's models and is kept for quick access rather
+    # than removed.
     def self.correct(character, new_value, actor:, reason:)
       return { error: "Character not found" } unless character
       return { error: "Reason is required for a Resonance correction" } if reason.to_s.blank?
@@ -106,6 +112,16 @@ module AresMUSH
         "corrected_at" => Time.now.to_s
       }
       character.update(resonance: r.to_s, resonance_correction_log: log)
+
+      audit = SoulAuditApi.create(
+        action: "resonance_correction", character: character, actor: actor, reason: reason,
+        before_state: { "resonance" => old_value }, after_state: { "resonance" => r }
+      )
+      SoulNarrativeHistoryApi.create(
+        character, event_type: "correction",
+        narrative: "Resonance corrected from R#{old_value} to R#{r}: #{reason}",
+        audit_entry: audit
+      )
 
       { success: true, old_value: old_value, new_value: r }
     end

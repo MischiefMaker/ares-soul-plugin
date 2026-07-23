@@ -18,7 +18,7 @@ Claude's ongoing engineering notebook for SOUL implementation. Tracks current st
 
 **Branch:** `main`
 
-**Phase:** ✅ Phase 1 complete. ✅ Phase 2 core models/APIs complete (Character Framework, Skills, Aspects, Resonance, XP Ledger) — commands, chargen UI, and B&B/Narrative-History-dependent pieces explicitly deferred (see `IMPLEMENTATION_CHECKLIST.md` Phase 2 "Deferred to Later Phases"). Ready to begin Phase 3 (Boons & Banes, Culminations, Narrative History/Audit).
+**Phase:** ✅ Phases 1-3 core models/APIs complete (Plugin Skeleton; Character Framework/Resonance/XP; Boons & Banes/Culminations/Narrative History/Audit). Commands and chargen/roll UI consistently deferred to Phase 6 across all three phases — see each phase's "Deferred to Later Phases" note in `IMPLEMENTATION_CHECKLIST.md`. Ready to begin Phase 4 (Standard Rolls and Pending-Roll Flow).
 
 ## Reference Repositories in This Session
 
@@ -36,6 +36,16 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 **Lesson for future sessions:** Never write architecture/reference scaffolding without deriving it from the actual governing specification. If a specification file exists, read it fully before writing any supporting documentation — do not fill gaps with generic assumptions.
 
 ## Recent Changes
+
+### Phase 3 Implementation: Boons & Banes, Culminations, Narrative History/Audit (2026-07-23)
+
+Confirmed the B&B catalogue design decision from the Phase 1 doc rebuild (`BnbCatalogueEntry` as a real DB model, unlike Aspects/Skills) was correct by re-checking it against FINAL and DD-02 before writing code: FINAL REQ-017 requires "a unique numeric ID" (implying database auto-assignment, not a config key an admin picks), and `SOUL_Design_Decisions.md` DD-02 (creator-built, protected) explicitly says B&Bs are created via in-game commands, not seeded from config. Inspected the real Achievements plugin (`plugins/achievements/`) as the closest precedent for a per-character granted-record model (config-independent, bespoke per grant) — informed the simpler `Culmination` model, which unlike B&Bs has no shared catalogue at all.
+
+**A significant additional finding, parallel to Phase 1's Lesson 33:** Inklings' own `dispatch_inkling_*` methods (`plugin/inklings.rb`) call `Global.dispatcher.dispatch("inkling:submitted", inkling)`, guarded by `if Global.dispatcher.respond_to?(:dispatch)`. The real `AresMUSH::Dispatcher` class (`engine/aresmush/commands/dispatcher.rb`) has no `dispatch` method at all — only `queue_command`/`queue_event`/`queue_timer`/`queue_action`/`spawn`/`on_command`/`on_event`/`on_web_request`. Every one of those Inklings calls is silently inert; the `respond_to?` guard is always false against real core. This is the same failure shape as `chargen_finalize`: a dispatch-shaped method that reads plausibly but has zero real callers. It also meant this project's own `API_and_Hooks.md` (written before this was caught) had the same invented pattern, plus an entirely separate invented `get_hooks(plugin_symbol, hook_name)` dispatch point that also has zero references anywhere in current core. Both are now flagged in the docs rather than silently propagated into Phase 3's actual code, which uses the real, confirmed mechanism instead: `Global.dispatcher.queue_event SomeEvent.new(...)`, with event classes defined **flat under `AresMUSH::`**, never nested under the plugin's own module (confirmed against `plugins/roles/public/roles_events.rb` — a real plugin-specific event, not a core one, ruling out "maybe only core events are flat").
+
+**Files added:** `plugin/models/bnb_catalogue_entry.rb`, `character_bnb_entry.rb`, `culmination.rb`, `narrative_history_entry.rb`, `soul_audit_entry.rb`; `plugin/public/soul_bnb_api.rb`, `soul_culmination_api.rb`, `soul_narrative_history_api.rb`, `soul_audit_api.rb`, `soul_events.rb`; three spec files. Backfilled Phase 2's `TODO(Phase 3)` marker in `SoulResonanceApi.lock_at_approval`/`.correct` now that `SoulNarrativeHistoryApi`/`SoulAuditApi` exist.
+
+**Explicitly deferred** (see `IMPLEMENTATION_CHECKLIST.md` Phase 3): B&B search/lookup commands (Phase 6), the roll-modifier contribution hook (needs a fresh design in Phase 4/5 now that `get_hooks` is confirmed fake), and firing `SoulXpAwardedEvent`/`SoulSkillAdvancedEvent` from Phase 2's APIs (documented shape exists, not yet wired).
 
 ### Phase 2 Implementation: Character Framework, Skills, Aspects, Resonance, XP Ledger (2026-07-23)
 
@@ -107,15 +117,16 @@ Three editorial inconsistencies within the Addendum were also resolved: XP statu
 
 The Addendum was drafted before this session's discovery of the fabricated docs, so a few of its illustrative examples use pre-fabrication terminology (e.g. "Skill rating +0 to +5" in a §2 dice example) that predates confirming FINAL's actual 0-10 Skill range. This does not change any resolved mechanic — it is illustrative wording only — but implementers should read Addendum examples as operating on FINAL's real ranges (0-10 Skills, Body/Mind/Spirit Aspects) rather than the example numbers literally. Flag to the project owner if a genuine numeric conflict (not just an illustrative example) turns up during implementation.
 
-### Before Phase 3 Begins
+### Before Phase 4 Begins
 
-- [ ] Finalize exact Ruby class names for services (FINAL leaves this an implementation decision, REQ-004) — `SoulFrameworkApi`/`SoulCharacterApi`/`SoulResonanceApi`/`SoulXpApi` now exist; Phase 3 needs `SoulBnbApi`, `SoulCulminationApi`, `SoulNarrativeHistoryApi`, `SoulAuditApi`
-- [ ] Decide B&B catalogue seeding approach: command-based creation with README examples (per DD-02), confirmed still current
+- [x] ~~Finalize exact Ruby class names for services~~ — `SoulFrameworkApi`/`SoulCharacterApi`/`SoulResonanceApi`/`SoulXpApi`/`SoulBnbApi`/`SoulCulminationApi`/`SoulNarrativeHistoryApi`/`SoulAuditApi` all now exist; Phase 4 needs `SoulRollApi`
+- [ ] Decide B&B catalogue seeding approach: command-based creation with README examples (per DD-02), confirmed still current — `SoulBnbApi.create_catalogue_entry` exists; no seed data has been created
 - [ ] Finalize non-canonical command syntax still open per REQ-037/REQ-045 (see `docs/reference/Commands.md` "Proposed" rows — e.g. exact abort-roll syntax)
 - [ ] Finalize API contracts between Ruby backend and Ember web portal for each REQ-046 required capability
+- [ ] **Design the roll-modifier contribution mechanism against a confirmed dispatch point** — the previously-assumed `get_hooks`/`:soul_roll_modifiers` design (documented in `API_and_Hooks.md`/`Integration_Guide.md`) has zero basis in real AresMUSH core; re-verify before Phase 4 implements it, per the Phase 3 finding above
 - [x] ~~Design cron/scheduler approach for weekly catch-up recalculation and weekly XP award~~ — done in Phase 2 (`plugin/events/soul_xp_cron_handler.rb`, real `Cron`/`CronEvent` mechanism)
 - [x] ~~Re-verify the real `custom_approval.rb` snippet mechanism~~ — done in Phase 2 (`custom-install/custom_approval.snippet.rb`)
-- [ ] When Phase 3's Narrative History/Audit models are built, backfill `SoulResonanceApi.lock_at_approval`'s `TODO(Phase 3)` marker and migrate `resonance_correction_log` (currently a lightweight Character attribute) to the real Audit model
+- [x] ~~Backfill `SoulResonanceApi.lock_at_approval`'s `TODO(Phase 3)` marker~~ — done in Phase 3; `resonance_correction_log` was kept alongside the new `SoulAuditEntry`/`NarrativeHistoryEntry` writes (fast character-scoped access) rather than migrated away from, since removing it would cost a lookup with no real benefit
 
 ## Resolved Architecture Questions
 
@@ -129,6 +140,18 @@ These were open in the pre-fabrication era of this project and are now settled b
 - **GM-assisted rolls:** Per-scene configurable policy (Required/Optional/Unavailable), mandatory vs. optional B&B selection (REQ-029).
 
 ## Session Notes
+
+### Session: 2026-07-23 (Phase 3 Implementation)
+
+- User asked to re-review all documentation, FINAL, and the Addendum again before starting Phase 3, per the established pattern.
+- Re-read FINAL §6.1-§6.3 (REQ-016 through REQ-024) and Addendum §5 (chargen B&B ratio/limits) in full before writing any code.
+- Confirmed the B&B catalogue should remain a real DB model (not config-driven like Aspects/Skills) by cross-checking FINAL REQ-017's "unique numeric ID" requirement and DD-02's "created via in-game commands" against the Phase 1 doc rebuild - this was a check, not a redesign, and it held up.
+- User clarified mid-implementation that a B&B "type" field with configurable Arcane/Mundane defaults was needed - this was already present as `category`; briefly renamed to `type` per the initial phrasing, then reverted back to `category` once the user confirmed "category is fine."
+- Found that Inklings' own custom "event" system (`dispatch_inkling_*` methods) calls a `Global.dispatcher.dispatch` method that doesn't exist on the real `Dispatcher` class - silently inert, the same failure shape as Lesson 33's `chargen_finalize`. Also found this project's own `API_and_Hooks.md`/`Integration_Guide.md` had invented an unverified `get_hooks` dispatch point with the same problem. Implemented the real mechanism (`Global.dispatcher.queue_event`, flat event classes) instead and flagged both docs.
+- Implemented Phase 3 models and service APIs: B&B catalogue/instance (`SoulBnbApi`), Culminations (`SoulCulminationApi`), Narrative History and Audit (`SoulNarrativeHistoryApi`, `SoulAuditApi`).
+- Backfilled Phase 2's `TODO(Phase 3)` marker in `SoulResonanceApi`.
+- Explicitly deferred B&B commands, the roll-modifier hook redesign, and firing the two not-yet-wired XP/Skill events - see `IMPLEMENTATION_CHECKLIST.md` Phase 3.
+- **Next:** Phase 4 — Standard Rolls and Pending-Roll Flow (see `docs/spec/IMPLEMENTATION_CHECKLIST.md` Phase 4 and `docs/spec/ROADMAP.md`). Design the roll-modifier contribution mechanism against a confirmed dispatch point before implementing it.
 
 ### Session: 2026-07-23 (Phase 2 Implementation)
 

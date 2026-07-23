@@ -30,5 +30,9 @@ module AresMUSH
     collection :character_aspects, "AresMUSH::CharacterAspect"
     collection :character_skills, "AresMUSH::CharacterSkill"
     collection :soul_xp_ledger_entries, "AresMUSH::SoulXpLedgerEntry"
+    collection :character_bnb_entries, "AresMUSH::CharacterBnbEntry"
+    collection :culminations, "AresMUSH::Culmination"
+    collection :narrative_history_entries, "AresMUSH::NarrativeHistoryEntry"
+    collection :soul_audit_entries, "AresMUSH::SoulAuditEntry"
   end
 end

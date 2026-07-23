@@ -110,30 +110,9 @@ Handlers SHALL be idempotent — SOUL documents whether a given event may be del
 
 ## Pattern: Providing Roll Modifiers
 
-```ruby
-def self.get_hooks(plugin_symbol, hook_name)
-  return nil unless plugin_symbol == :soul
-  case hook_name
-  when :soul_roll_modifiers
-    return [MyPluginModifierHandler]
-  end
-  nil
-end
-```
+> **Not yet designed against confirmed source.** An earlier draft of this pattern assumed a `get_hooks(plugin_symbol, hook_name)` dispatch point - grepping current AresMUSH core turns up no such mechanism anywhere (unlike `get_cmd_handler`/`get_event_handler`/`get_web_request_handler`, all confirmed real). Do not implement roll-modifier contribution this way. When Phase 4/5 builds the roll engine, design this against a confirmed dispatch point (most likely a direct method call from `SoulRollApi` into each loaded plugin module that defines a known method name, checked via `respond_to?` - the same pattern `PluginManager` itself uses for `shortcuts`/`achievements`/`check_config`) and re-verify against source at that time. See `docs/architecture/API_and_Hooks.md`'s "Hooks" section for the same caveat.
 
-```ruby
-class MyPluginModifierHandler
-  def self.get_modifiers(character, skill_key, context)
-    modifiers = []
-    if character.has_magical_staff?
-      modifiers << { source: "Magical Staff", value: 3, description: "Staff bonus to arcane skills" }
-    end
-    modifiers
-  end
-end
-```
-
-Contributed modifiers are combined with B&B modifiers and subject to the same global bounds (FINAL REQ-030) — Skill investment SHALL remain meaningful regardless of how many plugins contribute modifiers.
+Contributed modifiers would be combined with B&B modifiers and subject to the same global bounds (FINAL REQ-030) — Skill investment SHALL remain meaningful regardless of how many plugins contribute modifiers.
 
 ## Handling SOUL Absence
 
@@ -234,8 +213,8 @@ end
 
 ### Event handler not firing
 
-**Cause:** Hook not registered in `get_hooks`/`get_event_handler`, or wrong event name.
-**Fix:** Verify against `docs/architecture/API_and_Hooks.md`, and confirm your handler is registered for the exact event name SOUL fires.
+**Cause:** Handler not registered in `get_event_handler`, or wrong event name.
+**Fix:** Verify against `docs/architecture/API_and_Hooks.md`, and confirm your handler is registered for the exact event class name SOUL fires (`event.class.to_s.gsub("AresMUSH::", "")` - SOUL's event classes are flat under `AresMUSH::`, never nested under `AresMUSH::Soul::`).
 
 ### Modified rolls not applying
 

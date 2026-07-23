@@ -40,18 +40,26 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 
 ## Phase 3: Boons & Banes, Culminations, Narrative History/Audit
 
-- [ ] B&B catalogue model: numeric ID, tag, category, level definitions, chargen flags (REQ-017)
-- [ ] Character B&B entry model: instance ID, level/state, private explanation, associated Skills, source, progression history, GM notes (REQ-018)
-- [ ] Chargen B&B acquisition with per-Resonance-level limits and 2:1 ratio validation (REQ-019, Addendum §5)
-- [ ] Post-chargen B&B acquisition/progression through approved workflow, not XP (REQ-019)
-- [ ] Resolved/Negated state handling (non-destructive, preserves prior level) (REQ-020)
-- [ ] Epic state handling (explicit configured effect, no implied modifier) (REQ-020)
-- [ ] Destructive deletion safeguards: warning, two confirmations, audit snapshot, linked correction (REQ-021)
-- [ ] B&B search: `+bnb <id>`, `+bnb/here <tag>`, `+bnb/search <tag>` (REQ-022)
-- [ ] Culmination model and staff approval workflow (REQ-023)
-- [ ] Narrative History model, qualifying-events list, privacy/visibility (REQ-024)
-- [ ] Audit log, distinct from Narrative History (REQ-006, GL-17)
-- [ ] Correction/reversal pattern: append-only, links to original, never overwrite (CP-07)
+**Status:** ✅ Core models and service APIs complete (2026-07-23) — verified against real AresMUSH core (the Achievements plugin as the closest precedent for a per-character granted-record model; Roles plugin for the real custom-event convention). Commands/UI deferred to Phase 6, consistent with Phase 2's precedent.
+
+- [x] B&B catalogue model: numeric ID (Ohm's own auto-increment), tag, kind (boon/bane), category, level definitions, chargen flags (`BnbCatalogueEntry`, REQ-017)
+- [x] Character B&B entry model: instance ID, level/state, private explanation, associated Skills, source, progression history, GM notes (`CharacterBnbEntry`, REQ-018)
+- [x] Chargen B&B acquisition with per-Resonance-level limits (`SoulBnbApi.validate_chargen_limits`, chargen-sourced grants only) and continuous 2:1 ratio validation (`SoulBnbApi.ratio_satisfied_after_boon?`, every Boon grant regardless of source) (REQ-019, Addendum §5)
+- [x] Post-chargen B&B acquisition/progression through `SoulBnbApi.grant`/`progress` — no XP cost path exists for B&Bs (REQ-019)
+- [x] Resolved/Negated state handling: non-destructive, preserves prior level via `preserved_level_state`, restorable (`SoulBnbApi.resolve`/`restore`) (REQ-020)
+- [x] Epic state handling: catalogue-entry-level `epic_modifier`, no implied default (`SoulBnbApi.level_modifier`) (REQ-020)
+- [x] Destructive deletion safeguards: reason required, `confirmations: 2` required, audit snapshot, linked Narrative History correction (`SoulBnbApi.delete`) (REQ-021)
+- [x] Culmination model and staff approval workflow: propose (with deterministic duplicate detection)/approve/deny/revoke/correct (`Culmination`, `SoulCulminationApi`) (REQ-023)
+- [x] Narrative History model, qualifying-events creation, owner/staff-only privacy (`NarrativeHistoryEntry`, `SoulNarrativeHistoryApi`) (REQ-024)
+- [x] Audit log, distinct from Narrative History, staff-only (`SoulAuditEntry`, `SoulAuditApi`) (REQ-006, GL-17)
+- [x] Correction/reversal pattern: append-only `correction_log`/`progression_history` arrays, links to original, never overwrite (CP-07) — applied to `Culmination`, `CharacterBnbEntry`, and backfilled into Phase 2's `SoulResonanceApi.correct`
+- [x] Real custom-event mechanism (`SoulBnbTransitionedEvent`, `SoulCulminationApprovedEvent` via `Global.dispatcher.queue_event`) — corrects an unverified `get_hooks`/`dispatcher.dispatch(name, hash)` mechanism assumed in the Phase 1 doc rebuild, which has no basis in real core (see `docs/architecture/API_and_Hooks.md`'s "Hooks" section)
+
+### Deferred to Later Phases
+
+- [ ] B&B search/lookup **commands**: `+bnb <id>`, `+bnb/here <tag>`, `+bnb/search <tag>` (REQ-022) — the underlying `SoulBnbApi.get_catalogue_entry`/`search` methods exist; MUSH commands are Phase 6 territory, same as Phase 2's XP/Resonance commands
+- [ ] Roll-modifier contribution hook — the previously-documented `get_hooks`/`:soul_roll_modifiers` design has no basis in real core; needs a fresh design against a confirmed dispatch point when Phase 4/5 builds the roll engine
+- [ ] `SoulXpAwardedEvent`/`SoulSkillAdvancedEvent` — documented in `API_and_Hooks.md` as the planned shape but not yet fired by Phase 2's `SoulXpApi`/`SoulCharacterApi`; add when an integration actually needs them
 
 ## Phase 4: Standard Rolls and Pending-Roll Flow
 

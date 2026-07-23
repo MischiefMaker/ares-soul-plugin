@@ -63,27 +63,34 @@ SoulXpApi.get_history(character, limit: 50)
 ### B&B Validation / Transitions
 
 ```ruby
-SoulBnbApi.get_catalogue(category: nil)
-SoulBnbApi.get_catalogue_entry(id_or_tag)
+SoulBnbApi.create_catalogue_entry(name:, description:, kind:, tag:, enactor:, category: nil, epic_modifier: nil, ...)
+SoulBnbApi.get_catalogue(kind: nil, category: nil, active_only: true)
+SoulBnbApi.get_catalogue_entry(id_or_tag)          # Numeric ID or tag, case-insensitive
+SoulBnbApi.search(query)                           # Tag/name substring match
+
 SoulBnbApi.get_character_entries(character)          # Owner/authorized-staff view
 SoulBnbApi.get_character_entry_public(character, id) # Public-safe view (no explanation/GM notes)
 
-# Validate a proposed transition without applying it (used by Inklings' validation hook)
-SoulBnbApi.validate_transition(character, catalogue_id, target_level, options = {})
-
-# Apply a transition (chargen, staff, or approved Inklings outcome)
-SoulBnbApi.apply_transition(character, catalogue_id, target_level, source:, explanation: nil)
-  # Returns { error: "..." } or { success: true, entry_id: }
-
-SoulBnbApi.resolve(character, entry_id, reason:, enactor:)   # Non-destructive resolve/negate
+# Grant, progress, resolve/restore (non-destructive), delete (destructive)
+SoulBnbApi.grant(character, catalogue_ref, level_state:, source:, explanation: nil, enactor: nil)
+  # Validates the continuous 2:1 Boon ratio (any source) and, when source: "chargen",
+  # the Resonance-level count/level limits (Addendum §5). Returns { error: } or { success:, entry: }
+SoulBnbApi.progress(entry_id, new_level_state, source:, explanation: nil, enactor: nil)
+SoulBnbApi.resolve(entry_id, reason:, enactor:)     # Non-destructive; preserves prior level (REQ-020)
+SoulBnbApi.restore(entry_id, enactor:)
+SoulBnbApi.delete(entry_id, enactor:, confirmations:, reason:)  # Destructive; requires confirmations: 2 (REQ-021)
 ```
 
 ### Culmination Proposals
 
 ```ruby
-SoulCulminationApi.propose(character, title, description, source:, requires_approval: true)
+SoulCulminationApi.propose(character, title:, description:, source:, enactor: nil)
+  # Deterministic duplicate handling: a repeat call with the same source is a no-op (REQ-023)
 SoulCulminationApi.approve(culmination_id, enactor)
-SoulCulminationApi.get_culminations(character)
+SoulCulminationApi.deny(culmination_id, enactor, reason:)
+SoulCulminationApi.revoke(culmination_id, enactor, reason:)   # Preserves original record, appends correction_log entry
+SoulCulminationApi.correct(culmination_id, enactor, reason:, title: nil, description: nil)
+SoulCulminationApi.get_culminations(character, status: nil)
 ```
 
 Per REQ-023, an integrating plugin MAY propose a Culmination but SHALL NOT create the record directly — SOUL always owns creation after validation/approval.
@@ -109,34 +116,15 @@ SoulAuditApi.get_audit(character, viewer)                # Staff-only
 
 ## Hooks
 
-SOUL provides hooks for other plugins to extend behavior, registered via `get_hooks` (FINAL REQ-047 — stable names, versioned payload contracts, idempotent under duplicate delivery, expose only authorized data).
-
-```ruby
-def self.get_hooks(plugin_symbol, hook_name)
-  case hook_name
-  when :soul_roll_modifiers
-    return [MyModifierHandler]
-  end
-  nil
-end
-```
-
-### `:soul_roll_modifiers`
-
-Called while resolving a roll. Allows plugins to contribute modifiers (e.g. spell effects, equipment). Contributed modifiers are subject to the same global modifier bounds as B&B modifiers (REQ-030).
-
-**Handler interface:**
-```ruby
-class MyModifierHandler
-  def self.get_modifiers(character, skill_key, context)
-    # Return array of { source: "...", value: n, description: "..." }
-  end
-end
-```
+> **Not yet verified against real source.** `get_hooks` was assumed in an earlier documentation pass but, unlike `get_cmd_handler`/`get_event_handler`/`get_web_request_handler` (all confirmed real dispatch points on `AresMUSH::Dispatcher`), grepping the current AresMUSH core turns up **zero** references to `get_hooks` anywhere in engine or bundled plugins. This is the same class of mistake Lesson 33 (Inklings dev guide) warns about: a hook-shaped method that reads plausibly but has no confirmed caller. Do not implement `:soul_roll_modifiers` this way. When Phase 4/5 builds the roll engine, design the real modifier-contribution mechanism using a confirmed dispatch point (most likely `get_event_handler` with a purpose-built `SoulRollResolvingEvent`, or a direct method call from `SoulRollApi` into each loaded plugin module) - re-verify against source at that time rather than carrying this forward.
 
 ## Events
 
-SOUL fires events for other plugins to subscribe to via `get_event_handler`. All events carry stable identifiers and only the context their documented consumers are authorized to see (REQ-047).
+SOUL fires events via `Global.dispatcher.queue_event SomeEvent.new(...)` - the real, confirmed event mechanism (`plugins/roles/public/roles_events.rb`, `plugins/idle/public/idle_event.rb`; NOT `Global.dispatcher.dispatch("name", *args)`, which Inklings' own `dispatch_inkling_*` methods call but which doesn't exist on the real `Dispatcher` class - those calls are silently inert). Event classes are plain Ruby classes with `attr_accessor` fields, defined flat under `AresMUSH::` (never nested under `AresMUSH::Soul::` - see `plugin/public/soul_events.rb`). Other plugins subscribe the normal way, returning a handler class from their own `get_event_handler` for the event's class name.
+
+All events carry stable identifiers and only the context their documented consumers are authorized to see (REQ-047).
+
+> **Implementation status:** `SoulBnbTransitionedEvent` and `SoulCulminationApprovedEvent` below are fired for real (Phase 3, `plugin/public/soul_events.rb`). `SoulXpAwardedEvent` and `SoulSkillAdvancedEvent` are documented here as the planned shape but are not yet fired by Phase 2's `SoulXpApi`/`SoulCharacterApi` - add them using the same `Global.dispatcher.queue_event` pattern when an integration actually needs to consume them, rather than assuming they already exist.
 
 ### `SoulXpAwardedEvent`
 

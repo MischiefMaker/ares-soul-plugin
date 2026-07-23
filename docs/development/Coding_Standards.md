@@ -58,39 +58,11 @@ plugin/
 
 ### Example Method
 
-```ruby
-class SoulXpApi
-  def self.spend(character, skill_key, amount, enactor)
-    return { error: "Character not found" } unless character
-    return { error: "Invalid skill" } unless (skill = SoulFrameworkApi.get_skill(skill_key))
+See `plugin/public/soul_xp_api.rb`'s real `.spend` method for a complete worked example of this shape (validate → calculate cost → atomic deduct+advance → ledger). A few conventions worth calling out there:
 
-    char_skill = CharacterSkill.find_one(character_id: character.id, skill_key: skill_key)
-    new_rating = (char_skill&.rating || 0) + amount
-    max_rating = Global.read_config("soul", "framework", "skill_max_rating") || 10
-    return { error: "Rating would exceed the maximum of #{max_rating}" } if new_rating > max_rating
-
-    cost = calculate_cost(character, skill_key, new_rating)
-    available = SoulCharacterApi.get_available_xp(character)
-    return { error: "Insufficient XP: need #{cost}, have #{available}" } if available < cost
-
-    # Atomic per REQ-007: deduct and advance together, or not at all
-    char_skill ||= CharacterSkill.create(character_id: character.id, skill_key: skill_key, rating: 0)
-    char_skill.update(rating: new_rating, last_advanced_at: Time.now)
-    SoulCharacterApi.deduct_available_xp(character, cost)
-    SoulCharacterApi.increment_lifetime_spent_xp(character, cost)
-
-    AresMUSH.dispatcher.dispatch("SoulSkillAdvancedEvent", {
-      character_id: character.id,
-      skill_key: skill_key,
-      old_rating: new_rating - amount,
-      new_rating: new_rating,
-      xp_spent: cost
-    })
-
-    { success: true, new_rating: new_rating, xp_remaining: available - cost }
-  end
-end
-```
+- Custom events fire via `Global.dispatcher.queue_event SomeEvent.new(...)` (see `plugin/public/soul_events.rb`) - **not** `AresMUSH.dispatcher.dispatch("EventName", hash)`, which doesn't exist on the real `Dispatcher` class. An earlier draft of this doc used the latter; it was never real.
+- Event classes are plain `attr_accessor` Ruby classes defined flat under `module AresMUSH` - never nested under the plugin's own module (confirmed against `plugins/roles/public/roles_events.rb`).
+- Boolean-like model attributes (`resolved`, `chargen_available`, etc.) are plain `"true"`/`"false"` string attributes, not `DataType::Boolean` — its cast (`!!x`) turns even the stored string `"false"` into `true`, since any non-empty string is truthy in Ruby.
 
 ## Web/Ember Conventions
 

@@ -10,31 +10,33 @@ High-level milestones for SOUL implementation, following the recommended order i
 - `Implementation_Specification_Addendum.md` (co-developed) resolved all 10 items FINAL's REQ-045 left open: difficulty scale, 2d20 dice model, XP cost formula, chargen B&B ratio, pending roll expiry, aspect rounding, catch-up XP, degrees of success, extraordinary luck messaging, and the removal of global modifier bounds.
 - A documentation-fabrication incident was discovered, corrected, and archived (see `docs/spec/CLAUDE_ADR.md` and `docs/archive/README.md`); all architecture/reference/development documentation was rebuilt from the correct governing sources.
 
-## Current Milestone: Implementation, Phase 1
+## Completed Milestone: Implementation, Phases 1-3
 
-**Status:** Ready to begin
+**Status:** ✅ Core models and service APIs complete (2026-07-23). Commands and chargen/roll UI consistently deferred to Phase 6 across all three phases.
 
-Per FINAL Appendix D's recommended order:
-
-### Phase 1 — Plugin Skeleton, Configuration, Localization, Permissions
+### Phase 1 — Plugin Skeleton, Configuration, Localization, Permissions ✅
 
 Foundation work: no gameplay logic yet, but everything downstream depends on it.
 
-### Phase 2 — Character Framework, Skills, Aspects, Resonance, XP Ledger
+### Phase 2 — Character Framework, Skills, Aspects, Resonance, XP Ledger ✅
 
 The core character model: Body/Mind/Spirit Aspects, 0-10 Skills, chargen-locked Resonance, and the full XP ledger with the algebraic cost formula and catch-up mechanics.
 
-### Phase 3 — Boons & Banes, Culminations, Narrative History/Audit
+### Phase 3 — Boons & Banes, Culminations, Narrative History/Audit ✅
 
 The two-layer B&B catalogue/instance model, Culminations as story milestones, and the Narrative History vs. audit-log split.
 
-**Estimated scope for Phases 1-3:** 2-3 implementation cycles.
+Each phase was implemented only after verifying its design against real, current AresMUSH core source (FS3Skills for Phase 2, Achievements/Roles for Phase 3) rather than relying solely on the earlier documentation rebuild — see `docs/spec/CLAUDE_ADR.md`'s "Recent Changes" for the specific corrections each verification pass produced.
 
-## Future Phases
+## Current Milestone: Implementation, Phase 4
+
+**Status:** Ready to begin
 
 ### Phase 4 — Standard Rolls and Pending-Roll Flow
 
-The 2d20 open-ended dice engine, Boon/Bane die rerolls, degrees of success, extraordinary luck detection, and the standard (non-GM) pending-roll workflow.
+The 2d20 open-ended dice engine, Boon/Bane die rerolls, degrees of success, extraordinary luck detection, and the standard (non-GM) pending-roll workflow. Before implementing roll-modifier contribution from other plugins, design it against a confirmed dispatch point — the previously-assumed `get_hooks` mechanism was found to have no basis in real core (see Phase 3 notes in `CLAUDE_ADR.md`).
+
+## Future Phases
 
 ### Phase 5 — GM-Assisted Rolls and Scene Integration
 
@@ -52,7 +54,7 @@ The Inklings validate/apply hook handoff, and Grimoire's read-only Skill/Aspect/
 
 FS3 migration validation, full documentation currency pass, coverage targets, FINAL Appendix C acceptance criteria, and the release checklist.
 
-**Estimated scope for Phases 4-8:** 4-6 implementation cycles, with LlamaCoder handling repetitive scaffolding under Claude's architectural review (see the LlamaCoder Handoff Instructions in `Implementation_Specification_Addendum.md`).
+**Estimated scope for Phases 4-8:** 3-5 remaining implementation cycles, with LlamaCoder handling repetitive scaffolding under Claude's architectural review (see the LlamaCoder Handoff Instructions in `Implementation_Specification_Addendum.md`).
 
 ## Stretch Goals (Deferred — FINAL Appendix E)
 
@@ -77,4 +79,4 @@ FINAL explicitly defers these; they require owner approval/an ADR before any imp
 
 **Last Updated:** 2026-07-23
 
-**Next Review:** After completing Phase 1 (plugin skeleton, configuration, localization, permissions)
+**Next Review:** After completing Phase 4 (standard rolls and pending-roll flow)
