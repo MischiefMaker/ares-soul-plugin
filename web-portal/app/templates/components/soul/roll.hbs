@@ -228,8 +228,24 @@
     {{#if gmIsLoading}}
       <p>Loading pending rolls…</p>
     {{else if (eq gmReviewStage "list")}}
-      <Input @value={{forceAbortReason}} class="form-control mb-3"
-        placeholder="Required reason to force-abort a roll" />
+      <div class="card card-body mb-3">
+        <h4>Force-Abort Any Open Roll</h4>
+        <p>Use the pending roll ID and provide the required audit reason.</p>
+        <div class="row g-2">
+          <div class="col-md-3">
+            <Input @type="number" @value={{forceAbortRollId}} class="form-control"
+              placeholder="Roll ID" />
+          </div>
+          <div class="col-md-7">
+            <Input @value={{forceAbortReason}} class="form-control"
+              placeholder="Required reason" />
+          </div>
+          <div class="col-md-2">
+            <button type="button" class="btn btn-danger w-100"
+              onclick={{action "forceAbortById"}}>Force Abort</button>
+          </div>
+        </div>
+      </div>
       {{#if gmPendingRolls}}
         <div class="list-group">
           {{#each gmPendingRolls as |pending|}}
