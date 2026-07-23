@@ -114,6 +114,13 @@ rolls:
 | [1, 1] then [7, 3] | 2 - (10-2) = -6 | Implosion on double 1; reroll subtracted |
 | [1, 1] then [1, 1] then [5, 5] | 2 - (2-2) - (10-2) = -8 | Chained implosions |
 
+**Design Rationale for 2d10:**
+- **Smooth, understandable bell curve:** 2d10 produces a natural distribution centered on 11, familiar to players and intuitive to explain
+- **Skill matters:** Every skill point shifts the entire probability curve; no threshold effects or dead values
+- **Distinct difficulties:** Eight discrete difficulty targets (11-40) provide clear separation; no confusion about target ranges
+- **Rare tails without caps:** Open-ended explosions create statistically rare but unbounded high rolls; open-ended implosions create rare negative rolls; both feel exceptional without artificial ceilings
+- **Narrative degrees:** Tails produce meaningful story outcomes even when pass/fail doesn't change (e.g., exceptional success vs. success both win, but with different narrative weight)
+
 ---
 
 ## 3. XP Advancement Cost Table
@@ -507,6 +514,115 @@ xp:
 
 ---
 
+## 8.1 Degrees of Success
+
+**Status:** Approved
+
+**Decision:**
+Roll outcomes are categorized into six degrees reflecting both pass/fail status and margin of success/failure. These degrees determine narrative scope and player/GM authority.
+
+**The Six Degrees:**
+
+| Result | Description |
+|--------|-------------|
+| **Exceptional Success** | Succeed with a large margin; introduce additional benefit |
+| **Success** | Succeed with a normal margin; achieve goal |
+| **Complicated Success** | Succeed with a small margin; achieve goal but with cost/complication |
+| **Lucky Failure** | Fail with a small margin; miss goal but introduce benefit/opportunity |
+| **Failure** | Fail with a normal margin; miss goal |
+| **Catastrophic Failure** | Fail with a large margin; miss goal and introduce complication |
+
+**Trigger Calculation:**
+
+Degrees are determined by comparing final roll result to difficulty target:
+
+```
+margin = final_roll - difficulty_target
+
+Exceptional Success:   margin >= +10
+Success:              margin >= +0 and margin < +10
+Complicated Success:  margin >= -5 and margin < +0
+Lucky Failure:        margin >= -10 and margin < -5
+Failure:              margin < -10
+Catastrophic Failure: (same as Failure, but distinguished by narrative weight)
+```
+
+*Note: Exact margin thresholds are pending configuration finalization.*
+
+**Output Format - GM-Less (Player Authority):**
+
+Player receives an active-voice prompt with explicit authority to continue the story:
+
+```
+Exceptional Success
+You succeed. Introduce an additional benefit resulting from your success.
+
+Success
+You succeed.
+
+Complicated Success
+You succeed. Introduce an additional complication resulting from your success.
+
+Lucky Failure
+You fail. Introduce an additional benefit despite your failure.
+
+Failure
+You fail.
+
+Catastrophic Failure
+You fail. Introduce an additional complication resulting from your failure.
+```
+
+**Rationale:** Active voice ("Introduce...") gives the player explicit authority and clear expectations about their next narrative action.
+
+**Output Format - GM-Led (GM Discretion):**
+
+GM receives passive reporting of mechanical outcome; GM decides how to narrate/resolve:
+
+```
+Exceptional Success
+Success with an additional benefit.
+
+Success
+Success.
+
+Complicated Success
+Success with an additional complication.
+
+Lucky Failure
+Failure with an additional benefit.
+
+Failure
+Failure.
+
+Catastrophic Failure
+Failure with an additional complication.
+```
+
+**GM Options:** The GM may then:
+- Narrate the consequence directly
+- Ask the player for their narration
+- Collaborate on the outcome
+- Adjust or ignore the suggested degree if dramatically appropriate
+
+**Rationale:** Passive voice reports what happened mechanically without prescribing authority or narrative direction, preserving GM discretion in story-focused systems.
+
+**Configuration:**
+
+```yaml
+rolls:
+  degrees_of_success: true
+  margin_thresholds:
+    exceptional_success_min: 10
+    complicated_success_max: -0.01  # Just below zero
+    lucky_failure_max: -5
+    catastrophic_failure_min: -10
+  
+  output_mode: "gm_led"  # alternatives: "gm_less", "hybrid"
+```
+
+---
+
 ## 9. Extraordinary Luck Messaging
 
 **Status:** Approved
@@ -578,6 +694,7 @@ The configured prefix is used with the outcome appended:
 |----------|--------|----------------|
 | Difficulty Scale | ✅ Approved | See Table in §1 |
 | Random Model | ✅ Approved | 2d10 open-ended (§2) |
+| Degrees of Success | ✅ Approved | Six degrees with GM-less/GM-led output (§8.1) |
 | Extraordinary Luck Messaging | ✅ Approved | Probability-based (<0.5%) (§9) |
 | XP Advancement Cost | ⏳ Pending | [10, 15, 20, 25, 30] (provisional) |
 | Modifier Bounds | ⏳ Pending | ±10 (provisional) |
