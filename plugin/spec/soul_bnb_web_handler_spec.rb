@@ -9,6 +9,49 @@ module AresMUSH
       expect(subject.handle(request)[:error]).to be_present
     end
 
+    it "keeps the query/search path staff-only while ordinary catalogue browsing remains playable" do
+      enactor = Fabricate(:character)
+      allow(Website).to receive(:check_login).and_return(nil)
+      allow(Soul).to receive(:can_play?).and_return(true)
+      allow(Soul).to receive(:can_manage_soul?).and_return(false)
+
+      search = double(cmd: "soulBnbCatalogue", enactor: enactor, args: { 'query' => 'hidden' })
+      expect(subject.handle(search)[:error]).to be_present
+
+      allow(SoulBnbApi).to receive(:get_catalogue).and_return([])
+      browse = double(cmd: "soulBnbCatalogue", enactor: enactor, args: {})
+      expect(subject.handle(browse)).to eq(entries: [])
+    end
+
+    it "allows a manage-only staff member to search without requiring play permission" do
+      staff = Fabricate(:character)
+      allow(Website).to receive(:check_login).and_return(nil)
+      allow(Soul).to receive(:can_manage_soul?).and_return(true)
+      allow(Soul).to receive(:can_play?).and_return(false)
+      allow(SoulBnbApi).to receive(:search).and_return([])
+      request = double(cmd: "soulBnbCatalogue", enactor: staff, args: { 'query' => 'anything' })
+
+      expect(subject.handle(request)).to eq(entries: [])
+    end
+
+    it "uses the MUSH command's minor default for a web grant with no level" do
+      staff = Fabricate(:character)
+      character = Fabricate(:character)
+      allow(Website).to receive(:check_login).and_return(nil)
+      allow(Soul).to receive(:can_manage_soul?).and_return(true)
+      allow(Character).to receive(:find_one_by_name).and_return(character)
+      allow(SoulBnbApi).to receive(:grant).and_return(error: "test")
+      request = double(cmd: "soulBnbGrant", enactor: staff,
+        args: { 'character' => character.name, 'catalogue_ref' => 'lucky',
+                'explanation' => 'Because' })
+
+      subject.handle(request)
+      expect(SoulBnbApi).to have_received(:grant).with(
+        character, "lucky", level_state: "minor", source: "admin",
+        explanation: "Because", enactor: staff
+      )
+    end
+
     describe "soulBnbHere" do
       before do
         allow(Website).to receive(:check_login).and_return(nil)
