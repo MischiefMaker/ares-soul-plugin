@@ -51,39 +51,68 @@ rolls:
 
 ## 2. Random Distribution Model
 
-**Status:** Pending Decision
+**Status:** ✅ Approved
 
-**Question:**
-What die mechanism generates the base roll result?
+**Decision:**
+Rolls use a base 2d10 mechanic with open-ended explosions on doubles. The outcome is the sum of all rolled dice (including rerolls from explosions).
 
-**Options Under Consideration:**
+**Base Mechanic:**
 
-### Option A: d10 (Ares Native)
-- **Mechanism:** Roll 1d10 per point in the pool (e.g., pool 5 = 5d10), sum results
-- **Range:** 5-50 for pool 5; scales linearly
-- **Advantage:** Matches FS3's native mechanic; intuitive for Ares-familiar players
-- **Disadvantage:** Large pools produce predictable outcomes; bell curve peaks at mid-range
+1. **Initial Roll:** Roll 2d10, sum the result (range: 2-20)
 
-### Option B: d20 Pool with Threshold
-- **Mechanism:** Roll 1d20 per point in pool; count successes (results ≥ 11 = success)
-- **Range:** 0-pool successes; more granular control
-- **Advantage:** Bounded outcomes prevent unbounded high rolls; threshold model feels like genuine "difficulty"
-- **Disadvantage:** Different conceptual model than FS3; requires relearning
+2. **Explosion on Double 10:** 
+   - If both dice show 10 (double 10):
+     - Roll another 2d10
+     - Add `(reroll_sum - 2)` to the total (where reroll_sum is 2-20)
+     - Continue rerolling if the new reroll is also a double 10
+   - Example: Roll 2d10 → [10, 10] (sum 20) → reroll [9, 8] (sum 17) → add (17 - 2) = 15 → total 35
 
-### Option C: Single d20 + Pool Modifier
-- **Mechanism:** Roll 1d20 once, add pool as flat bonus (d20 + pool)
-- **Range:** 1-20 base, up to 1+pool+modifiers effective
-- **Advantage:** Fast, simple; minimizes variance
-- **Disadvantage:** Pool has less impact; diminishing returns at high ratings
+3. **Implosion on Double 1:**
+   - If both dice show 1 (double 1):
+     - Roll another 2d10
+     - Subtract `(reroll_sum - 2)` from the total
+     - Continue rerolling if the new reroll is also a double 1
+   - Example: Roll 2d10 → [1, 1] (sum 2) → reroll [4, 5] (sum 9) → subtract (9 - 2) = 7 → total 2 - 7 = -5
 
-**Recommendation:**
-*Awaiting project-owner decision.* Implementation will proceed with **d10 pool model (Option A)** as default, with configuration abstraction to permit substitution.
+4. **Final Result:** Sum of all rolls (initial + all explosions/implosions, clamped to minimum of -20 if needed)
 
-**Provisional Configuration:**
+**Rationale:**
+- 2d10 base provides intuitive central tendency (expected value ~11, matching "Standard" difficulty)
+- Open-ended explosions reward exceptional luck without hard caps
+- Symmetry between double-10 (good luck) and double-1 (bad luck)
+- Explosion bonus/penalty of `(reroll_sum - 2)` creates meaningful differentiation (explosions can add 0-18 per reroll)
+- Repeating explosions allow for truly extraordinary outcomes (rare but memorable)
+
+**Configuration:**
 ```yaml
 rolls:
-  random_model: "d10_pool"  # alternatives: d20_pool, d20_single
+  random_model: "d10_open_ended"
+  explosion:
+    enabled: true
+    trigger: "double_10"
+    bonus_formula: "reroll_sum - 2"  # reroll_sum = sum of the 2d10 reroll
+    
+  implosion:
+    enabled: true
+    trigger: "double_1"
+    penalty_formula: "reroll_sum - 2"
+    
+  # Customization options
+  explosion_bonus_min: 0    # Minimum bonus per explosion
+  explosion_bonus_max: 18   # Maximum bonus per explosion (2d10 = 2-20, minus 2 = 0-18)
+  implosion_penalty_min: 0
+  implosion_penalty_max: 18
 ```
+
+**Examples:**
+
+| Roll | Result | Notes |
+|------|--------|-------|
+| [5, 7] | 12 | Normal roll, no explosion/implosion |
+| [10, 10] then [8, 6] | 20 + (14-2) = 32 | Explosion on double 10; reroll added |
+| [10, 10] then [10, 10] then [6, 4] | 20 + (20-2) + (10-2) = 46 | Chained explosions |
+| [1, 1] then [7, 3] | 2 - (10-2) = -6 | Implosion on double 1; reroll subtracted |
+| [1, 1] then [1, 1] then [5, 5] | 2 - (2-2) - (10-2) = -8 | Chained implosions |
 
 ---
 
@@ -478,12 +507,71 @@ xp:
 
 ---
 
+## 9. Extraordinary Luck Messaging
+
+**Status:** Approved
+
+**Decision:**
+Roll result messages indicating "extraordinary luck" (both good and bad) shall be triggered based on the pre-calculated success probability, not on dice mechanics (e.g., not on doubles or critical rolls).
+
+**Trigger Rule:**
+
+Before rolling, calculate the final success probability using:
+- Skill rating
+- Difficulty target
+- All Boons and Banes (with mechanical effects)
+- Situational modifiers
+- Full open-ended dice distribution
+
+After rolling, compare the outcome to the pre-calculated probability:
+
+```
+If success_probability < 0.5% AND roll succeeds:
+    Display: "In an extraordinary string of good luck, [Character] succeeds."
+
+If failure_probability < 0.5% AND roll fails:
+    Display: "In an extraordinary string of bad luck, [Character] fails."
+```
+
+**Examples:**
+
+| Scenario | Success Prob | Outcome | Message |
+|----------|--------------|---------|---------|
+| Character with 1% success chance | 1% | Succeeds | "In an extraordinary string of good luck, Sarah succeeds." |
+| Character with 98% success chance | 98% | Fails | "In an extraordinary string of bad luck, Gandalf fails." |
+| Character with 50% success chance | 50% | Succeeds | (Standard success message, no extraordinary tag) |
+
+**Rationale:**
+- Extraordinary messaging rewards/acknowledges statistically unlikely outcomes
+- Probability-based triggering reflects the actual rarity of the outcome, not arbitrary dice patterns
+- Threshold (< 0.5%) ensures messages are reserved for genuinely improbable events
+- Applies equally to good and bad luck, maintaining narrative symmetry
+
+**Implementation Notes:**
+- Calculate probability *before* rolling (not retroactively after observing the outcome)
+- Use the same random distribution and modifier application as the actual roll
+- Store calculated probability alongside roll record for audit/transparency
+- Message format and personalization are configurable; above are templates
+
+**Configuration:**
+```yaml
+rolls:
+  extraordinary_luck:
+    enabled: true
+    probability_threshold: 0.005  # 0.5% = 0.005
+    good_luck_message: "In an extraordinary string of good luck, %{character} succeeds."
+    bad_luck_message: "In an extraordinary string of bad luck, %{character} fails."
+```
+
+---
+
 ## Summary Table
 
 | Decision | Status | Default Value |
 |----------|--------|----------------|
 | Difficulty Scale | ✅ Approved | See Table in §1 |
-| Random Model | ⏳ Pending | d10 pool (provisional) |
+| Random Model | ✅ Approved | 2d10 open-ended (§2) |
+| Extraordinary Luck Messaging | ✅ Approved | Probability-based (<0.5%) (§9) |
 | XP Advancement Cost | ⏳ Pending | [10, 15, 20, 25, 30] (provisional) |
 | Modifier Bounds | ⏳ Pending | ±10 (provisional) |
 | Chargen B&Bs | ⏳ Pending | 1 Boon + 1 Bane (provisional) |
