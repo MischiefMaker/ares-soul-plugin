@@ -10,11 +10,14 @@ SOUL SHALL expose documented service-level entry points for authorized reads and
 
 ### Framework Lookup
 
+Aspects and Skills are a configured catalogue (`game/config/soul.yml`'s `framework.aspects`/`framework.skills`), not separate DB models — `SoulFrameworkApi` reads `Global.read_config` directly and returns plain hashes, matching the verified real convention from FS3Skills (ability definitions are config; only per-character ratings are DB-backed). See `docs/architecture/Data_Model.md`.
+
 ```ruby
-# Read the configured Character Framework
-SoulFrameworkApi.get_aspects                       # => [Aspect, ...] (default: Body, Mind, Spirit)
-SoulFrameworkApi.get_skills(aspect_key: nil)        # => [Skill, ...]
-SoulFrameworkApi.get_skill(skill_key)
+SoulFrameworkApi.get_aspects                       # => [{key:, name:, description:, order:}, ...] (default: Body, Mind, Spirit)
+SoulFrameworkApi.get_aspect(aspect_key)             # => hash or nil
+SoulFrameworkApi.get_skills(aspect_key: nil)        # => [{key:, name:, aspect_key:, order:}, ...]
+SoulFrameworkApi.get_skill(skill_key)               # => hash or nil
+SoulFrameworkApi.skill_min_rating / skill_max_rating
 ```
 
 ### Character Ratings
@@ -22,33 +25,39 @@ SoulFrameworkApi.get_skill(skill_key)
 ```ruby
 SoulCharacterApi.get_skill_rating(character, skill_key)     # => 0-10
 SoulCharacterApi.get_aspect_rating(character, aspect_key)
-SoulCharacterApi.get_effective_base(character, skill_key)   # skill_rating + aspect contribution
+SoulCharacterApi.get_effective_base(character, skill_key)   # skill_rating + round_nearest(aspect_rating * weight)
+SoulCharacterApi.set_skill_rating(character, skill_key, rating, enactor)   # direct set, bypasses XP - chargen/staff only
+SoulCharacterApi.set_aspect_rating(character, aspect_key, rating, enactor)
 ```
 
 ### Resonance Reads
 
 ```ruby
-SoulResonanceApi.get_resonance(character)          # => -3..3, or nil if not yet locked
-SoulResonanceApi.get_chargen_allowance(resonance)   # => { skill_points:, starting_cap: }
+SoulResonanceApi.get_resonance(character)           # => -3..3, or nil if not yet chosen
+SoulResonanceApi.chargen_allowance(resonance)        # => { skill_points:, starting_cap: }
+SoulResonanceApi.locked?(character)
 ```
 
-Resonance is read-only to integrations — only SOUL's own chargen/staff-correction services may write it (REQ-012).
+Resonance is read-only to integrations — only SOUL's own chargen/staff-correction services (`set_resonance` pre-lock, `lock_at_approval`, `correct` post-lock) may write it (REQ-012).
 
 ### XP Awards / Spends
 
 ```ruby
-# Award (validates idempotency, applies catch-up only if eligible and not a manual grant)
-SoulXpApi.award(character, amount, source:, idempotency_key:)
-  # Returns { success: true, awarded: n, catchup_portion: n } or { error: "..." }
+# Award (validates idempotency; applies catch-up only if apply_catchup: true and the character is currently eligible)
+SoulXpApi.award(character, amount, source:, idempotency_key: nil, apply_catchup: true)
+  # Returns { success: true, awarded: n, base_award:, catchup_portion: n } or { error: "..." }
 
 # Spend (advancement)
 SoulXpApi.calculate_cost(character, skill_key, target_rating)  # Addendum §3 formula
 SoulXpApi.spend(character, skill_key, amount, enactor)
-  # Returns { error: "..." } or { success: true, new_rating:, xp_remaining: }
+  # Returns { error: "..." } or { success: true, new_rating:, cost:, xp_remaining: }
 
 SoulXpApi.get_available_xp(character)
 SoulXpApi.get_lifetime_earned_xp(character)
 SoulXpApi.get_lifetime_spent_xp(character)
+SoulXpApi.get_catchup_xp_earned(character)
+SoulXpApi.median_earned_xp                          # Live-computed across Chargen.approved_chars
+SoulXpApi.get_history(character, limit: 50)
 ```
 
 ### B&B Validation / Transitions
@@ -218,7 +227,7 @@ SoulInklingsHook.apply_outcome(payload, source: "inkling:234")
 
 ```ruby
 # Grimoire reads Skills/Aspects/Resonance through documented read APIs only
-SoulFrameworkApi.get_skill_rating(caster, "Ceremonial Magic")
+SoulCharacterApi.get_skill_rating(caster, "ceremonial_magic")
 # SOUL never receives or stores Grimoire spell history (REQ-040).
 ```
 

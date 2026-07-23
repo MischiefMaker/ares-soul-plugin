@@ -4,60 +4,68 @@ Database schema and data structures for SOUL, derived from `docs/spec/SOUL_LLM_I
 
 ## Character Framework
 
-### Aspect
+### Aspects and Skills Are Configured Catalogues, Not Database Models
+
+Aspects and Skills are **not** separate Ohm::Model classes. They are read directly from `game/config/soul.yml`'s `framework.aspects` and `framework.skills` (via `SoulFrameworkApi`), matching the verified real convention from AresMUSH's own bundled FS3Skills plugin — ability/attribute/skill *definitions* live entirely in config (`plugins/fs3skills/helpers/utils.rb`: `Global.read_config("fs3skills", "action_skills")`, etc.); only the per-character *rating* gets a DB-backed model (`FS3ActionSkill`). SOUL follows the same split. This also matches CP-06 (Configuration over Hard-Coding) more directly than a DB catalogue would.
+
+### Aspect (configured, `SoulFrameworkApi.get_aspects` / `get_aspect(key)`)
 
 A broad configured category representing innate or foundational capability, organizing related Skills (GL-04, REQ-009).
 
-**Key Attributes:**
-- `key` — Stable identifier used by core logic (never the display name)
+**Config shape** (`framework.aspects.<key>`):
+- `key` — Stable identifier used by core logic (never the display name); the config hash key itself
 - `name` — Configurable display name
 - `description` — What this Aspect represents
 - `order` — Display order
 
 **Defaults:** Body, Mind, Spirit (REQ-008). Names, stable keys, descriptions, ordering, and displayed terminology are all configurable.
 
-**Relationships:** Has many Skills.
-
-**Contribution to rolls (REQ-009, Addendum §7):**
+**Contribution to rolls (REQ-009, Addendum §7 — `SoulCharacterApi.aspect_contribution`/`get_effective_base`):**
 ```
 Aspect Contribution = round_nearest(Aspect Rating × aspect.weight)
 Effective Base = Skill Rating + Aspect Contribution
 ```
 `aspect.weight` defaults to `0.20` (DD-06). Per CP-03, equivalent Skill investment SHALL matter substantially more than Aspect investment — Aspects remain secondary to Skills.
 
-### Skill
+### Skill (configured, `SoulFrameworkApi.get_skills` / `get_skill(key)`)
 
 A learned capability belonging to exactly one Aspect (GL-05, REQ-010).
 
-**Key Attributes:**
-- `key` — Stable identifier
+**Config shape** (`framework.skills.<key>`):
+- `key` — Stable identifier; the config hash key itself
 - `name` — Display name
-- `description` — What the skill represents
-- `aspect_key` — Parent Aspect (stable key, not display name)
+- `aspect` — Parent Aspect's stable key (config field name `aspect`, exposed as `aspect_key` from `SoulFrameworkApi.get_skill`)
 - `order` — Display order
 
-**Defaults:** Rating range `0–10`. Labels: `0` Untrained; `1–3` Trained; `4–6` Experienced; `7–9` Expert; `10` Exceptional/Master. All Skills begin at `0` unless configured otherwise.
+**Defaults:** Rating range `0–10` (`framework.skill_min_rating`/`skill_max_rating`). Labels: `0` Untrained; `1–3` Trained; `4–6` Experienced; `7–9` Expert; `10` Exceptional/Master. All Skills begin at `0` unless configured otherwise.
 
-**Relationships:** Belongs to Aspect; has many CharacterSkill ratings.
+### CharacterAspect (`AresMUSH::CharacterAspect`, `plugin/models/character_aspect.rb`)
 
-### CharacterSkill
-
-A character's rating in a specific Skill.
+A character's rating in a specific configured Aspect — the DB-backed half of the Aspect split described above.
 
 **Key Attributes:**
-- `character_id`
-- `skill_key`
-- `rating` — Current rating (0–10, ultimate cap regardless of Resonance tier)
+- `character` — `reference` to `AresMUSH::Character`
+- `aspect_key` — Stable key into `framework.aspects`
+- `rating` — Current rating, default `0`
+
+### CharacterSkill (`AresMUSH::CharacterSkill`, `plugin/models/character_skill.rb`)
+
+A character's rating in a specific configured Skill — the DB-backed half of the Skill split described above. Shaped identically to FS3Skills' own `FS3ActionSkill` (`reference :character`, a stable key, a `rating`).
+
+**Key Attributes:**
+- `character` — `reference` to `AresMUSH::Character`
+- `skill_key` — Stable key into `framework.skills`
+- `rating` — Current rating (0–10, ultimate cap regardless of Resonance tier), default `0`
 - `last_advanced_at`
 
-## Resonance (GL-06, REQ-012)
+## Resonance (GL-06, REQ-012, `SoulResonanceApi`)
 
 Optional, configurable, chargen-only measure of setting-relative starting position. R0 is the normal protagonist baseline. Resonance affects starting resources and chargen ceilings, not ultimate potential.
 
-**Key Attributes (stored on character SOUL state):**
-- `resonance` — Approved value, range `R-3` through `R3`
-- `locked_at` — Timestamp of chargen-approval lock
-- `correction_history` — Original value, new value, actor, reason, source (for administrative correction only)
+**Key Attributes (Character custom fields, `plugin/models/character_soul_fields.rb`):**
+- `resonance` — Plain (untyped) attribute, not `DataType::Integer`. Ohm's Integer cast (`x.to_i`) turns a genuinely unset value into `0`, which would be indistinguishable from an explicit R0 choice — read via `SoulResonanceApi.get_resonance`, which parses manually and preserves the nil-vs-R0 distinction.
+- `resonance_locked_at` — `DataType::Time` (nil-safe); set once by `SoulResonanceApi.lock_at_approval`, called from the game's own `plugins/chargen/custom_approval.rb` (manual-paste snippet — see `custom-install/custom_approval.snippet.rb` — **not** a plugin-defined `hooks/` class; there is no framework-level chargen-approval hook dispatch, only `get_cmd_handler`/`get_event_handler`/`get_web_request_handler`)
+- `resonance_correction_log` — `DataType::Array`; append-only `{old_value, new_value, actor, reason, corrected_at}` entries from `SoulResonanceApi.correct`, standing in for the real Narrative History/Audit models until Phase 3 builds them
 
 **Canonical symmetric table (REQ-012):**
 
@@ -71,16 +79,30 @@ Optional, configurable, chargen-only measure of setting-relative starting positi
 | R2 | 19 | 9 |
 | R3 | 21 | 10 |
 
-Resonance normally locks at approval and does not advance later. Positive Resonance MAY require at least one Bane whose catalogue definition has `modifier_eligible: true` (staff MAY override with recorded reason).
+Resonance normally locks at approval and does not advance later. Positive Resonance MAY require at least one Bane whose catalogue definition has `modifier_eligible: true` (staff MAY override with recorded reason) — enforced once Phase 3's B&B catalogue exists.
 
-## XP and Advancement (GL-11, REQ-013)
+## XP and Advancement (GL-11, REQ-013, `SoulXpApi`)
 
-**Key Attributes (character SOUL state + ledger):**
-- `xp_available` — Current spendable XP
-- `xp_earned` — Lifetime Earned XP (base awards only, never includes catch-up bonus)
-- `xp_spent` — Lifetime Spent XP
-- `catchup_xp_earned` — Catch-Up XP Earned (bonus portion only, tracked separately per GL-12)
-- `source ledger` — One entry per award/spend with idempotency key, source, actor, timestamp
+**Key Attributes (Character custom fields, `plugin/models/character_soul_fields.rb`):**
+- `soul_xp_available` — Current spendable XP (`DataType::Integer`, default `0`)
+- `soul_xp_earned` — Lifetime Earned XP (base awards only, never includes catch-up bonus)
+- `soul_xp_spent` — Lifetime Spent XP
+- `soul_catchup_xp_earned` — Catch-Up XP Earned (bonus portion only, tracked separately per GL-12)
+
+Unlike Resonance, these safely use `DataType::Integer, :default => 0` — every character has them from creation (matching FS3Skills' own `attribute :fs3_xp, :type => DataType::Integer, :default => 0`), so the nil-casts-to-zero behavior never distinguishes a meaningfully different "unset" state.
+
+### SoulXpLedgerEntry (`AresMUSH::SoulXpLedgerEntry`, `plugin/models/soul_xp_ledger_entry.rb`)
+
+One award or spend event — the "source ledger/idempotency records" domain from REQ-003.
+
+**Key Attributes:**
+- `character` — `reference`
+- `direction` — `"award"` or `"spend"`
+- `source` — e.g. `"weekly"`, `"scene:42"`, `"admin"`, or a Skill key for spends
+- `idempotency_key` — Indexed; a repeated delivery of the same logical event (a re-fired cron tick) is detected via this and made a no-op rather than double-awarding (REQ-013)
+- `base_amount` — Base award amount, or XP cost for a spend
+- `catchup_amount` — Catch-up bonus portion (awards only)
+- `created_at`
 
 XP SHALL NOT directly buy Boons or remove Banes (GL-11).
 
@@ -95,13 +117,14 @@ resonance_modifier = (char_resonance > 0) ?
 final_cost = ceil(base_cost × development_modifier × resonance_modifier)
 ```
 
-Costs are non-decreasing as ratings rise (REQ-015 invariant).
+Costs are non-decreasing as ratings rise (REQ-015 invariant). Implemented in `SoulXpApi.calculate_cost` (`xp_spent` is read live via `SoulXpApi.get_lifetime_spent_xp`, `char_resonance` via `SoulResonanceApi.get_resonance`).
 
 ### Catch-Up XP (GL-12, REQ-014, Addendum §8)
 
-- Eligibility: weekly recalculation against median `xp_earned` across approved characters (new characters included immediately, no grace period).
+- Eligibility: median `xp_earned` across approved, active characters (`Chargen.approved_chars`, not `Character.all` — excludes NPCs/rosters/inactive, per the real convention `plugins/chargen/public/chargen_api.rb` establishes). New characters are included immediately (no grace period).
+- The median is computed live on every award (`SoulXpApi.median_earned_xp`) rather than cached and periodically recalculated — this naturally satisfies "weekly recalculation" (Addendum §8) since the weekly award cron (`xp.weekly_award_cron`) is the main point awards happen, without a separate recalculation job to keep in sync.
 - Progress metric: `xp_earned + catchup_xp_earned`.
-- Multiplier: `2.0×` (configurable) applied to all automatic sources except manual admin grants.
+- Multiplier: `2.0×` (configurable) applied only when `apply_catchup: true` is passed to `SoulXpApi.award` — the manual-grant staff command (`+xp/award`) omits it by default; `+xp/award/catchup` passes it explicitly.
 - Bonus SHALL be capped at the current median gap.
 
 ```
@@ -229,15 +252,15 @@ Expiry (Addendum §6): 720 hours (~30 days) wall-clock. Expired rolls are marked
 
 ## Character Integration
 
-SOUL attaches to Ares Characters via custom fields (`char.custom.soul_*`) per the AresMUSH `custom_char_fields.rb` convention — not a separate SOUL-owned Character subclass. See `docs/architecture/Plugin_Architecture.md`.
+SOUL attaches to Ares Characters by reopening `AresMUSH::Character` and declaring plain attributes directly (`plugin/models/character_soul_fields.rb`) — there is no `char.custom.soul_*` or `char.custom['...']` accessor on Character; that pattern doesn't exist in real AresMUSH source. A custom field is a normal Ohm attribute (`char.resonance`, `char.soul_xp_available`, etc.) that has to be declared before anything can read or write it — skipping the declaration produces a runtime `undefined method` error on every page that touches it. `custom_char_fields.rb` (a separate, game-owned file covered by its own manual-paste snippet) is only involved when a field needs to surface on the profile/chargen web forms — it does not create the underlying storage. See `docs/architecture/Plugin_Architecture.md`.
 
 ## Relationship Diagram
 
 ```
-Character
-  ├─→ CharacterSkill → Skill → Aspect
-  ├─→ Resonance (chargen-locked)
-  ├─→ XP ledger (xp_available, xp_earned, xp_spent, catchup_xp_earned)
+Character (resonance, resonance_locked_at, soul_xp_* attributes)
+  ├─→ CharacterAspect (aspect_key → configured Aspect)
+  ├─→ CharacterSkill (skill_key → configured Skill, which has an aspect_key)
+  ├─→ SoulXpLedgerEntry (award/spend history)
   ├─→ Character B&B Entry → Boon/Bane Catalogue Entry
   ├─→ Culmination
   ├─→ Narrative History entry
@@ -247,7 +270,8 @@ Character
 
 ## Data Integrity (CP-07)
 
-- Skills, Aspects, and Boon/Bane catalogue entries can be marked inactive but not deleted (preserve history).
+- Aspects and Skills are configuration, not database rows — "marking inactive" means removing or editing the config entry; existing `CharacterAspect`/`CharacterSkill` records referencing a since-removed key simply become orphaned data (harmless, but `SoulFrameworkApi.get_aspect`/`get_skill` will return `nil` for it).
+- Boon/Bane catalogue entries can be marked inactive but not deleted (preserve history).
 - Character B&B entries are never hard-deleted by ordinary play — resolution/negation preserves the record (REQ-021). Actual deletion requires two-step confirmation, an audit snapshot, and a linked Narrative History correction.
 - Corrections and reversals append linked records; originals are always preserved.
 - Rolls are append-only; pending rolls that expire or are aborted never produce a completed result.

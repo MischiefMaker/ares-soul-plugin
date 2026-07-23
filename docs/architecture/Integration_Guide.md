@@ -65,7 +65,7 @@ Grimoire owns its spell catalogue, branch definitions, casting lifecycle, and al
 ```ruby
 if defined?(AresMUSH::Soul)
   # Grimoire branches MAY map to Spirit Skills; SOUL does not require a separate Arcana Skill
-  skill_rating = SoulFrameworkApi.get_skill_rating(caster, "Ceremonial Magic")
+  skill_rating = SoulCharacterApi.get_skill_rating(caster, "ceremonial_magic")
   aspect_rating = SoulCharacterApi.get_aspect_rating(caster, "spirit")
   # Grimoire uses these values in its own casting resolution — SOUL is not asked to resolve the spell roll
   # unless Grimoire explicitly chooses to route a roll through SoulRollApi.start_roll
@@ -150,7 +150,7 @@ Document what doesn't work without SOUL, in your own README's "Known Limitations
 ```ruby
 def self.get_character_power(character)
   if defined?(AresMUSH::Soul)
-    SoulFrameworkApi.get_skill_rating(character, "sorcery") + 2
+    SoulCharacterApi.get_skill_rating(character, "sorcery") + 2
   else
     character.legacy_rating("Sorcery")
   end
@@ -203,7 +203,7 @@ end
 Cache SOUL reads within a single command/handler execution:
 ```ruby
 def handle(enactor)
-  skill_rating = SoulFrameworkApi.get_skill_rating(character, "combat")
+  skill_rating = SoulCharacterApi.get_skill_rating(character, "combat")
   # Reuse skill_rating for both checks below instead of calling the API twice
 end
 ```

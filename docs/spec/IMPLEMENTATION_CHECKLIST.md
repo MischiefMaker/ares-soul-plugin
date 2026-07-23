@@ -18,18 +18,25 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 
 ## Phase 2: Character Framework, Skills, Aspects, Resonance, XP Ledger
 
-- [ ] Aspect model and configuration (default: Body, Mind, Spirit) (REQ-008, REQ-009)
-- [ ] Skill model, Aspect relationship by stable key, 0-10 rating range (REQ-010)
-- [ ] Aspect roll contribution (`round_nearest(rating × aspect.weight)`, default weight 0.20) (Addendum §7)
-- [ ] Character Generation flow: framework load, Resonance selection, Skill allocation, chargen B&B selection, validation, correction, submission (REQ-011)
-- [ ] Chargen approval locking via `Chargen.custom_approval` hook (REQ-011)
-- [ ] Resonance model: R-3 to R3, chargen point/cap table, locking, staff correction with audit (REQ-012)
-- [ ] XP ledger: `xp_available`, `xp_earned`, `xp_spent`, `catchup_xp_earned` (REQ-013)
-- [ ] XP award sources: weekly, scene sharer/participant, forum, Inkling outcome, manual grant (REQ-013)
-- [ ] XP cost formula implementation and unit tests against Addendum §3 worked examples
-- [ ] Catch-up XP: weekly median recalculation, 2x multiplier, gap cap, exclusion of manual grants (REQ-014, Addendum §8)
-- [ ] XP spend/advancement flow: validate → cost → show → atomic deduct+advance → history/audit (REQ-015)
-- [ ] Staff XP commands: `+xp/award`, `+xp/award/catchup`, `+xp/scene`, `+xp/scene/catchup`, correction (REQ-015)
+**Status:** ✅ Core models and service APIs complete (2026-07-23) — verified against real AresMUSH core (FS3Skills plugin, the closest existing precedent for character ratings/XP/chargen point budgets) and Inklings' chargen-approval integration pattern. Player/staff-facing commands and full chargen UI are explicitly deferred — see "Deferred to Later Phases" below.
+
+- [x] Aspects and Skills as a **configured catalogue**, not DB models (`SoulFrameworkApi`, reading `game/config/soul.yml`'s `framework.aspects`/`framework.skills`) — corrected from an earlier draft that modeled these as separate Ohm::Model classes; verified against FS3Skills, where ability *definitions* are pure config and only the per-character *rating* is DB-backed (REQ-008, REQ-009, REQ-010)
+- [x] `CharacterAspect`, `CharacterSkill` models — per-character ratings, shaped like FS3Skills' own `FS3ActionSkill` (`plugin/models/character_aspect.rb`, `character_skill.rb`)
+- [x] Aspect roll contribution: `SoulCharacterApi.aspect_contribution`/`get_effective_base` (`round_nearest(rating × aspect.weight)`, default weight 0.20) (Addendum §7)
+- [x] Resonance: `SoulResonanceApi` — chargen point/cap table (REQ-012 canonical formula), pre-lock `set_resonance`, `lock_at_approval` (called from the game's own `plugins/chargen/custom_approval.rb` via `custom-install/custom_approval.snippet.rb` — **not** a plugin-defined hook class; there is no framework-level chargen-approval dispatch), staff `correct` with a lightweight audit trail pending Phase 3's real Audit model
+- [x] XP ledger: `soul_xp_available`, `soul_xp_earned`, `soul_xp_spent`, `soul_catchup_xp_earned` Character attributes + `SoulXpLedgerEntry` idempotency-keyed award/spend records (REQ-013)
+- [x] XP cost formula (`SoulXpApi.calculate_cost`) implemented and unit-tested against Addendum §3 worked examples — **found and corrected an arithmetic error in the Addendum's own +5 Resonance example** (stated 6.1×/610%, should be 7.1×/710% per the formula as written; see the Addendum §3 correction note)
+- [x] Catch-up XP (`SoulXpApi.award`/`catchup_eligible?`/`median_earned_xp`): median computed live across `Chargen.approved_chars` on every award rather than a separate cached recalculation step (still satisfies "weekly recalculation," since the weekly award cron is the main trigger point), 2x multiplier, gap cap, `apply_catchup:` flag (defaults on for automatic sources; the manual-grant staff command omits it) (REQ-014, Addendum §8)
+- [x] XP spend/advancement flow: validate → cost → atomic deduct+advance → ledger (`SoulXpApi.spend`) (REQ-015)
+- [x] Weekly XP award cron (`plugin/events/soul_xp_cron_handler.rb`), using the verified real `Cron.is_cron_match?`/`CronEvent` mechanism (confirmed via FS3Skills' and Inklings' own cron handlers)
+
+### Deferred to Later Phases (explicitly out of scope for this pass)
+
+- [ ] Character Generation **UI/commands**: framework display, Resonance selection form, Skill allocation validation surfaced to the player — the underlying `SoulResonanceApi`/`SoulCharacterApi` methods exist, but MUSH commands and web chargen integration belong with Phase 6 (Complete MUSH/Web UI Parity), matching how FS3Skills' own chargen UI is a separate layer over its rating storage
+- [ ] Chargen B&B selection (REQ-011) — depends on Phase 3's B&B catalogue model, which doesn't exist yet
+- [ ] Narrative History entry for approved starting Resonance (REQ-012) — depends on Phase 3's Narrative History model; `SoulResonanceApi.lock_at_approval` has a `TODO(Phase 3)` marking exactly where this plugs in
+- [ ] Staff XP commands (`+xp/award`, `+xp/award/catchup`, `+xp/scene`, `+xp/scene/catchup`, correction) — the `SoulXpApi.award`/`spend` methods these would call already exist; the MUSH command layer is Phase 6 territory
+- [ ] Scene sharer/participant and forum XP award sources (REQ-013) — require Scenes/Forum plugin integration points not yet investigated; only the weekly award source is wired so far
 
 ## Phase 3: Boons & Banes, Culminations, Narrative History/Audit
 

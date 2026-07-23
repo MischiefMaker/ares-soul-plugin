@@ -18,7 +18,7 @@ Claude's ongoing engineering notebook for SOUL implementation. Tracks current st
 
 **Branch:** `main`
 
-**Phase:** ✅ Phase 1 (Plugin Skeleton, Configuration, Localization, Permissions) complete and verified against real, current AresMUSH core source. Ready to begin Phase 2 (Character Framework, Skills, Aspects, Resonance, XP Ledger).
+**Phase:** ✅ Phase 1 complete. ✅ Phase 2 core models/APIs complete (Character Framework, Skills, Aspects, Resonance, XP Ledger) — commands, chargen UI, and B&B/Narrative-History-dependent pieces explicitly deferred (see `IMPLEMENTATION_CHECKLIST.md` Phase 2 "Deferred to Later Phases"). Ready to begin Phase 3 (Boons & Banes, Culminations, Narrative History/Audit).
 
 ## Reference Repositories in This Session
 
@@ -36,6 +36,25 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 **Lesson for future sessions:** Never write architecture/reference scaffolding without deriving it from the actual governing specification. If a specification file exists, read it fully before writing any supporting documentation — do not fill gaps with generic assumptions.
 
 ## Recent Changes
+
+### Phase 2 Implementation: Character Framework, Skills, Aspects, Resonance, XP Ledger (2026-07-23)
+
+Before writing code, inspected `plugins/fs3skills/` in the (now-current) AresMUSH core — the closest real precedent for character ratings, XP, and chargen point budgets — plus re-read `Global.read_config`/`Ohm::DataTypes`/`Cron` source directly rather than assuming Phase 1's conventions generalized cleanly to richer per-character data.
+
+**Key finding that changed the design:** Aspects and Skills should be a **configured catalogue**, not separate `Ohm::Model` DB classes. FS3Skills has zero DB-backed "ability definition" table — `plugins/fs3skills/helpers/utils.rb`'s `attrs`/`action_skills`/`languages` are pure `Global.read_config` reads; only the per-character rating gets an `Ohm::Model` (`FS3ActionSkill`, `FS3Attribute`, etc., each just `reference :character` + a name + a `rating`). The original architecture doc modeled `Aspect`/`Skill` as full catalogue tables — corrected this session; `docs/architecture/Data_Model.md` now documents the config-driven approach, and only `CharacterAspect`/`CharacterSkill` (the per-character rating half) are real models, matching `FS3ActionSkill`'s shape exactly.
+
+**Other findings from real source, applied to the implementation:**
+- `Ohm::DataTypes::DataType::Integer`'s cast is `x.to_i` with **no nil guard** — an attribute typed this way silently reads an unset value as `0`. This matters for Resonance, where R0 is a valid, meaningfully-different-from-unset choice: `resonance` is a plain untyped attribute instead, parsed manually in `SoulResonanceApi.get_resonance` to preserve the nil-vs-R0 distinction. (`Time`/`Date`/`Hash`/`Array`/`Set` casts all guard with `x && ...`; `Integer`/`Float`/`Decimal` do not.)
+- The real periodic-task mechanism is `CronEvent` (fired every minute) + `Cron.is_cron_match?(cron_spec, event.time)`, confirmed via both FS3Skills' `xp_cron_handler.rb` and Inklings' `inkling_xp_cron_handler.rb`. `docs/reference/Configuration.md`'s earlier placeholder `xp.catchup.schedule: "weekly"` string wasn't actionable against this — replaced with a real cron-format `xp.weekly_award_cron` hash (`day_of_week`/`hour`/`minute`), validated with `Manage::ConfigValidator#check_cron`.
+- Catch-up XP eligibility doesn't need its own separate recalculation job — `SoulXpApi.median_earned_xp` is computed live from `Chargen.approved_chars` on every award, so it's always current without a cache to keep in sync.
+- `Chargen.approved_chars` (not `Character.all`) is the real population for both the weekly award and the catch-up median — it excludes NPCs, rosters, and inactive characters, confirmed via `plugins/chargen/public/chargen_api.rb`.
+- Chargen-approval integration is the same manual-paste-snippet mechanism as Inklings' own (Lesson 33 from Phase 1) — `SoulResonanceApi.lock_at_approval` is called from `custom-install/custom_approval.snippet.rb`, not a plugin-defined hook class.
+
+**Files added:** `plugin/models/character_soul_fields.rb`, `character_aspect.rb`, `character_skill.rb`, `soul_xp_ledger_entry.rb`; `plugin/public/soul_framework_api.rb`, `soul_character_api.rb`, `soul_resonance_api.rb`, `soul_xp_api.rb`; `plugin/events/soul_xp_cron_handler.rb`; `custom-install/custom_approval.snippet.rb`; three spec files. `game/config/soul.yml` and `soul_config_validator.rb` updated for the real cron format.
+
+**Also found and corrected:** an arithmetic error in the Addendum's own §3 worked example (+5 Resonance stated as a 6.1×/610% multiplier; the formula as written actually produces 7.1×/710% — `1 + 0.22×5 + 1×5 = 7.1`, not `6.1`). Fixed the worked-example arithmetic only; the formula/decision itself is unchanged. Implementation (`SoulXpApi.calculate_cost`) and its spec both use the corrected 7.1× figure.
+
+**Explicitly deferred** (see `IMPLEMENTATION_CHECKLIST.md` Phase 2 for the full list): chargen UI/commands (Phase 6), B&B chargen selection (needs Phase 3's catalogue), the Narrative History entry for approved Resonance (needs Phase 3's model — `lock_at_approval` has a `TODO(Phase 3)` marking exactly where), and scene/forum XP award sources (need Scenes/Forum integration points not yet investigated).
 
 ### Phase 1 Implementation, Verified Against Real Source (2026-07-23)
 
@@ -88,14 +107,15 @@ Three editorial inconsistencies within the Addendum were also resolved: XP statu
 
 The Addendum was drafted before this session's discovery of the fabricated docs, so a few of its illustrative examples use pre-fabrication terminology (e.g. "Skill rating +0 to +5" in a §2 dice example) that predates confirming FINAL's actual 0-10 Skill range. This does not change any resolved mechanic — it is illustrative wording only — but implementers should read Addendum examples as operating on FINAL's real ranges (0-10 Skills, Body/Mind/Spirit Aspects) rather than the example numbers literally. Flag to the project owner if a genuine numeric conflict (not just an illustrative example) turns up during implementation.
 
-### Before Phase 2 Begins
+### Before Phase 3 Begins
 
-- [ ] Finalize exact Ruby class names for services (FINAL leaves this an implementation decision, REQ-004)
+- [ ] Finalize exact Ruby class names for services (FINAL leaves this an implementation decision, REQ-004) — `SoulFrameworkApi`/`SoulCharacterApi`/`SoulResonanceApi`/`SoulXpApi` now exist; Phase 3 needs `SoulBnbApi`, `SoulCulminationApi`, `SoulNarrativeHistoryApi`, `SoulAuditApi`
 - [ ] Decide B&B catalogue seeding approach: command-based creation with README examples (per DD-02), confirmed still current
 - [ ] Finalize non-canonical command syntax still open per REQ-037/REQ-045 (see `docs/reference/Commands.md` "Proposed" rows — e.g. exact abort-roll syntax)
-- [ ] Design cron/scheduler approach for weekly catch-up recalculation and weekly XP award
 - [ ] Finalize API contracts between Ruby backend and Ember web portal for each REQ-046 required capability
-- [ ] When chargen integration is needed (Phase 2's chargen flow, or Phase 5), re-verify the real `custom_approval.rb`/`custom_app_review.rb` snippet mechanism directly (see Inklings' `custom-install/custom_approval.snippet.rb`) rather than assuming a plugin-defined hook class gets auto-discovered — see Lesson 33 in the Inklings dev guide.
+- [x] ~~Design cron/scheduler approach for weekly catch-up recalculation and weekly XP award~~ — done in Phase 2 (`plugin/events/soul_xp_cron_handler.rb`, real `Cron`/`CronEvent` mechanism)
+- [x] ~~Re-verify the real `custom_approval.rb` snippet mechanism~~ — done in Phase 2 (`custom-install/custom_approval.snippet.rb`)
+- [ ] When Phase 3's Narrative History/Audit models are built, backfill `SoulResonanceApi.lock_at_approval`'s `TODO(Phase 3)` marker and migrate `resonance_correction_log` (currently a lightweight Character attribute) to the real Audit model
 
 ## Resolved Architecture Questions
 
@@ -109,6 +129,16 @@ These were open in the pre-fabrication era of this project and are now settled b
 - **GM-assisted rolls:** Per-scene configurable policy (Required/Optional/Unavailable), mandatory vs. optional B&B selection (REQ-029).
 
 ## Session Notes
+
+### Session: 2026-07-23 (Phase 2 Implementation)
+
+- User asked to re-review all documentation and the Inklings dev guide again before starting Phase 2, per the established pattern.
+- Explored `plugins/fs3skills/` in the (re-verified current) AresMUSH core as the closest real precedent for character ratings, XP, and chargen point budgets — found it uses config-driven ability definitions with only per-character ratings DB-backed, which corrected the planned Aspect/Skill model design before any code was written (see Recent Changes above).
+- Implemented Phase 2 core models and service APIs: Character Framework (config-driven catalogue + `CharacterAspect`/`CharacterSkill`), Resonance (`SoulResonanceApi`), XP ledger (`SoulXpApi`, `SoulXpLedgerEntry`), weekly XP cron.
+- Found and corrected an arithmetic error in the Addendum's own §3 worked example (+5 Resonance: stated 6.1×/610%, corrected to 7.1×/710% to match the formula as written) — a factual arithmetic fix within the "may add to it" permission for the Addendum, not a decision change.
+- Fixed `docs/architecture/Data_Model.md`, `API_and_Hooks.md`, and `Integration_Guide.md` to match the corrected Aspect/Skill design and a couple of small `SoulFrameworkApi`/`SoulCharacterApi` method-naming mixups from the Phase 1 doc rebuild.
+- Explicitly deferred chargen UI/commands, B&B chargen selection, the Resonance Narrative History entry, and scene/forum XP sources — see `IMPLEMENTATION_CHECKLIST.md` Phase 2.
+- **Next:** Phase 3 — Boons & Banes, Culminations, Narrative History/Audit (see `docs/spec/IMPLEMENTATION_CHECKLIST.md` Phase 3 and `docs/spec/ROADMAP.md`). Backfill the `TODO(Phase 3)` markers left in `SoulResonanceApi` once the Narrative History/Audit models exist.
 
 ### Session: 2026-07-23 (Phase 1 Implementation)
 

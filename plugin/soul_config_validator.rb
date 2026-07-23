@@ -116,6 +116,11 @@ module AresMUSH
           end
         end
 
+        # check_cron accepts either a config-section field name or (as here)
+        # a nested cron hash passed directly - see Manage::ConfigValidator
+        # and jobs_config_validator.rb's identical use for nested schedules.
+        @validator.check_cron(xp["weekly_award_cron"])
+
         cost = xp["cost"]
         if !cost.kind_of?(Hash)
           @validator.add_error("soul:xp.cost must be a hash of the algebraic cost formula's constants (Addendum §3).")

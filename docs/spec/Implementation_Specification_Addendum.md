@@ -224,7 +224,11 @@ Example: -5 Resonance → 1 + 0.12×(-5) = 0.4 multiplier → costs 40% of base
 **Positive Resonance (Above 0):**
 ```
 1 + 0.22 * char_resonance + 1 * char_resonance
-Example: +5 Resonance → 1 + 0.22×5 + 1×5 = 6.1 multiplier → costs 610% of base
+Example: +5 Resonance → 1 + 0.22×5 + 1×5 = 1 + 1.1 + 5 = 7.1 multiplier → costs 710% of base
+(Corrected 2026-07-23: the original worked example arithmetic summed to 6.1/610%,
+dropping the leading "1 +" term. The formula itself is unchanged; only this
+worked example's arithmetic was fixed - implementations should verify
+against 7.1/710%, not the original figure.)
 ```
 
 - **Design Rationale:**

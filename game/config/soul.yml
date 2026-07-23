@@ -121,6 +121,19 @@ soul:
     scene_participant_award: 1
     forum_award: 1
 
+    # Standard Ares cron format (see
+    # https://www.aresmush.com/tutorials/code/cron.html) - checked every
+    # minute via Cron.is_cron_match?, same mechanism FS3Skills' own
+    # xp_cron and Inklings' inkling_xp_cron use. Default below runs
+    # weekly, Sunday at midnight.
+    weekly_award_cron:
+      day_of_week:
+        - Sun
+      hour:
+        - 0
+      minute:
+        - 0
+
     cost:
       skill_curve_numerator: 1
       skill_curve_denominator: 2
@@ -131,9 +144,11 @@ soul:
       positive_resonance_rate: 0.22
       positive_resonance_surcharge: 1
 
+    # Catch-up eligibility (median comparison) is recalculated live on
+    # every award - see SoulXpApi.catchup_eligible? - so no separate
+    # recalculation schedule is needed beyond weekly_award_cron above.
     catchup:
       enabled: true
-      schedule: "weekly"
       multiplier: 2.0
       grace_period_weeks: 0
       sources_excluded:
