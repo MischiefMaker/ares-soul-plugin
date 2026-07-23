@@ -312,6 +312,31 @@ module AresMUSH
         .first(limit)
     end
 
+    def self.get_open_pending_for_selection(character)
+      get_open_pending_rolls(character)
+        .find { |pending| pending.status == "awaiting_selection" }
+    end
+
+    def self.get_open_pending_rolls(character)
+      return [] unless character
+
+      expire_stale_pending_rolls
+      character.pending_rolls.to_a
+        .select { |pending| open_status?(pending.status) }
+        .sort_by { |pending| pending.id.to_i }
+        .reverse
+    end
+
+    def self.get_pending_gm_review(scene)
+      return [] unless scene
+
+      expire_stale_pending_rolls
+      PendingRoll.find(status: "awaiting_gm").to_a
+        .select { |pending| pending.scene_id.to_s == scene.id.to_s }
+        .sort_by { |pending| pending.id.to_i }
+        .reverse
+    end
+
     def self.normalize_context(context)
       (context || {}).each_with_object({}) do |(key, value), normalized|
         normalized[key.to_s] = value

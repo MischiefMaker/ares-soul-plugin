@@ -19,6 +19,19 @@ module AresMUSH
           reason: request.args['reason'])
       when "soulReload"
         { success: true, live_read: true }
+      when "soulAudit"
+        character = Character.find_one_by_name(request.args['character'])
+        return { error: t('soul.character_not_found') } unless character
+        {
+          character: character.name,
+          entries: SoulAuditApi.get_audit(character, request.enactor).map do |entry|
+            {
+              id: entry.id, action: entry.action, actor: entry.actor && entry.actor.name,
+              reason: entry.reason, source: entry.source, before_state: entry.before_state,
+              after_state: entry.after_state, error: entry.error, created_at: entry.created_at
+            }
+          end
+        }
       end
     end
   end

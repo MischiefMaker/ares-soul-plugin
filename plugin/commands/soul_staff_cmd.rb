@@ -9,6 +9,8 @@ module AresMUSH
         if cmd.switch == "resonance"
           args = cmd.parse_args(ArgParser.arg1_equals_arg2_slash_arg3)
           self.name, self.value, self.reason = args.arg1, integer_arg(args.arg2), args.arg3
+        elsif cmd.switch == "audit"
+          self.name = cmd.args.to_s.strip
         end
       end
 
@@ -17,7 +19,14 @@ module AresMUSH
       end
 
       def required_args
-        cmd.switch == "resonance" ? [ self.name, self.value, self.reason ] : []
+        case cmd.switch
+        when "resonance"
+          [ self.name, self.value, self.reason ]
+        when "audit"
+          [ self.name ]
+        else
+          []
+        end
       end
 
       def handle
@@ -37,6 +46,16 @@ module AresMUSH
           end
         when "reload"
           client.emit_success t('soul.config_live')
+        when "audit"
+          ClassTargetFinder.with_a_character(self.name, client, enactor) do |character|
+            lines = SoulAuditApi.get_audit(character, enactor).map do |entry|
+              t('soul.audit_line', at: entry.created_at, action: entry.action,
+                actor: entry.actor ? entry.actor.name : t('soul.system_actor'),
+                reason: entry.reason.blank? ? t('soul.none') : entry.reason)
+            end
+            client.emit t('soul.audit', name: character.name,
+              entries: lines.empty? ? t('soul.none') : lines.join("%r"))
+          end
         end
       end
 

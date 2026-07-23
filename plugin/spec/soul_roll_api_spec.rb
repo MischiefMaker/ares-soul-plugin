@@ -610,5 +610,43 @@ module AresMUSH
         expect(SoulRollApi.get_roll_history(character, limit: 2)).to eq([recent, old])
       end
     end
+
+    describe ".get_open_pending_for_selection" do
+      it "returns the newest awaiting-selection roll for the character" do
+        older = pending_for(character)
+        newer = pending_for(character)
+        pending_for(character, status: "awaiting_gm", gm_assisted: "true")
+        pending_for(other_character)
+
+        expect(SoulRollApi.get_open_pending_for_selection(character)).to eq(newer)
+        expect(SoulRollApi.get_open_pending_for_selection(nil)).to be_nil
+        expect(older.status).to eq("awaiting_selection")
+      end
+    end
+
+    describe ".get_open_pending_rolls" do
+      it "returns both open statuses for only the requested character" do
+        selecting = pending_for(character)
+        gm_review = pending_for(character, status: "awaiting_gm", gm_assisted: "true")
+        pending_for(character, status: "resolved")
+        pending_for(other_character)
+
+        expect(SoulRollApi.get_open_pending_rolls(character)).to contain_exactly(selecting, gm_review)
+        expect(SoulRollApi.get_open_pending_rolls(nil)).to eq([])
+      end
+    end
+
+    describe ".get_pending_gm_review" do
+      it "returns only awaiting-GM rolls in the requested scene" do
+        scene = Fabricate(:scene)
+        other_scene = Fabricate(:scene)
+        match = pending_for(character, status: "awaiting_gm", gm_assisted: "true", scene_id: scene.id)
+        pending_for(other_character, status: "awaiting_selection", scene_id: scene.id)
+        pending_for(other_character, status: "awaiting_gm", gm_assisted: "true", scene_id: other_scene.id)
+
+        expect(SoulRollApi.get_pending_gm_review(scene)).to eq([match])
+        expect(SoulRollApi.get_pending_gm_review(nil)).to eq([])
+      end
+    end
   end
 end
