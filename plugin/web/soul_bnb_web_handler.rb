@@ -6,7 +6,8 @@ module AresMUSH
       enactor = request.enactor
 
       staff_commands = %w[soulBnbCreate soulBnbGrant soulBnbProgress soulBnbDelete soulBnbResolve soulBnbRestore]
-      if staff_commands.include?(request.cmd)
+      staff_search = request.cmd == "soulBnbCatalogue" && !request.args['query'].blank?
+      if staff_commands.include?(request.cmd) || staff_search
         return { error: t('soul.permission_denied') } unless Soul.can_manage_soul?(enactor)
       elsif !Soul.can_play?(enactor)
         return { error: t('soul.permission_denied') }
@@ -33,8 +34,9 @@ module AresMUSH
         result[:error] ? result : { success: true, entry: serialize_catalogue(result[:entry]) }
       when "soulBnbGrant"
         character = Character.find_one_by_name(request.args['character'])
+        level_state = request.args['level_state'].blank? ? "minor" : request.args['level_state']
         result = SoulBnbApi.grant(character, request.args['catalogue_ref'],
-          level_state: request.args['level_state'], source: "admin",
+          level_state: level_state, source: "admin",
           explanation: request.args['explanation'], enactor: enactor)
         result[:error] ? result : { success: true, entry: serialize_character_entry(result[:entry], true) }
       when "soulBnbProgress"
