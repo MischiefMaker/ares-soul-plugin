@@ -81,6 +81,7 @@ FS3 migration validation, full documentation currency pass, coverage targets, FI
 
 - `docs/handoffs/Phase_9_Automatic_XP_Award_Sources.md` — REQ-013's scene-sharer/participant and forum XP award sources were never actually automatic; `+xp/scene` is a manual staff command, not the event-driven award REQ-013 specifies, and no forum award path exists at all. Design resolved (real `SceneSharedEvent` + `Scene#owner` as sharer; forum via idempotent reconciliation, since no core forum-post event exists).
 - `docs/handoffs/Phase_9_Character_Generation_UI.md` — REQ-011's chargen-time Resonance selection, Skill/Aspect allocation, and B&B selection were deferred since Phase 2 and never scheduled a home phase. Underlying service APIs already do the right thing; only the command/web/chargen-stage integration layer is missing.
+- `docs/handoffs/Phase_9_Profile_Tab_and_XP_Spend_UI.md` — found in response to a direct user question about web parity: the SOUL Ember components (Sheet/XP/B&B/Culmination/History) and their backend web operations are all correct, but none are ever mounted into the character profile page (no profile-tab-mounting snippets exist, unlike Inklings), and the web XP-spend form has no template UI despite its component actions already being wired correctly.
 
 ### Confirmed stale, not real gaps (checkboxes corrected in `IMPLEMENTATION_CHECKLIST.md`)
 

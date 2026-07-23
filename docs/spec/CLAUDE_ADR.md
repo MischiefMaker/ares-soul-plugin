@@ -55,7 +55,14 @@ User asked to review `IMPLEMENTATION_CHECKLIST.md` for every remaining deferred/
 
 README.md's rewrite is being handled separately (Codex), not duplicated by this pass.
 
-**Next:** await Codex's implementation of both Phase 9 handoffs; review and merge per the established discipline (read the actual diff, not just the completion summary).
+**User then asked directly whether players can view their SOUL sheet from their web profile and spend XP there** (a targeted CP-05/web-parity question, not a re-request of the general checklist review). Investigated `web-portal/app/components/soul/*` and confirmed both pieces are genuinely missing despite looking complete at a glance:
+- The five Ember components (Sheet, XP, B&B, Culmination, History) and their backend web operations are all real and correct — but **nothing mounts them into the character profile page.** No `custom-install/profile-custom-tabs.snippet.hbs`, `profile-custom.snippet.hbs`, or `custom_char_fields.snippet.rb` exist for SOUL, unlike Inklings, which ships all three (verified directly against the real `ares-inklings-plugin` checkout) for the identical purpose, including the non-obvious `get_fields_for_viewing`/`char.custom.viewer_id`/`char.custom.is_approved` mechanism a naive `char.is_approved`/`this.viewer.id` reference would silently and invisibly get wrong (both would just render as `undefined`, not error).
+- `xp.js` already has correct `previewSpend`/`confirmSpend` actions wired to the real `soulXpSpend` web operation, but `xp.hbs`'s template has no skill picker, amount input, or button to ever invoke them — the JS is done, the UI to trigger it is not.
+- Found in the same pass: `sheet.hbs` never renders the `bnb` array `soulSheet`'s backend already returns.
+
+Wrote `docs/handoffs/Phase_9_Profile_Tab_and_XP_Spend_UI.md`, resolving the design directly (mirror Inklings' three-file mounting pattern exactly; gate the interactive XP-spend form to self-view only, since `soulXp`/`soulXpSpend` are correctly enactor-only and staff corrections already have a separate path). Retroactively corrected Phase 6's checklist entries: "both interfaces" there meant a working web *operation* existed, not that a player could actually navigate to it — a real, if subtle, distinction this project's own review discipline should have caught at Phase 6 and didn't.
+
+**Next:** await Codex's implementation of all three open Phase 9 handoffs; review and merge per the established discipline (read the actual diff, not just the completion summary).
 
 ### Phase 8: Documentation Currency, Spec Correctness, and Release Review (2026-07-24)
 
