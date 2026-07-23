@@ -34,5 +34,7 @@ module AresMUSH
     collection :culminations, "AresMUSH::Culmination"
     collection :narrative_history_entries, "AresMUSH::NarrativeHistoryEntry"
     collection :soul_audit_entries, "AresMUSH::SoulAuditEntry"
+    collection :rolls, "AresMUSH::Roll"
+    collection :pending_rolls, "AresMUSH::PendingRoll"
   end
 end
