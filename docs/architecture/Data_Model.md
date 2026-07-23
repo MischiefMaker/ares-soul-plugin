@@ -224,7 +224,7 @@ The technical, staff-only operational record (`AresMUSH::SoulAuditEntry`, `plugi
 - `success_probability` — the pre-roll probability calculated by `SoulDiceEngine.success_probability` (Addendum §9: "store calculated probability alongside roll record for audit/transparency"); this is the probability of the outcome that actually occurred (success chance if the roll succeeded, failure chance if it failed), not always "chance of success"
 - `degree_of_success` — One of six degrees (Addendum §8.1)
 - `extraordinary` — Boolean flag, set when the relevant probability above was ≤ `extraordinary_result_threshold` (default 0.01%, Addendum §9)
-- `gm_assisted` — Boolean; always `false` in Phase 4 (no GM-assisted rolls exist yet), reserved for Phase 5
+- `gm_assisted` — Boolean; `"true"` only for a Phase 5 GM-assisted roll
 - `rolled_at`
 
 ### PendingRoll (REQ-027, `AresMUSH::PendingRoll`)
@@ -235,14 +235,17 @@ The technical, staff-only operational record (`AresMUSH::SoulAuditEntry`, `plugi
 - `scene_id` / context
 - `difficulty` and other validated inputs
 - `system_suggested_entries` — candidate B&B entry ids identified automatically (may be empty; REQ-028's "no candidates found" case is simply an empty list, not a distinct status)
-- `gm_suggested_entries`, `gm_mandatory_entries` — present in the schema per REQ-027's full field list, but unused/always empty until Phase 5 implements GM-assisted rolls
+- `gm_suggested_entries` — ids the scene-GM marked optional from `system_suggested_entries` (Phase 5); an id not mentioned by the GM in either bucket is dropped from consideration for that roll, not implicitly optional
+- `gm_mandatory_entries` — ids the scene-GM marked mandatory (Phase 5); always applied at resolution regardless of the player's optional selection, including `+roll none` (REQ-029)
 - `player_selected_entries`
-- `manually_identified_entries` — distinct from system suggestions; a player may identify and add a relevant owned B&B the system did not suggest, marked as identified/override, never misreported as a system suggestion
-- `status` — Phase 4 uses `awaiting_selection` / `resolved` / `aborted` / `expired` only; Phase 5 adds GM-assisted statuses (e.g. `gm_input`)
-- `gm_assisted` — Boolean; always `false` in Phase 4, reserved for Phase 5
+- `manually_identified_entries` — distinct from system suggestions; a player may identify and add a relevant owned B&B the system did not suggest, marked as identified/override, never misreported as a system suggestion. Unaffected by GM assistance — this path never goes through GM review.
+- `status` — `awaiting_selection` / `resolved` / `aborted` / `expired` (Phase 4) plus `awaiting_gm` (Phase 5: a GM-assisted roll waiting on the scene-GM to call `gm_submit_selections`, before the player can select or the roll can resolve)
+- `gm_assisted` — Boolean; `"true"` only for a GM-assisted roll (Phase 5). Determined by `rolls.gm_scene_policy` (required/optional/unavailable) at `start_roll` time — see `docs/handoffs/Phase_5_GM_Assisted_Rolls.md` §5.2 for the exact resolution rule
 - `expires_at`
 
-Expiry (Addendum §6): 720 hours (~30 days) wall-clock. Expired rolls are marked inactive; no auto-resolution occurs. Pending-roll limits (CI-04 canonical defaults): standard player rolls `1` open, GM-assisted rolls `2` open (configurable) — only the standard limit is enforced until Phase 5.
+Expiry (Addendum §6): 720 hours (~30 days) wall-clock. Expired rolls are marked inactive; no auto-resolution occurs. Both `awaiting_gm` and `awaiting_selection` count as open for expiry and pending-roll-limit purposes. Pending-roll limits (CI-04 canonical defaults): standard player rolls `1` open, GM-assisted rolls `2` open (configurable) — these are two independent per-player caps, not a shared pool; a player can have an open standard roll and an open GM-assisted roll simultaneously.
+
+**Scene-GM authorization (Phase 5):** a character has scene-GM authority over a given pending roll when `Soul.can_review_rolls?(character) && scene.is_participant?(character)`, where `scene` is loaded from the roll's `scene_id`. The real AresMUSH `Scene` model (`plugins/scenes/public/scene.rb`) has no dedicated "GM" field — only `owner`/`participants`/`is_participant?` — so this two-part rule (global GM permission tier, scoped to actual presence in the scene) is SOUL's own design decision for a gap FINAL left open, not something confirmed against a real precedent. `Soul.can_manage_soul?` always additionally satisfies any scene-GM-gated check.
 
 ## Character Integration
 

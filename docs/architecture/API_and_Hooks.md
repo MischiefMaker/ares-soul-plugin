@@ -121,25 +121,52 @@ SoulDiceEngine.success_probability(net_modifier, required_dice_total)
   # pre-roll probability to be calculable and stored, not estimated).
 ```
 
-### Roll Initiation / Completion (Phase 4 — standard rolls only; GM-assisted is Phase 5)
+### Roll Initiation / Completion (Phase 4: standard rolls; Phase 5: GM-assisted)
 
 ```ruby
 SoulRollApi.get_candidate_bnbs(character, skill_key)
   # => [CharacterBnbEntry, ...] owned, unresolved, modifier_eligible, skill-associated
 
-SoulRollApi.start_roll(character, skill_key, context: {})
+SoulRollApi.start_roll(character, skill_key, context: {}, gm_requested: false)
   # Creates a PendingRoll; system_suggested_entries may be empty (REQ-028's
-  # "no candidates found" case - not a distinct status)
+  # "no candidates found" case - not a distinct status). gm_requested combines
+  # with rolls.gm_scene_policy (required/optional/unavailable) to determine
+  # the effective gm_assisted value (Phase 5, REQ-029) - a GM-assisted roll
+  # starts in status "awaiting_gm" instead of "awaiting_selection" and
+  # requires a resolvable scene.
+
+SoulRollApi.get_gm_candidate_view(pending_roll_id, gm)
+  # Phase 5. Privacy-filtered candidate list for GM review - only the fields
+  # rolls.privacy.gm_reveal_categories permits (default: name + public
+  # description only). Requires scene-GM authority (REQ-005): can_review_rolls?
+  # AND the gm is a participant in the roll's scene.
+
+SoulRollApi.gm_submit_selections(pending_roll_id, gm, mandatory_ids: [], optional_ids: [])
+  # Phase 5. Partitions the pending roll's own system_suggested_entries into
+  # mandatory (survives +roll none, REQ-029) and optional. Transitions
+  # "awaiting_gm" -> "awaiting_selection".
 
 SoulRollApi.select_entries(pending_roll_id, character, tags: [], suggested: false, none: false)
-  # REQ-026's three selection forms (+roll <tag>, +roll suggested, +roll none)
+  # REQ-026's three selection forms (+roll <tag>, +roll suggested, +roll none).
+  # Governs only the OPTIONAL bucket - unchanged by Phase 5's GM-mandatory
+  # entries, which are combined in at resolve_pending instead.
 
 SoulRollApi.resolve_pending(pending_roll_id, character)   # character required for ownership check (REQ-002)
-  # Combines accepted entries -> net_modifier -> SoulDiceEngine -> degree of
+  # Combines accepted entries (player-selected + manually-identified +
+  # GM-mandatory, Phase 5) -> net_modifier -> SoulDiceEngine -> degree of
   # success (Addendum §8.1) -> extraordinary flag (Addendum §9) -> Roll record
 
 SoulRollApi.abort_pending(pending_roll_id, actor, reason:)
-SoulRollApi.expire_stale_pending_rolls(now = Time.now)   # cron-driven sweep, Addendum §6
+  # Player's own voluntary abort. Phase 5 narrows the window for GM-assisted
+  # rolls: allowed while "awaiting_gm", no longer allowed once the GM has
+  # submitted (status "awaiting_selection" with gm_assisted true) - only
+  # force_abort_pending remains available past that point (REQ-029/CI-03).
+
+SoulRollApi.force_abort_pending(pending_roll_id, actor, reason:)
+  # Phase 5. Staff or scene-GM only, either open status, notifies the roller
+  # via Login.notify (REQ-029's "notify affected participants").
+
+SoulRollApi.expire_stale_pending_rolls(now = Time.now)   # cron-driven sweep, Addendum §6; sweeps both open statuses as of Phase 5
 SoulRollApi.get_roll_history(character, limit: 50)
 ```
 

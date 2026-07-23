@@ -91,12 +91,16 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 
 ## Phase 5: GM-Assisted Rolls and Scene Integration
 
-- [ ] Scene policy configuration: Required / Optional / Unavailable (REQ-029)
-- [ ] GM mandatory vs. optional B&B marking (REQ-029)
-- [ ] Reveal-policy-scoped GM visibility (privacy-safe wording, REQ-029, REQ-005)
-- [ ] Player abort before GM submission, with GM notification (REQ-029)
-- [ ] Staff force-abort with reason and audit (REQ-029)
-- [ ] `+roll/gm`, `+roll suggested`, `+roll <tag>`, `+roll none` command implementations (REQ-026)
+**Status:** 🔶 Handed to Codex (2026-07-24) — `docs/handoffs/Phase_5_GM_Assisted_Rolls.md`, extending the existing `plugin/public/soul_roll_api.rb` rather than new files. Pending implementation and review.
+
+- [ ] Scene policy configuration: Required / Optional / Unavailable (REQ-029) — `rolls.gm_scene_policy` already shipped/validated (Phase 1); resolution logic in `start_roll` designed, handed to Codex
+- [ ] GM mandatory vs. optional B&B marking (REQ-029) — `gm_submit_selections`, restricted to the roll's own `system_suggested_entries`, designed, handed to Codex
+- [ ] Reveal-policy-scoped GM visibility (privacy-safe wording, REQ-029, REQ-005) — `get_gm_candidate_view`, category-to-field mapping fully specified in the handoff, designed, handed to Codex
+- [ ] Player abort before GM submission, with GM notification (REQ-029) — narrowed `abort_pending` window + new `force_abort_pending` using the real `Login.notify` mechanism, designed, handed to Codex
+- [ ] Staff force-abort with reason and audit (REQ-029) — same as above
+- [ ] `+roll/gm`, `+roll suggested`, `+roll <tag>`, `+roll none` command implementations (REQ-026) — commands remain Phase 6, consistent with every other subsystem
+
+**Scene-GM authorization gap resolved:** FINAL/Permissions.md describe a "Scene-GM" permission tier scoped to "the active scene," but real AresMUSH's `Scene` model (confirmed against `plugins/scenes/public/scene.rb`) has no dedicated GM field — only `owner`/`participants`/`is_participant?`. Resolved as `Soul.can_review_rolls?(character) && scene.is_participant?(character)` — a real design decision recorded in the handoff (§5.1) and `Data_Model.md`, not a fabrication, since no more specific mechanism exists in core to check against.
 
 ## Phase 6: Complete MUSH/Web UI Parity
 

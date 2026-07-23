@@ -18,7 +18,7 @@ Claude's ongoing engineering notebook for SOUL implementation. Tracks current st
 
 **Branch:** `main`
 
-**Phase:** ✅ Phases 1-4 complete. Phase 4 (Standard Rolls and Pending-Roll Flow): dice/probability engine Claude-implemented directly; `Roll`/`PendingRoll` models and `SoulRollApi` implemented by Codex against a written handoff and reviewed/merged by Claude, with one signature gap (missing caller-identity argument on `resolve_pending`) caught and fixed during review. Ready to begin Phase 5 (GM-Assisted Rolls and Scene Integration).
+**Phase:** ✅ Phases 1-4 complete. 🔶 Phase 5 (GM-Assisted Rolls and Scene Integration) handed to Codex (`docs/handoffs/Phase_5_GM_Assisted_Rolls.md`), pending implementation and review.
 
 **Delegation model changed this session:** `Implementation_Specification_Addendum.md` was updated with a new, much broader Codex role (models, services, APIs, events, cron jobs, tests — not just command/web adapters as under the narrower LlamaCoder rules that preceded it). See the Addendum's "SOUL Codex Handoff Instructions" section. Claude's role is now consistently: architecture, mathematically/architecturally sensitive implementation, design-gap resolution, and review — with conventional CRUD/service implementation work delegated to Codex once the design is locked.
 
@@ -38,6 +38,16 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 **Lesson for future sessions:** Never write architecture/reference scaffolding without deriving it from the actual governing specification. If a specification file exists, read it fully before writing any supporting documentation — do not fill gaps with generic assumptions.
 
 ## Recent Changes
+
+### Phase 5 Handoff: GM-Assisted Rolls (2026-07-24)
+
+Reviewed FINAL §6.4.4 (REQ-029), CI-03/CI-04, and `docs/reference/Permissions.md`'s Scene-GM section before designing. Checked the real AresMUSH `Scene` model (`plugins/scenes/public/scene.rb`) rather than assuming a "GM" concept exists on it — it doesn't; `Scene` has only `owner`/`participants`/`is_participant?`, no dedicated GM field. Resolved this gap as a Claude design decision: scene-GM authority = `Soul.can_review_rolls?(character) && scene.is_participant?(character)` (global GM permission tier, scoped to actual scene presence) — recorded explicitly in the handoff and `Data_Model.md` rather than silently assumed.
+
+Also confirmed the real player-notification mechanism (`Login.notify(char, type, message, reference_id, ...)`, `plugins/login/public/login_api.rb`) for REQ-029's "notify affected participants" on force-abort, rather than inventing a new one.
+
+Extends Phase 4's `SoulRollApi` in place (`docs/handoffs/Phase_5_GM_Assisted_Rolls.md`) rather than adding new files: `start_roll` gains scene-policy resolution and a new `gm_requested:` flag; new `PendingRoll` status `awaiting_gm`; new `get_gm_candidate_view` (privacy-filtered per `gm_reveal_categories`) and `gm_submit_selections` (restricted to the roll's own candidate list — an unmentioned candidate is dropped, not implicitly optional); `resolve_pending` now folds in GM-mandatory entries so they survive `+roll none` (REQ-029); `abort_pending`'s window narrows once the GM has submitted, with a new `force_abort_pending` for staff/scene-GM at any open status. Pending-roll limits (1 standard / 2 GM-assisted, CI-04) are two independent per-player caps, not a shared pool — a design point CI-04's wording doesn't state explicitly but implies by giving them separate numbers.
+
+Handed to Codex following the same pattern that worked for Phase 4: full authorization rules, state-machine transitions, and privacy-filtering logic specified precisely enough that no architectural judgment is required to implement it, since a bug in scene-GM authorization or privacy filtering would be a real security/privacy defect, not just a cosmetic issue.
 
 ### Phase 1-3 Command/Web-Handler Layer: Codex Implementation and Review (2026-07-23/24)
 

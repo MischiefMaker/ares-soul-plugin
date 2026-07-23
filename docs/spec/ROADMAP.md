@@ -38,11 +38,11 @@ The 2d20 open-ended dice engine, Boon/Bane die rerolls, degrees of success, extr
 
 ## Current Milestone: Implementation, Phase 5
 
-**Status:** Ready to begin
+**Status:** 🔶 In progress. Handed to Codex (`docs/handoffs/Phase_5_GM_Assisted_Rolls.md`) — extends the existing `SoulRollApi` rather than adding new files. Pending implementation and Claude's review.
 
 ### Phase 5 — GM-Assisted Rolls and Scene Integration
 
-Per-scene GM policy (Required/Optional/Unavailable), mandatory/optional B&B selection, abort/force-abort. Builds on Phase 4's `PendingRoll` model, which already reserves the `gm_suggested_entries`/`gm_mandatory_entries`/`gm_assisted` fields for this phase.
+Per-scene GM policy (Required/Optional/Unavailable), mandatory/optional B&B selection, abort/force-abort. Builds on Phase 4's `PendingRoll` model, which already reserves the `gm_suggested_entries`/`gm_mandatory_entries`/`gm_assisted` fields for this phase. Scene-GM authorization (no dedicated GM field exists on the real `Scene` model) is resolved as global `gm_review_permission` scoped to actual scene participation — see the handoff §5.1.
 
 ## Future Phases
 
