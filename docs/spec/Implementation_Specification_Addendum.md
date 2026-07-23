@@ -784,13 +784,13 @@ The configured prefix is used with the outcome appended:
 
 ### Codex
 
-## SOUL Codex Handoff Instructions
+#### SOUL Codex Handoff Instructions
 
 This project uses a two-stage AI workflow.
 
 Claude is the project architect and implementation lead. Codex is the implementation engineer.
 
-### Claude's Role
+#### Claude's Role
 
 You (Claude) remain responsible for the complete SOUL project.
 
@@ -814,7 +814,7 @@ Claude must review every change before it is accepted.
 
 ---
 
-## Codex's Role
+#### Codex's Role
 
 Codex is responsible for implementing well-defined portions of the project inside the existing repository.
 
@@ -842,7 +842,7 @@ Codex should implement using existing AresMUSH conventions whenever possible ins
 
 ---
 
-## Before Beginning Any Work
+#### Before Beginning Any Work
 
 Before implementing a handoff, Codex must review the project documentation.
 
@@ -879,7 +879,7 @@ If any document appears to conflict with another:
 
 ---
 
-## Repository Expectations
+#### Repository Expectations
 
 Codex is working inside an existing AresMUSH plugin.
 
@@ -906,7 +906,7 @@ When modifying existing code:
 
 ---
 
-## Architecture
+#### Architecture
 
 Architecture has already been completed.
 
@@ -932,7 +932,7 @@ Do not invent a solution.
 
 ---
 
-## Preparing Work
+#### Preparing Work
 
 Claude should delegate work in logical implementation units.
 
@@ -952,7 +952,7 @@ Codex should inspect the repository as needed to understand surrounding code bef
 
 ---
 
-## During Implementation
+#### During Implementation
 
 Codex should:
 
@@ -971,7 +971,7 @@ If repository conventions differ from assumptions in the handoff, follow the rep
 
 ---
 
-## After Implementation
+#### After Implementation
 
 Codex should provide:
 
@@ -993,7 +993,7 @@ Codex should clearly distinguish:
 
 ---
 
-## Claude Review
+#### Claude Review
 
 After Codex completes a task, Claude must review every change.
 
@@ -1021,7 +1021,7 @@ Codex output is not considered accepted until Claude has completed this review.
 
 ---
 
-## Architectural Rule
+#### Architectural Rule
 
 If implementation reveals a design question that is not already answered by:
 
@@ -1036,7 +1036,7 @@ Only Claude may resolve architectural questions.
 
 ---
 
-## Default Rule
+#### Default Rule
 
 Codex implements.
 
@@ -1048,7 +1048,7 @@ When uncertainty exists, preserve the architecture and return questions to Claud
 
 This project uses Claude as the primary implementation agent. LlamaCoder may be used only for narrowly bounded, self-contained support tasks when its environment is demonstrably suitable.
 
-### Claude’s Role
+#### Claude’s Role
 
 You (Claude) are the project architect and primary implementer.
 
@@ -1072,7 +1072,7 @@ You remain responsible for the complete implementation, including any work deleg
 
 Do not stop implementing merely because a task is repetitive. Continue implementing directly unless delegation is clearly safe, useful, and compatible with the target environment.
 
-### LlamaCoder’s Role
+#### LlamaCoder’s Role
 
 LlamaCoder is an optional support tool, not a required implementation stage.
 
@@ -1098,7 +1098,7 @@ LlamaCoder’s default environment may be oriented toward standalone React and T
 
 The ability to generate a file does not establish that it can correctly inspect, integrate, validate, or test that file within the SOUL repository.
 
-### Appropriate Uses of LlamaCoder
+#### Appropriate Uses of LlamaCoder
 
 LlamaCoder may be used only for small, self-contained tasks where all required context can be included directly in the prompt and no repository inspection is necessary.
 
@@ -1114,7 +1114,7 @@ Potentially suitable tasks include:
 
 Any delegated output must be treated as untrusted draft material until Claude reviews and integrates it.
 
-### Tasks That Must Remain With Claude
+#### Tasks That Must Remain With Claude
 
 Claude must implement directly whenever the task involves any of the following:
 
@@ -1142,7 +1142,7 @@ Claude must implement directly whenever the task involves any of the following:
 
 Do not delegate a repository-aware task to LlamaCoder by supplying an incomplete selection of files. If correct implementation requires repository context, Claude must perform the work directly.
 
-### Before Delegating Anything
+#### Before Delegating Anything
 
 Before preparing a LlamaCoder task, Claude must confirm all of the following:
 
@@ -1157,7 +1157,7 @@ Before preparing a LlamaCoder task, Claude must confirm all of the following:
 
 If any condition is not met, do not delegate.
 
-### Required LlamaCoder Guardrails
+#### Required LlamaCoder Guardrails
 
 Every LlamaCoder prompt must state:
 
@@ -1171,7 +1171,7 @@ Every LlamaCoder prompt must state:
 
 Where possible, request plain text or a single explicitly named file rather than a multi-file archive.
 
-### LlamaCoder Handoff Contents
+#### LlamaCoder Handoff Contents
 
 When delegation is appropriate, the handoff must include:
 
@@ -1190,7 +1190,7 @@ Do not ask it to inspect GitHub or external source code unless its environment h
 
 Do not request a ZIP unless multiple standalone files are genuinely necessary.
 
-### After LlamaCoder Finishes
+#### After LlamaCoder Finishes
 
 Assume nothing.
 
@@ -1213,7 +1213,7 @@ Claude must integrate, correct, or discard the result as appropriate.
 
 LlamaCoder output must never be accepted merely because it generated plausible-looking files.
 
-### Architectural Rule
+#### Architectural Rule
 
 If an unresolved design question, missing API, repository dependency, framework uncertainty, or integration concern is discovered, do not delegate it.
 
@@ -1221,7 +1221,7 @@ Claude must resolve the issue through architectural review and repository inspec
 
 Only fully specified, self-contained, repository-independent tasks may be handed to LlamaCoder.
 
-### Default Rule
+#### Default Rule
 
 When uncertain, Claude should implement the work directly.
 
