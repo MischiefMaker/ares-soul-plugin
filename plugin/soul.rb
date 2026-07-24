@@ -98,6 +98,8 @@ module AresMUSH
           SoulHistoryCmd
         when "framework", "framework/skill", "framework/aspect", "resonance", "reload", "audit"
           SoulStaffCmd
+        when "cg", "cg/resonance", "cg/skill", "cg/bnb", "cg/drop"
+          SoulChargenCmd
         when nil
           SoulSheetCmd
         end
@@ -109,8 +111,6 @@ module AresMUSH
         SoulCulminationCmd
       when "roll"
         SoulRollCmd
-      when "chargen"
-        SoulChargenCmd
       end
     end
 

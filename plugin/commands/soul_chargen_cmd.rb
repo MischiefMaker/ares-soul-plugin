@@ -6,8 +6,23 @@ module AresMUSH
       attr_accessor :value, :skill, :rating, :reference, :level,
                     :explanation, :entry_id
 
+      # Dispatched under the "soul" root as a compound switch ("cg",
+      # "cg/resonance", "cg/skill", "cg/bnb", "cg/drop") - not its own
+      # "chargen" root. Core AresMUSH's own chargen.yml defines a
+      # built-in shortcut, `chargen: cg`, that rewrites the literal word
+      # "chargen" to "cg" before command dispatch ever sees it - so a
+      # SOUL-owned "+chargen" root is permanently unreachable on any
+      # stock game, shadowed by core's own chargen review flow (found
+      # during internal testing, 2026-07-24 - see docs/development/
+      # Bug_List.md BUG-004). "cg" is namespaced under "soul" (not a
+      # bare root of its own) specifically so it can't collide with that
+      # same core shortcut a second time.
+      def sub_switch
+        cmd.switch.to_s.sub(/\Acg\/?/, '')
+      end
+
       def parse_args
-        case cmd.switch
+        case sub_switch
         when "resonance"
           self.value = integer_arg(cmd.args)
         when "skill"
@@ -29,7 +44,7 @@ module AresMUSH
       end
 
       def required_args
-        case cmd.switch
+        case sub_switch
         when "resonance" then [ self.value ]
         when "skill" then [ self.skill, self.rating ]
         when "bnb" then [ self.reference, self.explanation ]
@@ -39,8 +54,8 @@ module AresMUSH
       end
 
       def handle
-        case cmd.switch
-        when nil then show_status
+        case sub_switch
+        when "" then show_status
         when "resonance" then emit_result SoulResonanceApi.set_resonance(enactor, self.value, enactor)
         when "skill" then set_skill
         when "bnb"

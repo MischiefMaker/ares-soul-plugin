@@ -17,11 +17,18 @@ The default Sheet fits roughly one MUSH screen (CI-02); drill-down commands belo
 
 | Command | Purpose | Permission |
 |---|---|---|
-| `+chargen` | Review Resonance, Skill allocation, and starting B&B selections | unapproved player |
-| `+chargen/resonance <value>` | Select or change Resonance | unapproved player |
-| `+chargen/skill <key>=<rating>` | Set an absolute starting Skill rating | unapproved player |
-| `+chargen/bnb <id or tag>[/<level>]=<explanation>` | Add a chargen-available B&B | unapproved player |
-| `+chargen/drop <entry id>` | Remove a chargen-selected B&B | unapproved player |
+| `+soul/cg` | Review Resonance, Skill allocation, and starting B&B selections | unapproved player |
+| `+soul/cg/resonance <value>` | Select or change Resonance | unapproved player |
+| `+soul/cg/skill <key>=<rating>` | Set an absolute starting Skill rating | unapproved player |
+| `+soul/cg/bnb <id or tag>[/<level>]=<explanation>` | Add a chargen-available B&B | unapproved player |
+| `+soul/cg/drop <entry id>` | Remove a chargen-selected B&B | unapproved player |
+
+**Not `+chargen`:** core AresMUSH's own `game/config/chargen.yml` defines a
+built-in shortcut, `chargen: cg`, that rewrites the literal word "chargen" to
+"cg" before command dispatch ever runs — so a SOUL-owned `+chargen` root is
+permanently unreachable on any stock game, shadowed by core's own chargen
+review flow. Namespaced under `+soul/cg` instead (found during internal
+testing, 2026-07-24 — see `docs/development/Bug_List.md` BUG-004).
 
 The optional web chargen tab provides the same actions. Install the two
 `chargen-custom` snippets and add the supplied `chargen_stage` entry to the

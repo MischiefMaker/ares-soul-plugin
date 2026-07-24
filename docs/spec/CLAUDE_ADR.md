@@ -39,6 +39,14 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 
 ## Recent Changes
 
+### BUG-004: `+chargen` Renamed to `+soul/cg` — Shortcut Collision Missed by Phase 9's Own Verification (2026-07-24)
+
+User's exact report during internal testing: *"chargen commands do not work -- we need a unique namespace and +chargen is taken. Use +soul/cg."* Confirmed and fixed.
+
+**Root cause, and why the earlier verification missed it:** Phase 9's Character Generation UI work explicitly checked whether `"chargen"` was a free root word before choosing it — but only checked core's Chargen plugin `get_cmd_handler` (`case cmd.root`), which correctly showed `chargen` unclaimed there (`app`/`bg`/`cg`/`hook` are the real roots). What that check didn't cover: `game/config/chargen.yml` also defines a **shortcut**, `chargen: cg`, and AresMUSH expands shortcuts *before* the dispatcher ever matches `cmd.root` against any plugin's `get_cmd_handler`. So `+chargen` was rewritten to `+cg` (core's own command) before SOUL's dispatch code ever ran — the command family was unreachable on every stock game, not just this test game. **Lesson recorded for future root-word choices:** checking a plugin's `get_cmd_handler` alone doesn't prove a word is free; its `shortcuts:` config (and every other installed plugin's) has to be checked too.
+
+**Fix:** Renamed the whole family to `+soul/cg` — a compound switch (`cg`, `cg/resonance`, `cg/skill`, `cg/bnb`, `cg/drop`) under the existing `soul` root, using the same embedded-slash-switch pattern already established for `+soul/framework/skill` and `+xp/award/catchup`. Chose `soul` as the parent specifically so this can't collide with the same shortcut mechanism a second time. `SoulChargenCmd` gained a small `sub_switch` helper to strip the `cg` prefix; its internal per-action logic is otherwise untouched. Web operations were never affected (they're string identifiers like `soulChargenStatus`, not MUSH roots) and no `custom-install/` snippet needed to change (the web chargen tab mounts the `soul/chargen` Ember component, unrelated to MUSH command syntax). Updated `docs/reference/Commands.md`, `README.md`, `plugin/help/en/soul_chargen.md`, `locale_en.yml`, and `soul_chargen_cmd_spec.rb`. Full detail in `docs/development/Bug_List.md` BUG-004.
+
 ### Internal Testing Begins: Bug List Started, Two Default-Permission Bugs Fixed (2026-07-24)
 
 User began installing SOUL on a non-live game for internal testing (Inklings installed, Grimoire not). Started `docs/development/Bug_List.md` to track findings as they come in. First two reports were both the same class of bug, found by the user directly comparing SOUL's configured permission defaults against their game's real `+role` permission listing:

@@ -32,8 +32,8 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 
 ### Deferred to Later Phases (explicitly out of scope for this pass)
 
-- [x] Character Generation **UI/commands**: framework display, Resonance selection, and Skill allocation validation are available through `+chargen` and the mounted web chargen tab.
-- [x] Chargen B&B selection (REQ-011) — implemented through `+chargen/bnb`, `+chargen/drop`, and equivalent web controls, with approval finalization.
+- [x] Character Generation **UI/commands**: framework display, Resonance selection, and Skill allocation validation are available through `+soul/cg` (renamed from `+chargen` 2026-07-24 — see BUG-004 below) and the mounted web chargen tab.
+- [x] Chargen B&B selection (REQ-011) — implemented through `+soul/cg/bnb`, `+soul/cg/drop`, and equivalent web controls, with approval finalization.
 - [x] ~~Narrative History entry for approved starting Resonance (REQ-012)~~ — **done**; `SoulResonanceApi.lock_at_approval` calls `SoulNarrativeHistoryApi.create` directly (verified 2026-07-24). This checklist item was stale, not an open gap.
 - [x] ~~Staff XP commands~~ — **done** in Phase 6 (`+xp/award`, `+xp/award/catchup`, `+xp/scene`, `+xp/scene/catchup`, `+xp/correct`). This checklist item was stale, not an open gap.
 - [x] Automatic scene sharer/participant and forum XP award sources (REQ-013) — implemented by `SceneSharedEventHandler` and the idempotent forum reconciliation path in `XpCronHandler`.

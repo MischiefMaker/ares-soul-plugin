@@ -128,8 +128,10 @@ Both calls are idempotent and safe on re-approval.
 
 ### Step 4: Add the MUSH Chargen Stage
 
-The `+chargen` command family works once the plugin is installed, but adding a stage
-introduces it at the correct point in the normal character-generation flow.
+The `+soul/cg` command family works once the plugin is installed, but adding a
+stage introduces it at the correct point in the normal character-generation flow.
+(Not `+chargen` — core AresMUSH's own `chargen: cg` shortcut claims that word
+before SOUL ever sees it, so SOUL's chargen commands live under `+soul/cg`.)
 
 1. In **aresmush**, open `game/config/chargen.yml`.
 2. Under the existing `stages:` section, add the entry from
