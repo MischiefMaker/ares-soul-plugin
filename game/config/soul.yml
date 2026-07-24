@@ -18,12 +18,18 @@ soul:
   # docs/reference/Permissions.md.
   manage_permission: manage_jobs
 
-  # Permission required for ordinary player actions: view your own Sheet,
-  # spend XP, make rolls, browse the B&B catalogue.
-  play_permission: play
+  # Ordinary player actions (view your own Sheet, spend XP, make rolls,
+  # browse the B&B catalogue) are available to any approved character by
+  # default - no permission needed. Set play_permission to also grant
+  # play access to characters who don't have that permission (e.g. to
+  # let staff or beta-testers use SOUL before their own character is
+  # approved). Leave unset/commented for the default (approved only).
+  # play_permission: manage_jobs
 
   # Permission required to review/approve GM-assisted pending rolls.
-  gm_review_permission: gm
+  # Defaults to "manage_scenes", the real permission the Scenes plugin
+  # already uses for scene-authority staff.
+  gm_review_permission: manage_scenes
 
   # ==========================================================================
   # Character Framework

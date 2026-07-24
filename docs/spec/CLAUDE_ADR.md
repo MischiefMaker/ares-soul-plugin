@@ -39,6 +39,17 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 
 ## Recent Changes
 
+### Internal Testing Begins: Bug List Started, Two Default-Permission Bugs Fixed (2026-07-24)
+
+User began installing SOUL on a non-live game for internal testing (Inklings installed, Grimoire not). Started `docs/development/Bug_List.md` to track findings as they come in. First two reports were both the same class of bug, found by the user directly comparing SOUL's configured permission defaults against their game's real `+role` permission listing:
+
+- **BUG-001:** `gm_review_permission` defaulted to `"gm"` — not a real AresMUSH permission (confirmed against `plugins/scenes/helpers/permissions.rb`, `install/init_db.rb`'s seed roles, and the user's own live permission list). User's own diagnosis was exactly right: `"manage_scenes"` is the correct default (real Scenes-plugin permission for scene-authority staff). Fixed in `Soul.can_review_rolls?` and `game/config/soul.yml`.
+- **BUG-002:** `play_permission` defaulted to `"play"` — same problem, and the user asked directly whether this should just be approval status instead, correctly noting there's no built-in permission for that either. Confirmed: no bundled AresMUSH plugin registers a "can play" permission because the real gate for "ordinary player access" is chargen approval, not a Role permission — this project has used `Character#is_approved?` for exactly this elsewhere throughout (chargen, profile custom fields, Sheet viewing). Resolved by making `Soul.can_play?` default to `is_approved?` and demoting `play_permission` to an optional additional grant (e.g. for pre-approval staff/beta access) rather than the sole gate. This is a slightly bigger change than BUG-001 (behavior change, not just a default-value swap) — reasoned through directly per the Addendum's delegation rules rather than stopping to ask, since the user had already articulated the correct direction and the fix is unambiguous once `is_approved?` is identified as the real mechanism.
+
+Both required touching `plugin/soul_config_validator.rb` (`play_permission` validation changed from required-nonblank to optional-if-present) and fixing a spec that had baked in the old broken default (`soul_roll_api_spec.rb` stubbed `has_permission?("play")`, a path that no longer runs since approval is checked first). `docs/reference/Permissions.md`/`Default_Config.md` updated to match.
+
+Also logged, not yet acted on: **BUG-003**, a naming/UX observation (not a functional bug) that `+soul/reload` doesn't actually reload anything (SOUL reads config live) and the command name overpromises — recommendation is to rename to `+soul/validate` with `+soul/reload` kept as an alias, but that's a command-syntax change worth a deliberate decision rather than doing reflexively. See the Bug List for full detail on all three.
+
 ### Codex's Own Final Audit: Staff Rating Corrections, XP Reversal, `enabled` Enforcement (2026-07-24)
 
 Codex ran its own final audit pass after Claude's help/README/reference-doc audit above, found four real gaps, fixed them, and pushed to `Codex` (`5270cc8`, 21 commits over the prior merge, 241 insertions/51 deletions across 21 files). Reviewed the full diff file-by-file, ran `ruby -c`/`node --check` on every changed source file, and confirmed `git diff --check` was clean before merging (clean fast-forward, no conflicts with the prior audit commit since the two touched different files at that point):

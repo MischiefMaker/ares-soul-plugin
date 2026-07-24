@@ -16,12 +16,18 @@ soul:
   # Jobs plugin uses.
   manage_permission: manage_jobs
 
-  # Permission required for ordinary player actions: view your own Sheet,
-  # spend XP, make rolls, browse the B&B catalogue.
-  play_permission: play
+  # Ordinary player actions (view your own Sheet, spend XP, make rolls,
+  # browse the B&B catalogue) are available to any approved character by
+  # default - no permission needed. Set play_permission to also grant
+  # play access to characters who don't have that permission (e.g. to
+  # let staff or beta-testers use SOUL before their own character is
+  # approved). Leave unset/commented for the default (approved only).
+  # play_permission: manage_jobs
 
   # Permission required to review/approve GM-assisted pending rolls.
-  gm_review_permission: gm
+  # Defaults to "manage_scenes", the real permission the Scenes plugin
+  # already uses for scene-authority staff.
+  gm_review_permission: manage_scenes
 
   # ============================================================================
   # Character Framework
@@ -335,11 +341,10 @@ soul:
 
 ### Restricting Features
 
-Require staff approval for XP spending:
-```yaml
-soul:
-  play_permission: "manage_jobs"   # Not recommended; overrides baseline play permission broadly
-```
+Ordinary play access defaults to any approved character and isn't restrictable
+below that — `play_permission` only ever grants *additional* pre-approval
+access (e.g. for staff/beta-testing), it can't narrow who already qualifies.
+See `docs/reference/Permissions.md` for the full player-tier explanation.
 
 Disable GM-assisted rolls entirely:
 ```yaml
@@ -353,5 +358,5 @@ soul:
 - Every setting lives under a single top-level `soul:` key — this is how `AresMUSH::ConfigReader` namespaces each plugin's config file (confirmed against `game/config/inklings.yml`'s own top-level `inklings:` key).
 - Configuration is parsed once at boot and cached in memory; edits take effect the next time staff reload game config (not instantly on save, and not re-read from disk on every call) — see `docs/development/Coding_Standards.md`.
 - `null` represents "no configured cap" only where explicitly documented (e.g. `banes.max_count`, `bnb.level_definitions.epic.modifier`).
-- Permission names (`manage_permission`, `play_permission`, `gm_review_permission`) are plain strings, not Role names — they must be included in the `permissions` list of whichever Role(s) should have that capability, via Ares's own role configuration.
+- Permission names (`manage_permission`, `play_permission`, `gm_review_permission`) are plain strings, not Role names — they must be included in the `permissions` list of whichever Role(s) should have that capability, via Ares's own role configuration. `play_permission` is the exception: it's optional and additive, not a gate — see `docs/reference/Permissions.md`.
 - Changing interconnected defaults (e.g. `aspect.weight` alongside `xp.cost.*`) may affect pacing, probability, and staff workload — see `docs/spec/Implementation_Specification_Addendum.md` for the rationale behind each default.

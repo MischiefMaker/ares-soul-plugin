@@ -30,8 +30,8 @@ module AresMUSH
         # check membership against at config-load time, unlike
         # check_role_exists which validates an actual Role name).
         @validator.require_nonblank_text("manage_permission")
-        @validator.require_nonblank_text("play_permission")
         @validator.require_nonblank_text("gm_review_permission")
+        validate_play_permission
 
         validate_framework
         validate_aspect_weight
@@ -66,6 +66,19 @@ module AresMUSH
         aspects = framework["aspects"]
         if !aspects.kind_of?(Hash) || aspects.empty?
           @validator.add_error("soul:framework.aspects must be a non-empty hash of Aspect definitions.")
+        end
+      end
+
+      # Unlike manage_permission/gm_review_permission, play_permission is
+      # optional (nil by default) - ordinary play access defaults to
+      # Character#is_approved? instead, since no bundled AresMUSH
+      # permission means "is an approved player" (see Soul.can_play?).
+      # This only validates the type when a game does configure it.
+      def validate_play_permission
+        value = @validator.config["play_permission"]
+        return if value.nil?
+        if !value.kind_of?(String) || value.blank?
+          @validator.add_error("soul:play_permission, if set, must be a non-blank text string.")
         end
       end
 

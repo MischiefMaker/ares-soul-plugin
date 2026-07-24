@@ -19,9 +19,8 @@ module AresMUSH
 
     before do
       allow(Global).to receive(:read_config).and_call_original
-      allow(Global).to receive(:read_config).with("soul", "play_permission").and_return("play")
-      allow(character).to receive(:has_permission?).with("play").and_return(true)
-      allow(other_character).to receive(:has_permission?).with("play").and_return(true)
+      allow(character).to receive(:is_approved?).and_return(true)
+      allow(other_character).to receive(:is_approved?).and_return(true)
       allow(Global).to receive(:read_config).with("soul", "rolls", "max_pending_rolls_per_player").and_return(1)
       allow(Global).to receive(:read_config).with("soul", "rolls", "max_pending_rolls_per_player_gm").and_return(2)
       allow(Global).to receive(:read_config).with("soul", "rolls", "pending_roll_timeout_hours").and_return(720)

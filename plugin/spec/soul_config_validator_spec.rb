@@ -6,8 +6,7 @@ module AresMUSH
       {
         "enabled" => true,
         "manage_permission" => "manage_jobs",
-        "play_permission" => "play",
-        "gm_review_permission" => "gm",
+        "gm_review_permission" => "manage_scenes",
         "framework" => {
           "skill_min_rating" => 0,
           "skill_max_rating" => 10,

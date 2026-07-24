@@ -6,13 +6,13 @@ Permission and privacy model for SOUL, derived from `docs/spec/SOUL_LLM_Implemen
 
 FINAL defines four tiers of capability. The final permission matrix — exact commands/handlers mapped to each tier — is enumerated in `docs/reference/Commands.md`.
 
-| Tier | Scope | Default Permission |
+| Tier | Scope | Default |
 |---|---|---|
-| **Player** | Own character only | `play` |
-| **Scene-GM** | Active scene only, bounded by configured reveal policy | `gm` |
+| **Player** | Own character only | Approved characters (`Character#is_approved?`) — not a Role permission |
+| **Scene-GM** | Active scene only, bounded by configured reveal policy | `manage_scenes` |
 | **Staff/Admin** | Global; requires explicit permission | `manage_soul` (→ `manage_jobs` by default) |
 
-### Player Operations (default: `play`)
+### Player Operations (default: any approved character)
 
 Players MAY perform supported actions for their own characters:
 - View own SOUL Sheet (`+soul`)
@@ -22,12 +22,24 @@ Players MAY perform supported actions for their own characters:
 - Browse the active public B&B catalogue
 - View own Narrative History
 
-**Override example** — restrict XP spending to staff:
-```yaml
-play_permission: "manage_jobs"   # Not recommended for normal play
-```
+Unlike the Scene-GM and Staff/Admin tiers, ordinary play access is **not** gated
+by a Role permission by default — it defaults to `Character#is_approved?`
+(the same real chargen-approval flag used everywhere else in this project),
+because no bundled AresMUSH plugin registers a permission that means "is an
+approved player." An earlier default of `play_permission: "play"` looked
+configured but named a permission nothing ever granted, so no character could
+use SOUL until a game manually invented and assigned it (found during
+internal testing).
 
-### Scene-GM Operations (default: `gm`)
+`play_permission` still exists, but only as an **optional additional grant**
+on top of approval — e.g. to let staff or beta-testers use SOUL before their
+own character is approved:
+```yaml
+play_permission: "manage_jobs"   # also lets staff use SOUL pre-approval
+```
+Leave it unset (the default) unless you need that.
+
+### Scene-GM Operations (default: `manage_scenes`)
 
 Scene-GM authority is **limited to the active scene** and the configured reveal policy — a GM does not gain global visibility into a character's private B&B explanations or GM notes by virtue of being a GM.
 
@@ -89,8 +101,8 @@ privacy:
 Permission names are flat, top-level `soul.yml` keys — not a nested hash. This matches the one real precedent in the AresMUSH ecosystem for a configurable permission name: the Inklings plugin's own `manage_permission` setting (`plugin/inklings.rb`), not an invented `permissions:` block.
 
 ```yaml
-play_permission: "play"                # Baseline player actions
-gm_review_permission: "gm"              # Scene-GM authority for GM-assisted rolls
+# play_permission: "manage_jobs"        # optional additional grant; unset = approved characters only
+gm_review_permission: "manage_scenes"   # Scene-GM authority for GM-assisted rolls
 manage_permission: "manage_jobs"        # Staff administration
 ```
 
@@ -98,8 +110,7 @@ manage_permission: "manage_jobs"        # Staff administration
 
 **Default (most permissive within safe bounds):**
 ```yaml
-play_permission: "play"
-gm_review_permission: "gm"
+gm_review_permission: "manage_scenes"
 manage_permission: "manage_jobs"
 ```
 

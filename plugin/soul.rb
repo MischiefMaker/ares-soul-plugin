@@ -30,20 +30,37 @@ module AresMUSH
 
     # Whether this character can perform ordinary player actions: view
     # their own Sheet, spend XP, make rolls, browse the B&B catalogue.
-    # Defaults to "play" per FINAL REQ-005's player tier. Kept separate
-    # from can_manage_soul? so games can restrict specific player actions
-    # (e.g. play_permission: manage_jobs) without touching staff access.
+    # Defaults to approved-character status (Character#is_approved?, the
+    # same real approval gate used everywhere else in this project - see
+    # plugins/chargen/public/chargen_char.rb) rather than a Role
+    # permission string, since no bundled AresMUSH plugin registers one
+    # that means "is an ordinary approved player" (unlike manage_jobs for
+    # staff or manage_scenes for scene-GMs - both real, pre-existing
+    # permissions). "play" was never a real permission and required
+    # every game to invent and assign it by hand before SOUL worked for
+    # anyone (found during internal testing, 2026-07-24).
+    #
+    # play_permission remains available as an optional ADDITIONAL grant,
+    # not the sole gate - e.g. to let staff or beta-testers use SOUL
+    # before their own character is approved. It is nil (no extra grant)
+    # by default.
     def self.can_play?(enactor)
       return false if !enactor
-      permission = Global.read_config("soul", "play_permission") || "play"
-      enactor.has_permission?(permission)
+      return true if enactor.is_approved?
+      permission = Global.read_config("soul", "play_permission")
+      permission && enactor.has_permission?(permission)
     end
 
     # Whether this character can review/approve GM-assisted pending rolls
-    # (FINAL REQ-029). Defaults to "gm" per REQ-005's scene-GM tier.
+    # (FINAL REQ-029). Defaults to "manage_scenes" - a real, pre-existing
+    # AresMUSH permission (Scenes plugin: "Can use scene-related admin
+    # tools, like stopping or unsharing scenes") that already maps to
+    # scene-authority staff. "gm" was never a real permission and
+    # required every game to invent and assign it by hand before this
+    # worked for anyone (found during internal testing, 2026-07-24).
     def self.can_review_rolls?(enactor)
       return false if !enactor
-      permission = Global.read_config("soul", "gm_review_permission") || "gm"
+      permission = Global.read_config("soul", "gm_review_permission") || "manage_scenes"
       enactor.has_permission?(permission)
     end
 
