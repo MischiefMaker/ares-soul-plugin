@@ -1,40 +1,75 @@
 {{#if isLoading}}
   <div class="text-muted">Loading SOUL sheet…</div>
+{{else if sheet.error}}
+  <div class="alert alert-danger">{{sheet.error}}</div>
 {{else}}
   <section class="soul-sheet">
-    <h3>{{sheet.character}}</h3>
-    {{#each sheet.aspects as |aspect|}}
-      <div class="card mb-3 soul-sheet-aspect">
-        <div class="card-header">{{aspect.name}} <span class="badge bg-secondary">{{aspect.rating}}</span></div>
-        <ul class="list-group list-group-flush">
-          {{#each aspect.skills as |skill|}}
-            <li class="list-group-item d-flex justify-content-between">
-              <span>{{skill.name}}</span><span>{{skill.rating}} ({{skill.effective_base}} effective)</span>
-            </li>
-          {{/each}}
-        </ul>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <h3 class="mb-0">{{sheet.character}}</h3>
+      <div class="d-flex gap-2 flex-wrap">
+        <span class="badge bg-primary">Resonance {{sheet.resonance_label}}</span>
+        <span class="badge bg-secondary">XP {{sheet.xp.available}}</span>
+        <span class="badge bg-light text-dark">{{sheet.xp.earned}} earned</span>
+        <span class="badge bg-light text-dark">{{sheet.xp.spent}} spent</span>
       </div>
-    {{/each}}
-    <h4>Boons &amp; Banes</h4>
-    {{#if sheet.bnb}}
-      <ul class="list-group mb-3 soul-sheet-bnb">
-        {{#each sheet.bnb as |entry|}}
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <span>
-              #{{entry.id}} {{entry.name}} [{{entry.tag}}]
-              {{#if entry.resolved}}— Resolved{{/if}}
-            </span>
-            <span>
-              <span class="badge bg-secondary">{{entry.kind}}</span>
-              <span class="badge bg-secondary">{{entry.level_state}}</span>
-            </span>
-          </li>
-        {{/each}}
-      </ul>
-    {{else}}
-      <p>No Boons or Banes recorded.</p>
-    {{/if}}
-    <p class="soul-sheet-xp">XP: {{sheet.xp.available}} available / {{sheet.xp.earned}} earned / {{sheet.xp.spent}} spent</p>
-    <p class="soul-sheet-resonance">Resonance: {{sheet.resonance}}</p>
+    </div>
+
+    <div class="row">
+      {{#each sheet.aspects as |aspect|}}
+        <div class="col-lg-4 col-md-6 mb-3">
+          <div class="card h-100 soul-sheet-aspect">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <strong>{{aspect.name}}</strong>
+              <span class="badge bg-primary">{{aspect.rating}}</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr>
+                    <th scope="col">Skill</th>
+                    <th scope="col" class="text-center">Rating</th>
+                    <th scope="col" class="text-center">Effective</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{#each aspect.skills as |skill|}}
+                    <tr>
+                      <td>{{skill.name}}</td>
+                      <td class="text-center"><strong>{{skill.rating}}</strong></td>
+                      <td class="text-center text-muted">{{skill.effective_base}}</td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      {{/each}}
+    </div>
+
+    <div class="card mb-3 soul-sheet-bnb">
+      <div class="card-header"><strong>Boons &amp; Banes</strong></div>
+      {{#if sheet.bnb}}
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr><th scope="col">Entry</th><th scope="col">Kind</th><th scope="col">Level</th><th scope="col">State</th></tr>
+            </thead>
+            <tbody>
+              {{#each sheet.bnb as |entry|}}
+                <tr>
+                  <td>#{{entry.id}} {{entry.name}} <span class="text-muted">[{{entry.tag}}]</span></td>
+                  <td>{{entry.kind}}</td>
+                  <td>{{entry.level_state}}</td>
+                  <td>{{#if entry.resolved}}Resolved{{else}}Active{{/if}}</td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      {{else}}
+        <div class="card-body text-muted">No Boons or Banes recorded.</div>
+      {{/if}}
+    </div>
   </section>
 {{/if}}
