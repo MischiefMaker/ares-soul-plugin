@@ -56,36 +56,36 @@ soul:
         name: "Strength"
         aspect: "body"
         order: 1
-      reflexes:
-        name: "Reflexes"
+      speed:
+        name: "Speed"
         aspect: "body"
         order: 2
       stamina:
         name: "Stamina"
         aspect: "body"
         order: 3
-      investigation:
-        name: "Investigation"
+      intelligence:
+        name: "Intelligence"
         aspect: "mind"
         order: 1
-      empathy:
-        name: "Empathy"
+      learning:
+        name: "Learning"
         aspect: "mind"
         order: 2
-      academics:
-        name: "Academics"
+      wit:
+        name: "Wit"
         aspect: "mind"
         order: 3
-      resolve:
-        name: "Resolve"
-        aspect: "spirit"
-        order: 1
       ceremonial_magic:
         name: "Ceremonial Magic"
         aspect: "spirit"
+        order: 1
+      hedgecraft:
+        name: "Hedgecraft"
+        aspect: "spirit"
         order: 2
-      presence:
-        name: "Presence"
+      natural:
+        name: "Natural"
         aspect: "spirit"
         order: 3
 
