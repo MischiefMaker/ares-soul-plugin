@@ -4,7 +4,7 @@
   </button>
 </li>
 
-{{#if canReview}}
+{{#if this.canReview}}
   <li>
     <button type="button" class="dropdown-item" onclick={{action "openGmReview"}}>
       Review SOUL Rolls
@@ -18,19 +18,19 @@
   @submitTitle={{null}}
   @size="lg"
   @fade={{true}}
-  @open={{rollOpen}}
+  @open={{this.rollOpen}}
   @onHide={{action "closeRoll"}}
 >
-  {{#if isLoading}}
+  {{#if this.isLoading}}
     <p>Loading SOUL roll…</p>
-  {{else if (eq rollStage "setup")}}
+  {{else if (eq this.rollStage "setup")}}
     <p>Select the ability and difficulty for this roll.</p>
 
     <div class="mb-3">
       <label class="form-label">Skill</label>
       <PowerSelect
-        @selected={{selectedSkill}}
-        @options={{skills}}
+        @selected={{this.selectedSkill}}
+        @options={{this.skills}}
         @searchField="name"
         @onChange={{action "selectSkill"}}
         as |skill|
@@ -42,8 +42,8 @@
     <div class="mb-3">
       <label class="form-label">Difficulty</label>
       <PowerSelect
-        @selected={{selectedDifficulty}}
-        @options={{difficulties}}
+        @selected={{this.selectedDifficulty}}
+        @options={{this.difficulties}}
         @searchField="name"
         @onChange={{action "selectDifficulty"}}
         as |difficulty|
@@ -68,10 +68,10 @@
         Request GM Assistance
       </button>
     </div>
-  {{else if (eq rollStage "awaiting_gm")}}
+  {{else if (eq this.rollStage "awaiting_gm")}}
     <h4>Waiting for GM Review</h4>
     <p>
-      Roll #{{pendingRoll.id}} for {{pendingRoll.skill_key}} is waiting for
+      Roll #{{this.pendingRoll.id}} for {{this.pendingRoll.skill_key}} is waiting for
       a scene GM to review its Boons and Banes.
     </p>
     <button
@@ -82,20 +82,20 @@
       Refresh
     </button>
     <div class="mt-3">
-      <Input @value={{abortReason}} class="form-control mb-2" placeholder="Reason for aborting" />
-      <button type="button" class="btn btn-danger" onclick={{action "abortRoll" pendingRoll}}>
+      <Input @value={{this.abortReason}} class="form-control mb-2" placeholder="Reason for aborting" />
+      <button type="button" class="btn btn-danger" onclick={{action "abortRoll" this.pendingRoll}}>
         Abort This Roll
       </button>
     </div>
-  {{else if (eq rollStage "selection")}}
+  {{else if (eq this.rollStage "selection")}}
     <h4>Choose Boons and Banes</h4>
-    {{#if candidates}}
+    {{#if this.candidates}}
       <p>
         Checked optional entries will be included. Mandatory entries were
         selected by the GM and are always applied.
       </p>
       <div class="list-group mb-3">
-        {{#each candidates as |candidate|}}
+        {{#each this.candidates as |candidate|}}
           <label class="list-group-item">
             <input
               type="checkbox"
@@ -142,7 +142,7 @@
       <Input
         @id="soul-roll-extra-tags"
         @type="text"
-        @value={{additionalTags}}
+        @value={{this.additionalTags}}
         class="form-control"
         placeholder="Optional, separated by spaces"
       />
@@ -155,27 +155,27 @@
     >
       Confirm and Roll
     </button>
-  {{else if (eq rollStage "result")}}
+  {{else if (eq this.rollStage "result")}}
     <h4>Private Roll Result</h4>
     <dl class="row">
       <dt class="col-sm-4">Skill</dt>
-      <dd class="col-sm-8">{{rollResult.skill_key}}</dd>
+      <dd class="col-sm-8">{{this.rollResult.skill_key}}</dd>
       <dt class="col-sm-4">Final result</dt>
-      <dd class="col-sm-8">{{rollResult.final_result}}</dd>
+      <dd class="col-sm-8">{{this.rollResult.final_result}}</dd>
       <dt class="col-sm-4">Degree</dt>
-      <dd class="col-sm-8">{{rollResult.degree_of_success}}</dd>
+      <dd class="col-sm-8">{{this.rollResult.degree_of_success}}</dd>
       <dt class="col-sm-4">Difficulty</dt>
-      <dd class="col-sm-8">{{rollResult.difficulty}}</dd>
-      {{#if (eq rollResult.extraordinary "true")}}
+      <dd class="col-sm-8">{{this.rollResult.difficulty}}</dd>
+      {{#if (eq this.rollResult.extraordinary "true")}}
         <dt class="col-sm-4">Extraordinary</dt>
         <dd class="col-sm-8">Yes</dd>
       {{/if}}
     </dl>
 
-    {{#if rollResult.applied_modifiers}}
+    {{#if this.rollResult.applied_modifiers}}
       <h5>Applied Boons and Banes</h5>
       <ul>
-        {{#each rollResult.applied_modifiers as |modifier|}}
+        {{#each this.rollResult.applied_modifiers as |modifier|}}
           <li>
             {{modifier.name}} [{{modifier.tag}}] —
             {{modifier.level_state}} ({{modifier.modifier}})
@@ -195,7 +195,7 @@
 
   <hr>
   <h4>Open Pending Rolls</h4>
-  {{#each pendingRolls as |pending|}}
+  {{#each this.pendingRolls as |pending|}}
     <div class="d-flex justify-content-between align-items-center mb-2">
       <button type="button" class="btn btn-link" onclick={{action "showPendingRoll" pending}}>
         #{{pending.id}} {{pending.skill_key}} — {{pending.status}}
@@ -204,40 +204,40 @@
         onclick={{action "abortRoll" pending}}>Abort</button>
     </div>
   {{/each}}
-  <Input @value={{abortReason}} class="form-control mb-3" placeholder="Required abort reason" />
+  <Input @value={{this.abortReason}} class="form-control mb-3" placeholder="Required abort reason" />
 
   <h4>Roll History</h4>
   <ul class="list-group">
-    {{#each rollHistory as |roll|}}
+    {{#each this.rollHistory as |roll|}}
       <li class="list-group-item">#{{roll.id}} {{roll.skill_key}}:
         {{roll.final_result}} — {{roll.degree_of_success}}</li>
     {{/each}}
   </ul>
 </BsModalSimple>
 
-{{#if canReview}}
+{{#if this.canReview}}
   <BsModalSimple
     @title="Review SOUL Rolls"
     @closeTitle="Close"
     @submitTitle={{null}}
     @size="lg"
     @fade={{true}}
-    @open={{gmReviewOpen}}
+    @open={{this.gmReviewOpen}}
     @onHide={{action "closeGmReview"}}
   >
-    {{#if gmIsLoading}}
+    {{#if this.gmIsLoading}}
       <p>Loading pending rolls…</p>
-    {{else if (eq gmReviewStage "list")}}
+    {{else if (eq this.gmReviewStage "list")}}
       <div class="card card-body mb-3">
         <h4>Force-Abort Any Open Roll</h4>
         <p>Use the pending roll ID and provide the required audit reason.</p>
         <div class="row g-2">
           <div class="col-md-3">
-            <Input @type="number" @value={{forceAbortRollId}} class="form-control"
+            <Input @type="number" @value={{this.forceAbortRollId}} class="form-control"
               placeholder="Roll ID" />
           </div>
           <div class="col-md-7">
-            <Input @value={{forceAbortReason}} class="form-control"
+            <Input @value={{this.forceAbortReason}} class="form-control"
               placeholder="Required reason" />
           </div>
           <div class="col-md-2">
@@ -246,9 +246,9 @@
           </div>
         </div>
       </div>
-      {{#if gmPendingRolls}}
+      {{#if this.gmPendingRolls}}
         <div class="list-group">
-          {{#each gmPendingRolls as |pending|}}
+          {{#each this.gmPendingRolls as |pending|}}
             <button
               type="button"
               class="list-group-item list-group-item-action"
@@ -264,19 +264,19 @@
       {{else}}
         <p>No GM-assisted SOUL rolls are waiting in this scene.</p>
       {{/if}}
-    {{else if (eq gmReviewStage "candidates")}}
+    {{else if (eq this.gmReviewStage "candidates")}}
       <h4>
-        Roll #{{selectedGmRoll.id}} — {{selectedGmRoll.character}} —
-        {{selectedGmRoll.skill_key}}
+        Roll #{{this.selectedGmRoll.id}} — {{this.selectedGmRoll.character}} —
+        {{this.selectedGmRoll.skill_key}}
       </h4>
       <p>
         Mark each candidate mandatory, optional, or leave both boxes clear
         to exclude it.
       </p>
 
-      {{#if gmCandidates}}
+      {{#if this.gmCandidates}}
         <div class="list-group mb-3">
-          {{#each gmCandidates as |candidate|}}
+          {{#each this.gmCandidates as |candidate|}}
             <div class="list-group-item">
               <div>
                 <strong>{{candidate.name}}</strong> [{{candidate.tag}}]
