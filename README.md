@@ -112,8 +112,8 @@ Boons and Banes that survive chargen. Install it even if Resonance is disabled.
 2. Find `custom_approval(char)` and add these lines inside the method:
 
    ```ruby
-   AresMUSH::Soul::SoulResonanceApi.lock_at_approval(char)
-   AresMUSH::Soul::SoulBnbApi.finalize_chargen_grants(char)
+   SoulResonanceApi.lock_at_approval(char)
+   SoulBnbApi.finalize_chargen_grants(char)
    ```
 3. Preserve any approval hooks already present for other plugins.
 4. From the MUSH, run:
@@ -128,10 +128,8 @@ Both calls are idempotent and safe on re-approval.
 
 ### Step 4: Add the MUSH Chargen Stage
 
-The `+soul/cg` command family works once the plugin is installed, but adding a
-stage introduces it at the correct point in the normal character-generation flow.
-(Not `+chargen` — core AresMUSH's own `chargen: cg` shortcut claims that word
-before SOUL ever sees it, so SOUL's chargen commands live under `+soul/cg`.)
+The `+chargen` command family works once the plugin is installed, but adding a stage
+introduces it at the correct point in the normal character-generation flow.
 
 1. In **aresmush**, open `game/config/chargen.yml`.
 2. Under the existing `stages:` section, add the entry from
@@ -246,7 +244,9 @@ Use an unapproved test character, an approved player, and a staff/GM character:
   Narrative History entry.
 - Open an approved character profile and verify Sheet, XP, B&B, Culmination, and
   History sections.
-- Spend XP through both `+xp/spend` and the web form.
+- Spend XP on both a Skill and an Aspect through `+xp/spend`,
+  `+xp/spend/aspect`, and the web form. Confirm that the previewed Aspect
+  price uses the configured multiplier (4× by default).
 - As staff, validate configuration, search and manage B&Bs, award/correct/reverse
   XP, correct Skill and Aspect ratings, manage Culminations, correct Resonance,
   and view the audit log. Test each staff workflow in-game and on the web.
