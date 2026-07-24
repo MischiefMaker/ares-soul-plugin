@@ -17,13 +17,15 @@ The default Sheet fits roughly one MUSH screen (CI-02); drill-down commands belo
 
 | Command | Purpose | Permission |
 |---|---|---|
-| `+chargen` | Review Resonance, Skill allocation, and starting B&B selections | unapproved player |
-| `+chargen/resonance <value>` | Select or change Resonance | unapproved player |
-| `+chargen/skill <key>=<rating>` | Set an absolute starting Skill rating | unapproved player |
-| `+chargen/bnb <id or tag>[/<level>]=<explanation>` | Add a chargen-available B&B | unapproved player |
-| `+chargen/drop <entry id>` | Remove a chargen-selected B&B | unapproved player |
+| `+soul/cg` | Review Resonance, Skill allocation, and starting B&B selections | unapproved player |
+| `+soul/cg/resonance <value>` | Select or change Resonance | unapproved player |
+| `+soul/cg/skill <key>=<rating>` | Set an absolute starting Skill rating | unapproved player |
+| `+soul/cg/catalogue` | List active Boons and Banes available during chargen | unapproved player |
+| `+soul/cg/bnb <id or tag>[/<level>]=<explanation>` | Add a chargen-available B&B | unapproved player |
+| `+soul/cg/drop <entry id>` | Remove a chargen-selected B&B | unapproved player |
 
-The optional web chargen tab provides the same actions. Install the two
+The optional web chargen tab provides the same actions, including a modal
+listing every available chargen Boon and Bane. Install the two
 `chargen-custom` snippets and add the supplied `chargen_stage` entry to the
 game's chargen configuration.
 
