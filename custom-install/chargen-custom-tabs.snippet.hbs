@@ -1,4 +1,10 @@
-<!-- Add inside ares-webportal/app/components/chargen-custom-tabs.hbs. -->
-<li class="nav-item">
-  <a class="nav-link" data-bs-toggle="tab" href="#soul-chargen-tab">SOUL</a>
+<!--
+  Add inside ares-webportal/app/components/chargen-custom-tabs.hbs.
+  This file contains tab <li> elements only. The href must match the pane id
+  in chargen-custom.snippet.hbs. AresMUSH uses Bootstrap 5, so retain
+  data-bs-toggle (not the older data-toggle attribute).
+-->
+<li role="presentation" class="nav-item">
+  <a href="#soul-chargen-tab" aria-controls="soul-chargen-tab" role="tab"
+    data-bs-toggle="tab" class="nav-link">SOUL</a>
 </li>
