@@ -51,6 +51,15 @@ export default Component.extend({
     loadFramework() {
       return this.call('soulFramework', {}, 'framework', 'Framework loaded.');
     },
+    correctFramework(kind) {
+      return this.mutate('soulFrameworkCorrect', {
+        character: this.frameworkCharacter, kind: kind,
+        key: this.frameworkKey, rating: this.frameworkRating,
+        reason: this.frameworkReason
+      }, (result) =>
+        `${kind} ${result.key} changed from ${result.old_rating} to ${result.new_rating}.`
+      );
+    },
     reloadConfig() {
       return this.call(
         'soulReload',
@@ -99,11 +108,12 @@ export default Component.extend({
         return result;
       });
     },
-    xpCorrect() {
+    xpCorrect(direction) {
       return this.mutate('soulXpCorrect', {
-        character: this.xpCharacter, amount: this.xpAmount, reason: this.xpReason
+        character: this.xpCharacter, amount: this.xpAmount, reason: this.xpReason,
+        direction: direction
       }, (result) =>
-        `Corrected ${this.xpCharacter}'s available XP from ` +
+        `${direction === 'reversal' ? 'Reversed' : 'Corrected'} ${this.xpCharacter}'s available XP from ` +
           `${result.old_available} to ${result.new_available}.`
       );
     },
