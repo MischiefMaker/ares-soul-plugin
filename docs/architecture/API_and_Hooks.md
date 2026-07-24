@@ -290,7 +290,7 @@ SoulInklingsHook.apply_outcome(payload, source: "inkling:234")
 
 ```ruby
 # Grimoire reads Skills/Aspects/Resonance through documented read APIs only
-SoulCharacterApi.get_skill_rating(caster, "ceremonial_magic")
+SoulCharacterApi.get_skill_rating(caster, "ceremonial")
 
 # Grimoire branch -> Skill mapping (REQ-040: no dedicated Arcana Skill is created)
 SoulFrameworkApi.get_skill_for_grimoire_branch(branch_key)
