@@ -31,5 +31,15 @@
     This is wrong: Aspects will allow post-chargen advancement. Resonance does not allow changing after chargen. Everything else does.
    Remove the language about the chargen command. Players do not care. Just tell them the commands they need.
 
+   8. We need to add explanations how to disable FS3, including de-listing it in chargen, including: disabling the plugin, removing the chargen steps and app_review_commands for sheet.
+  
+   9. Installers should add to app_review_commands : - soul %{name} -- Note: we should add inkling/list ${name} to the Inkling instructions as well.
+   10. Add cg checks for: Points spent on Aspects < Points allowed, points spent on skills < points allowed, bnbs < allowed number and ratio as 3 separate items. See inklings for how to implement.
+   11. We were going to include some default bnbs in the install instructions which never got added. Add the following:
+         #1 Cursed, Tag: cursed    Kind: bane,         Your character carries some sort of curse.
+         #2 Artifact, Tag: artifact    Kind: boon,         Your character possesses some sort of magical artifact that grants them something extra.
+         #3 Contacts, tag: contacts         Kind: boon,         Your character knows important people.
+         #4 Bad Reputation, tag: bad_rep,         Kind: bane,         Your character has some sort of bad reputation that preceeds them.
+
 
    
