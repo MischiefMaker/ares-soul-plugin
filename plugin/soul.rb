@@ -94,6 +94,8 @@ module AresMUSH
       case cmd.root
       when "soul"
         case cmd.switch
+        when "cg", "cg/resonance", "cg/skill", "cg/aspect", "cg/catalogue", "cg/bnb", "cg/drop"
+          SoulChargenCmd
         when "history"
           SoulHistoryCmd
         when "framework", "framework/skill", "framework/aspect", "resonance", "reload", "audit"
