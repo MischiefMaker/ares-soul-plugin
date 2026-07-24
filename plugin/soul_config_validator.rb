@@ -30,8 +30,8 @@ module AresMUSH
         # check membership against at config-load time, unlike
         # check_role_exists which validates an actual Role name).
         @validator.require_nonblank_text("manage_permission")
+        @validator.require_nonblank_text("play_permission")
         @validator.require_nonblank_text("gm_review_permission")
-        validate_play_permission
 
         validate_framework
         validate_aspect_weight
@@ -51,46 +51,23 @@ module AresMUSH
         framework = @validator.config["framework"]
         return unless framework.kind_of?(Hash)
 
-        min = framework["skill_min_rating"]
-        max = framework["skill_max_rating"]
-        if !min.kind_of?(Integer)
-          @validator.add_error("soul:framework.skill_min_rating must be a whole number.")
-        end
-        if !max.kind_of?(Integer)
-          @validator.add_error("soul:framework.skill_max_rating must be a whole number.")
-        end
-        if min.kind_of?(Integer) && max.kind_of?(Integer) && min >= max
-          @validator.add_error("soul:framework.skill_max_rating must be greater than skill_min_rating.")
-        end
-
-        aspect_min = framework["aspect_min_rating"]
-        aspect_max = framework["aspect_max_rating"]
-        if !aspect_min.kind_of?(Integer)
-          @validator.add_error("soul:framework.aspect_min_rating must be a whole number.")
-        end
-        if !aspect_max.kind_of?(Integer)
-          @validator.add_error("soul:framework.aspect_max_rating must be a whole number.")
-        end
-        if aspect_min.kind_of?(Integer) && aspect_max.kind_of?(Integer) && aspect_min >= aspect_max
-          @validator.add_error("soul:framework.aspect_max_rating must be greater than aspect_min_rating.")
+        %w[skill aspect].each do |trait|
+          min = framework["#{trait}_min_rating"]
+          max = framework["#{trait}_max_rating"]
+          if !min.kind_of?(Integer)
+            @validator.add_error("soul:framework.#{trait}_min_rating must be a whole number.")
+          end
+          if !max.kind_of?(Integer)
+            @validator.add_error("soul:framework.#{trait}_max_rating must be a whole number.")
+          end
+          if min.kind_of?(Integer) && max.kind_of?(Integer) && min >= max
+            @validator.add_error("soul:framework.#{trait}_max_rating must be greater than #{trait}_min_rating.")
+          end
         end
 
         aspects = framework["aspects"]
         if !aspects.kind_of?(Hash) || aspects.empty?
           @validator.add_error("soul:framework.aspects must be a non-empty hash of Aspect definitions.")
-        end
-      end
-
-      # Unlike manage_permission/gm_review_permission, play_permission is
-      # optional (nil by default) - ordinary play access defaults to
-      # Character#is_approved? instead, since no bundled AresMUSH
-      # permission means "is an approved player" (see Soul.can_play?).
-      # This only validates the type when a game does configure it.
-      def validate_play_permission
-        value = @validator.config["play_permission"]
-        return if value.nil?
-        if !value.kind_of?(String) || value.blank?
-          @validator.add_error("soul:play_permission, if set, must be a non-blank text string.")
         end
       end
 
@@ -124,8 +101,7 @@ module AresMUSH
         end
 
         %w[r0_skill_points r0_starting_cap positive_skill_points_per_level negative_skill_points_per_level
-           positive_starting_cap_per_level negative_starting_cap_per_level
-           r0_aspect_points positive_aspect_points_per_level negative_aspect_points_per_level].each do |key|
+           positive_starting_cap_per_level negative_starting_cap_per_level].each do |key|
           if !resonance[key].kind_of?(Integer)
             @validator.add_error("soul:resonance.#{key} must be a whole number.")
           end
@@ -152,7 +128,8 @@ module AresMUSH
         if !cost.kind_of?(Hash)
           @validator.add_error("soul:xp.cost must be a hash of the algebraic cost formula's constants (Addendum §3).")
         else
-          %w[skill_curve_numerator skill_curve_denominator development_base development_scale].each do |key|
+          %w[skill_curve_numerator skill_curve_denominator skill_cost_multiplier aspect_cost_multiplier
+             development_base development_scale].each do |key|
             if !cost[key].kind_of?(Numeric) || cost[key] <= 0
               @validator.add_error("soul:xp.cost.#{key} must be a positive number.")
             end
