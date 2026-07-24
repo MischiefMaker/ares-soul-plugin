@@ -65,7 +65,7 @@ Grimoire owns its spell catalogue, branch definitions, casting lifecycle, and al
 ```ruby
 if defined?(AresMUSH::Soul)
   # Grimoire branches MAY map to Spirit Skills; SOUL does not require a separate Arcana Skill
-  skill_rating = SoulCharacterApi.get_skill_rating(caster, "ceremonial_magic")
+  skill_rating = SoulCharacterApi.get_skill_rating(caster, "ceremonial")
   aspect_rating = SoulCharacterApi.get_aspect_rating(caster, "spirit")
   # Grimoire uses these values in its own casting resolution — SOUL is not asked to resolve the spell roll
   # unless Grimoire explicitly chooses to route a roll through SoulRollApi.start_roll
@@ -76,7 +76,7 @@ end
 
 If Grimoire wants SOUL to resolve the actual dice roll for a spell (optional, not required):
 ```ruby
-pending = SoulRollApi.start_roll(caster, "ceremonial_magic", { source: "grimoire:spell:#{spell.id}" })
+pending = SoulRollApi.start_roll(caster, "ceremonial", { source: "grimoire:spell:#{spell.id}" })
 # Grimoire interprets the eventual SoulRollResolvedEvent to determine spell success —
 # SOUL still owns the roll record; Grimoire never creates its own parallel roll history for it.
 ```
