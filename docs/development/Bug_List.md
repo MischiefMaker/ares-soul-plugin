@@ -8,6 +8,19 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-004: Default Skill set changed to setting-specific names
+
+**Status:** 🟡 Partially done — skills changed; a related open question on Aspect ratings needs an answer
+
+**Requested:** 2026-07-24, internal testing: *"We need to change the default skills. Also Body, Mind and Spirit need to take values -- these are the aspects in the roll."* New Skill set specified per Aspect:
+- Body: Strength, Speed, Stamina
+- Mind: Intelligence, Learning, Wit
+- Spirit: Ceremonial Magic, Hedgecraft, Natural
+
+**Done:** Updated the shipped default Skill list (`game/config/soul.yml`, mirrored in `docs/reference/Default_Config.md`) to the set above. Net change from the old starter set: Body's Reflexes → Speed (Strength/Stamina unchanged); Mind fully replaced (Investigation/Empathy/Academics → Intelligence/Learning/Wit); Spirit fully replaced except Ceremonial Magic, which was already there (Resolve/Presence → Hedgecraft/Natural). Stable keys: `strength`, `speed`, `stamina`, `intelligence`, `learning`, `wit`, `ceremonial_magic`, `hedgecraft`, `natural`. This is the shipped *default* — an already-installed game's own `game/config/soul.yml` is a separate copy and needs the same edit applied by hand (or a fresh `plugin/install` merge) to take effect there.
+
+**Open question — not yet acted on:** "Body, Mind and Spirit need to take values" reads as flagging a real gap: Aspect ratings currently default to 0 for every character and nothing in normal play ever sets them — chargen only lets players allocate Skills (FINAL REQ-011's canonical flow lists Skills only), so the Aspect Contribution term (`rating × 0.20`) in the roll formula is effectively always 0 right now. `+soul/framework/aspect` (staff correction) is the only way an Aspect rating ever changes today. Asked the user which mechanism should actually set the value — derive it from the Aspect's own Skills automatically, add Aspect allocation to chargen (a deviation from FINAL's canonical flow), or give every character a flat starting value — and got no answer yet. Not implementing any of the three without that answer, since they're meaningfully different designs, not variations on one mechanical fix.
+
 ### FR-003: Owners and staff need private B&B detail on both MUSH and web (FR-001's flagged follow-up)
 
 **Status:** ✅ Done (`plugin/commands/soul_bnb_cmd.rb`, `plugin/web/soul_sheet_web_handler.rb`, `web-portal/app/components/soul/sheet.js`/`.hbs`)
