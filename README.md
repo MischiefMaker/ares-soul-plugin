@@ -112,8 +112,8 @@ Boons and Banes that survive chargen. Install it even if Resonance is disabled.
 2. Find `custom_approval(char)` and add these lines inside the method:
 
    ```ruby
-   AresMUSH::Soul::SoulResonanceApi.lock_at_approval(char)
-   AresMUSH::Soul::SoulBnbApi.finalize_chargen_grants(char)
+   SoulResonanceApi.lock_at_approval(char)
+   SoulBnbApi.finalize_chargen_grants(char)
    ```
 3. Preserve any approval hooks already present for other plugins.
 4. From the MUSH, run:
