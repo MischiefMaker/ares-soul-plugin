@@ -60,14 +60,35 @@ module AresMUSH
 
     def spend(request)
       character = request.enactor
-      skill = request.args['skill_key']
+      trait_type = request.args['trait_type'].to_s == "aspect" ? "aspect" : "skill"
+      trait_key = request.args['trait_key'] || request.args['skill_key']
       amount = request.args['amount'].to_i
-      target = SoulCharacterApi.get_skill_rating(character, skill) + amount
-      cost = SoulXpApi.calculate_cost(character, skill, target)
+      return { error: "Amount must be positive" } if amount <= 0
+
+      trait = trait_type == "aspect" ? SoulFrameworkApi.get_aspect(trait_key) : SoulFrameworkApi.get_skill(trait_key)
+      return { error: "Unknown #{trait_type}: #{trait_key}" } unless trait
+
+      current = if trait_type == "aspect"
+                  SoulCharacterApi.get_aspect_rating(character, trait_key)
+                else
+                  SoulCharacterApi.get_skill_rating(character, trait_key)
+                end
+      target = current + amount
+      max_rating = trait_type == "aspect" ? SoulFrameworkApi.aspect_max_rating : SoulFrameworkApi.skill_max_rating
+      return { error: "Rating would exceed the maximum of #{max_rating}" } if target > max_rating
+
+      cost = SoulXpApi.calculate_cost(character, trait_key, target, trait_type: trait_type)
       unless request.args['confirmed'].to_s == "true"
-        return { preview: true, skill_key: skill, target_rating: target, cost: cost }
+        return {
+          preview: true, trait_type: trait_type, trait_key: trait_key,
+          trait_name: trait[:name], target_rating: target, cost: cost
+        }
       end
-      SoulXpApi.spend(character, skill, amount, character)
+      if trait_type == "aspect"
+        SoulXpApi.spend_aspect(character, trait_key, amount, character)
+      else
+        SoulXpApi.spend(character, trait_key, amount, character)
+      end
     end
   end
 end
