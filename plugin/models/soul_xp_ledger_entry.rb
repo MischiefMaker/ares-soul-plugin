@@ -10,7 +10,8 @@ module AresMUSH
     # "award" or "spend".
     attribute :direction
     # Free-text origin: "weekly", "scene:<id>", "forum", "inkling:<id>",
-    # "admin", or a Skill key for spends (e.g. "blade").
+    # "admin", a Skill key for spends (e.g. "blade"), or a namespaced
+    # Aspect key for Aspect spends (e.g. "aspect:body").
     attribute :source
     # Stable key used to detect duplicate delivery of the same logical
     # event (e.g. "weekly:2026-W30:<char_id>", "scene:42:<char_id>").
