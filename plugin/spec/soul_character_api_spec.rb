@@ -57,5 +57,27 @@ module AresMUSH
         expect(SoulCharacterApi.get_effective_base(character, "blade")).to eq(4)
       end
     end
+
+    describe ".correct_rating" do
+      it "corrects a skill and records audit and narrative history" do
+        staff = Fabricate(:character)
+        SoulCharacterApi.set_skill_rating(character, "blade", 2, character)
+
+        result = SoulCharacterApi.correct_rating(
+          character, "skill", "blade", 4, actor: staff, reason: "Sheet repair"
+        )
+
+        expect(result).to include(success: true, old_rating: 2, new_rating: 4)
+        expect(SoulAuditEntry.find_one(action: "framework_rating_correction")).to exist
+        expect(character.reload.narrative_history_entries.count).to eq(1)
+      end
+
+      it "requires a reason" do
+        result = SoulCharacterApi.correct_rating(
+          character, "skill", "blade", 4, actor: character, reason: ""
+        )
+        expect(result[:error]).to match(/reason.*required/i)
+      end
+    end
   end
 end
