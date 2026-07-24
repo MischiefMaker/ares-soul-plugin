@@ -28,5 +28,22 @@ module AresMUSH
 
       expect(subject.handle(request)).to eq(error: "award failed")
     end
+
+    it "passes an explicit reversal through the staff web operation" do
+      staff = Fabricate(:character)
+      character = Fabricate(:character)
+      request = double(cmd: "soulXpCorrect", enactor: staff,
+        args: { 'character' => character.name, 'amount' => 3,
+                'reason' => 'Duplicate award', 'direction' => 'reversal' })
+      allow(Website).to receive(:check_login).and_return(nil)
+      allow(Soul).to receive(:can_manage_soul?).and_return(true)
+      allow(Character).to receive(:find_one_by_name).and_return(character)
+      allow(SoulXpApi).to receive(:correct).and_return(success: true)
+
+      subject.handle(request)
+      expect(SoulXpApi).to have_received(:correct).with(
+        character, 3, reason: 'Duplicate award', actor: staff, direction: 'reversal'
+      )
+    end
   end
 end
