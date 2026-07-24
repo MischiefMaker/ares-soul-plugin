@@ -16,16 +16,16 @@
 # CODE TO ADD
 # ===========================================================================
 
-AresMUSH::Soul::SoulResonanceApi.lock_at_approval(char)
-AresMUSH::Soul::SoulBnbApi.finalize_chargen_grants(char)
+SoulResonanceApi.lock_at_approval(char)
+SoulBnbApi.finalize_chargen_grants(char)
 
 # ===========================================================================
 # EXAMPLE
 # ===========================================================================
 #
 # def self.custom_approval(char)
-#   AresMUSH::Soul::SoulResonanceApi.lock_at_approval(char)
-#   AresMUSH::Soul::SoulBnbApi.finalize_chargen_grants(char)
+#   SoulResonanceApi.lock_at_approval(char)
+#   SoulBnbApi.finalize_chargen_grants(char)
 #   # Other approval triggers may be added here
 # end
 #
