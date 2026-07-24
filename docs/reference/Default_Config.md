@@ -73,7 +73,7 @@ soul:
         name: "Wit"
         aspect: "mind"
         order: 3
-      ceremonial_magic:
+      ceremonial:
         name: "Ceremonial Magic"
         aspect: "spirit"
         order: 1
