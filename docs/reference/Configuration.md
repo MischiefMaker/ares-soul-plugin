@@ -21,8 +21,9 @@ At startup, SOUL validates YAML structure, required keys, supported values, refe
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `framework.aspects` | list | Body, Mind, Spirit | Configurable Aspect keys, names, descriptions, ordering |
-| `framework.skills` | list | (none built in) | Skills, each mapped to exactly one Aspect by stable key |
+| `enabled` | bool | `true` | Plugin-wide switch; when false, SOUL command and web routes are not registered |
+| `framework.aspects` | map | Body, Mind, Spirit | Stable Aspect keys mapped to names, descriptions, and ordering |
+| `framework.skills` | map | starter set in `soul.yml` | Stable Skill keys mapped to names, ordering, and exactly one Aspect |
 | `framework.skill_min_rating` | int | `0` | Minimum Skill rating |
 | `framework.skill_max_rating` | int | `10` | Ultimate Skill cap, all Resonance tiers (REQ-010) |
 
@@ -70,6 +71,7 @@ Canonical symmetric table (REQ-012):
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `xp.weekly_award` | int | `1` | Weekly award per approved character (no login/activity required) |
+| `xp.weekly_award_cron` | cron map | Sunday 00:00 | Schedule for automatic weekly and forum reconciliation awards |
 | `xp.scene_sharer_award` | int | `2` | Award to the scene sharer, once per scene/recipient/award-type |
 | `xp.scene_participant_award` | int | `1` | Award to each other approved participant |
 | `xp.forum_award` | int | `1` | First qualifying player-authored forum topic/reply per week (later contributions that week award 0) |
@@ -97,7 +99,6 @@ final_cost = ceil(base_cost × development_modifier × resonance_modifier)
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `xp.catchup.enabled` | bool | `true` | Whether catch-up XP is active |
-| `xp.catchup.schedule` | string | `"weekly"` | Recalculation cadence |
 | `xp.catchup.multiplier` | decimal | `2.0` | Multiplier applied to eligible automatic awards |
 | `xp.catchup.grace_period_weeks` | int | `0` | New-character grace period (none by default) |
 | `xp.catchup.sources_excluded` | list | `[manual_grant]` | Sources exempt from catch-up (manual staff awards use `+xp/award/catchup` explicitly instead) |
@@ -149,13 +150,14 @@ Full per-Resonance-level values are in `docs/spec/Implementation_Specification_A
 | `rolls.degrees_of_success.success_min` | int | `0` | |
 | `rolls.degrees_of_success.complicated_success_min` | int | `-5` | |
 | `rolls.degrees_of_success.lucky_failure_min` | int | `-10` | |
-| `rolls.degrees_of_success.catastrophic_failure_min` | int/null | `null` | Below `lucky_failure_min` |
+| `rolls.degrees_of_success.failure_min` | int | `-20` | Failure begins at this margin |
+| `rolls.degrees_of_success.catastrophic_failure_min` | int | `-20` | Margins below this value are catastrophic failures |
 | `rolls.output_mode` | enum | `"gm_led"` | `"gm_less"`, `"gm_led"`, or `"hybrid"` |
 | `rolls.pending_roll_timeout_hours` | int | `720` | ~30 days wall-clock expiry (Addendum §6) |
 | `rolls.auto_failure_on_expiry` | bool | `false` | Expired rolls never auto-resolve |
 | `rolls.max_pending_rolls_per_player` | int | `1` | Standard roll pending limit (CI-04) |
 | `rolls.max_pending_rolls_per_player_gm` | int | `2` | GM-assisted roll pending limit (CI-04) |
-| `rolls.gm_scene_policy` | enum | `"optional"` | `"required"`, `"optional"`, or `"unavailable"` per scene (REQ-029) |
+| `rolls.gm_scene_policy` | enum | `"optional"` | Game-wide default: `"required"`, `"optional"`, or `"unavailable"` |
 
 ## Privacy
 
@@ -187,6 +189,7 @@ See `docs/reference/Permissions.md` for the full permission matrix (REQ-005).
 | `integrations.inklings.enabled` | bool | `true` | Auto-detected via `defined?`; this flag allows explicit opt-out |
 | `integrations.inklings.inspiration_cost` | int | `0` | Default Inkling submission cost (REQ-044) |
 | `integrations.grimoire.enabled` | bool | `true` | Auto-detected via `defined?` |
+| `integrations.grimoire.branch_skill_map` | map | `{}` | Grimoire branch keys mapped to configured SOUL Skill keys |
 
 ## Open Configuration Decisions Now Resolved
 
