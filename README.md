@@ -128,7 +128,7 @@ Both calls are idempotent and safe on re-approval.
 
 ### Step 4: Add the MUSH Chargen Stage
 
-The `+chargen` command family works once the plugin is installed, but adding a stage
+The `+soul/cg` command family works once the plugin is installed, but adding a stage
 introduces it at the correct point in the normal character-generation flow.
 
 1. In **aresmush**, open `game/config/chargen.yml`.
