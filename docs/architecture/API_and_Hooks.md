@@ -48,8 +48,10 @@ SoulXpApi.award(character, amount, source:, idempotency_key: nil, apply_catchup:
   # Returns { success: true, awarded: n, base_award:, catchup_portion: n } or { error: "..." }
 
 # Spend (advancement)
-SoulXpApi.calculate_cost(character, skill_key, target_rating)  # Addendum §3 formula
+SoulXpApi.calculate_cost(character, trait_key, target_rating, trait_type: "skill")
+  # trait_type "aspect" applies xp.cost.aspect_cost_multiplier (4 by default)
 SoulXpApi.spend(character, skill_key, amount, enactor)
+SoulXpApi.spend_aspect(character, aspect_key, amount, enactor)
   # Returns { error: "..." } or { success: true, new_rating:, cost:, xp_remaining: }
 
 SoulXpApi.get_available_xp(character)
