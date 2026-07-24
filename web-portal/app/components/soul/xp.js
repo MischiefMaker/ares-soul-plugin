@@ -7,6 +7,14 @@ export default Component.extend({
   isLoading: false,
   selectedTraitType: 'skill',
 
+  init() {
+    this._super(...arguments);
+    this.setProperties({
+      skills: [],
+      aspects: []
+    });
+  },
+
   didReceiveAttrs() {
     this._super(...arguments);
     if (this.isSelf) {
@@ -60,6 +68,10 @@ export default Component.extend({
         spendError: null,
         spendPreview: null
       });
+    },
+
+    selectTrait(traitKey) {
+      this.set('selectedTrait', traitKey || null);
     },
 
     async previewSpend(traitType, traitKey, amount) {
