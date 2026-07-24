@@ -76,7 +76,7 @@ soul:
         name: "Wit"
         aspect: "mind"
         order: 3
-      ceremonial_magic:
+      ceremonial:
         name: "Ceremonial Magic"
         aspect: "spirit"
         order: 1
@@ -314,8 +314,8 @@ soul:
       # Grimoire integration configures its own branch names here.
       # Example:
       #   branch_skill_map:
-      #     evocation: "ceremonial_magic"
-      #     divination: "ceremonial_magic"
+      #     evocation: "ceremonial"
+      #     divination: "ceremonial"
       branch_skill_map: {}
 
   shortcuts: {}
