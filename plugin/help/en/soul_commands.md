@@ -15,6 +15,10 @@ aliases:
 `+xp/spend <skill>=<amount>` — Preview advancement cost. Repeat with
 `/confirm` to spend the XP.
 
+`+xp/spend/aspect <aspect>=<amount>` — Preview the cost to advance an
+Aspect. Repeat with `/confirm` to spend the XP. By default, an Aspect costs
+four times the equivalent Skill increase.
+
 `+culmination [character]` — View Culminations.
 
 Before approval, see `help soul_chargen` for Resonance, Skill, and starting
