@@ -43,5 +43,22 @@ module AresMUSH
       allow(Soul).to receive(:check_config).and_return(["bad setting"])
       expect(subject.handle(request)).to eq(success: false, live_read: true, errors: ["bad setting"])
     end
+
+    it "exposes audited framework correction to authorized staff" do
+      staff = Fabricate(:character)
+      character = Fabricate(:character)
+      request = double(cmd: "soulFrameworkCorrect", enactor: staff,
+        args: { 'character' => character.name, 'kind' => 'skill',
+                'key' => 'blade', 'rating' => 4, 'reason' => 'Repair' })
+      allow(Website).to receive(:check_login).and_return(nil)
+      allow(Soul).to receive(:can_manage_soul?).and_return(true)
+      allow(Character).to receive(:find_one_by_name).and_return(character)
+      allow(SoulCharacterApi).to receive(:correct_rating).and_return(success: true)
+
+      subject.handle(request)
+      expect(SoulCharacterApi).to have_received(:correct_rating).with(
+        character, 'skill', 'blade', 4, actor: staff, reason: 'Repair'
+      )
+    end
   end
 end
