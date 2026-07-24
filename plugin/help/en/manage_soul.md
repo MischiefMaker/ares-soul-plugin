@@ -22,12 +22,17 @@ reloading game config - no plugin restart needed. See
 
 ## Framework and Resonance
 
-`+soul/framework` — Review configured Aspects and Skills. Rating correction
-syntax is not yet specified.
+`+soul/framework` — Review configured Aspects and Skills.
+
+`+soul/framework/skill <character>=<key>/<rating>/<reason>` — Correct a
+character's Skill rating.
+
+`+soul/framework/aspect <character>=<key>/<rating>/<reason>` — Correct a
+character's Aspect rating.
 
 `+soul/resonance <character>=<value>/<reason>` — Correct locked Resonance.
 
-`+soul/reload` — Confirm that SOUL configuration is read live.
+`+soul/reload` — Validate the live SOUL configuration and report errors.
 
 `+soul/audit <character>` — View the staff-only technical audit log for a
 character (distinct from their player-facing Narrative History).
@@ -59,7 +64,11 @@ entry. Both explicit confirmations and a reason are required.
 
 `+xp/award/catchup <character>=<amount>/<reason>` — Award with catch-up.
 
-`+xp/correct <character>=<amount>/<reason>` — Add a correction ledger entry.
+`+xp/correct <character>=<amount>/<reason>` — Add XP through a linked
+correction ledger entry.
+
+`+xp/reverse <character>=<amount>/<reason>` — Subtract available XP through
+a linked reversal ledger entry. This does not undo a Skill advance.
 
 `+xp/scene [scene id=]<amount>/<reason>` — Preview a scene award. Repeat with
 `/confirm` to commit. Use `+xp/scene/catchup` to apply catch-up.
