@@ -178,7 +178,7 @@ rolls:
 **Status:** ✅ Approved
 
 **Decision:**
-XP advancement costs are calculated using an algebraic model combining skill rating curves, character development curves, and Resonance modifiers. This approach eliminates static lookup tables while maintaining configurability and natural scaling.
+XP advancement costs are calculated using an algebraic model combining a rating curve, character development curve, Resonance modifiers, and a configurable multiplier for the type of trait being advanced. Skills use a multiplier of 1 by default. Aspects use the same rating progression, development modifier, and Resonance modifier as Skills, but cost **4 times** the equivalent Skill increase by default. This approach eliminates static lookup tables while maintaining configurability and natural scaling.
 
 **Cost Calculation Formula:**
 
@@ -188,8 +188,11 @@ development_modifier = 1 + (xp_spent / 250)^1.25
 resonance_modifier = (char_resonance > 0) ?
                       (1 + 0.22 * char_resonance + 1 * char_resonance) :
                       (1 + 0.12 * char_resonance)
-                      
-final_cost = ceil(base_cost × development_modifier × resonance_modifier)
+
+advancement_multiplier = advancing_aspect ? aspect_cost_multiplier : skill_cost_multiplier
+
+equivalent_skill_cost = ceil(base_cost × development_modifier × resonance_modifier)
+final_cost = ceil(equivalent_skill_cost × advancement_multiplier)
 ```
 
 **Component Breakdown:**
@@ -203,6 +206,14 @@ final_cost = ceil(base_cost × development_modifier × resonance_modifier)
   - Rating 9: ceil(81 / 2) = ceil(40.5) = 41 XP
   - Rating 10: ceil(100 / 2) = 50 XP
 - **Design Rationale:** Ratings 9–10 become intentionally expensive without requiring a hand-maintained table; smooth curve enables natural tuning
+
+### Advancement Type Multiplier
+
+- **Skills:** `1×` by default.
+- **Aspects:** `4×` by default.
+- The Aspect multiplier **MUST** be configurable per game.
+- The shared rating, development, and Resonance calculation is rounded to determine the equivalent Skill cost first. The configured advancement-type multiplier is then applied, and the result is rounded up to a whole XP value. This guarantees that the default Aspect price is exactly four times the displayed equivalent Skill price.
+- **Example:** If increasing a Skill to a given rating would cost 5 XP under the character's current development and Resonance modifiers, increasing an Aspect to that same rating costs 20 XP with the default `4×` multiplier.
 
 ### Development Curve: `1 + (xp_spent / 250)^1.25`
 - **Purpose:** Advancement gradually slows as a character develops
@@ -240,9 +251,13 @@ against 7.1/710%, not the original figure.)
 **Configuration:**
 ```yaml
 xp:
-  # Skill rating curve (configurable constants)
+  # Shared Skill/Aspect rating curve (configurable constants)
   skill_curve_numerator: 1      # numerator for rating²
   skill_curve_denominator: 2    # denominator (rating² / 2)
+
+  # Advancement type multipliers
+  skill_cost_multiplier: 1
+  aspect_cost_multiplier: 4
   
   # Development curve (configurable constants)
   development_base: 1           # baseline multiplier
@@ -258,6 +273,7 @@ xp:
 **Design Goals Satisfied:**
 - ✔ No giant lookup tables
 - ✔ Entirely algebraic and configurable
+- ✔ Skills and Aspects share one progression model, with a configurable premium for Aspects
 - ✔ Very high ratings (9–10) are genuinely difficult to reach
 - ✔ Positive Resonance makes advancement harder (intentional)
 - ✔ Effect of Resonance grows naturally as characters progress
