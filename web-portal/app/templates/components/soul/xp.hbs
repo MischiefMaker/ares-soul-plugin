@@ -12,19 +12,36 @@
       </div>
 
       <div class="card card-body mb-3">
-        <h4>Advance a Skill</h4>
+        <h4>Advance a Skill or Aspect</h4>
         <div class="row g-3 align-items-end">
-          <div class="col-md-7">
-            <label for="soul-xp-skill" class="form-label">Skill</label>
+          <div class="col-md-3">
+            <label for="soul-xp-trait-type" class="form-label">Trait Type</label>
             <select
-              id="soul-xp-skill"
+              id="soul-xp-trait-type"
               class="form-select"
-              onchange={{action (mut selectedSkill) value="target.value"}}
+              onchange={{action "selectTraitType" value="target.value"}}
             >
-              <option value="">Choose a Skill</option>
-              {{#each skills as |skill|}}
-                <option value={{skill.key}}>{{skill.name}} — current rating {{skill.rating}}</option>
-              {{/each}}
+              <option value="skill">Skill</option>
+              <option value="aspect">Aspect</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="soul-xp-trait" class="form-label">Trait</label>
+            <select
+              id="soul-xp-trait"
+              class="form-select"
+              onchange={{action (mut selectedTrait) value="target.value"}}
+            >
+              <option value="">Choose a Trait</option>
+              {{#if (eq selectedTraitType "aspect")}}
+                {{#each aspects as |aspect|}}
+                  <option value={{aspect.key}}>{{aspect.name}} — current rating {{aspect.rating}}</option>
+                {{/each}}
+              {{else}}
+                {{#each skills as |skill|}}
+                  <option value={{skill.key}}>{{skill.name}} — current rating {{skill.rating}}</option>
+                {{/each}}
+              {{/if}}
             </select>
           </div>
           <div class="col-md-3">
@@ -42,8 +59,8 @@
             <button
               type="button"
               class="btn btn-primary w-100"
-              disabled={{or (not selectedSkill) (not spendAmount)}}
-              onclick={{action "previewSpend" selectedSkill spendAmount}}
+              disabled={{or (not selectedTrait) (not spendAmount)}}
+              onclick={{action "previewSpend" selectedTraitType selectedTrait spendAmount}}
             >
               Preview
             </button>
@@ -58,7 +75,7 @@
           <div class="border-start border-3 ps-3 mt-3">
             <p>
               This increases
-              <strong>{{spendPreview.skill_key}}</strong>
+              <strong>{{spendPreview.trait_name}}</strong>
               to rating <strong>{{spendPreview.target_rating}}</strong>
               for <strong>{{spendPreview.cost}} XP</strong>.
             </p>
@@ -67,7 +84,8 @@
               class="btn btn-primary"
               onclick={{action
                 "confirmSpend"
-                spendPreview.skill_key
+                spendPreview.trait_type
+                spendPreview.trait_key
                 spendPreviewAmount
               }}
             >
