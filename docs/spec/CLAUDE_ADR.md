@@ -39,6 +39,14 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 
 ## Recent Changes
 
+### BUG-005: Chargen's Permission Check Contradicted Itself After BUG-002 — Traced Before Renaming Again (2026-07-24)
+
+User's report: *"soul/cg tells unapproved players they don't have permission to do that. Let's change the command again instead. We'll use soulcg/ for the cg commands."* Read as another namespace collision at first (matching BUG-004's pattern), but traced the actual code before acting on the rename request, since a third rename in one session is real cost if it's not the actual fix.
+
+**Root cause:** `SoulChargenCmd#check_permission` and `SoulChargenWebHandler`'s equivalent check both gated on `Soul.can_play?(enactor)` ahead of their own `enactor.is_approved?` check. That was fine under the pre-BUG-002 default (`play_permission: "play"`, a permission any playable character could plausibly hold). Once BUG-002 changed `Soul.can_play?` to default to `is_approved?`, this became a direct contradiction for chargen specifically: an unapproved character — chargen's *only* intended user — now fails `can_play?` before the code ever reaches the `is_approved?` check that exists to block the opposite case. Confirmed identically broken in both the command and the web handler.
+
+**Outcome:** Flagged the real cause to the user before implementing anything, since the requested rename to `+soulcg` would not have fixed the reported symptom — the bug is in the permission-check logic, not the command's name or routing. User chose to fix the logic bug and keep `+soul/cg` (no further renaming). Removed the `can_play?` gate from both call sites; chargen's own `is_approved?` check is a complete, correct gate by itself. New specs cover both the "unapproved character is allowed" and "approved character is blocked" cases directly (`soul_chargen_cmd_spec.rb`, `soul_chargen_web_handler_spec.rb`). Full detail in `docs/development/Bug_List.md` BUG-005.
+
 ### BUG-004: `+chargen` Renamed to `+soul/cg` — Shortcut Collision Missed by Phase 9's Own Verification (2026-07-24)
 
 User's exact report during internal testing: *"chargen commands do not work -- we need a unique namespace and +chargen is taken. Use +soul/cg."* Confirmed and fixed.

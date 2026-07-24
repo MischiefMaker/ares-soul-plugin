@@ -22,5 +22,19 @@ module AresMUSH
         expect(handler.sub_switch).to eq("")
       end
     end
+
+    describe "#check_permission" do
+      it "allows an unapproved character even with no play_permission configured (BUG-005)" do
+        enactor = double(is_approved?: false)
+        handler = Soul::SoulChargenCmd.new(nil, double, enactor)
+        expect(handler.check_permission).to be_nil
+      end
+
+      it "blocks an already-approved character" do
+        enactor = double(is_approved?: true)
+        handler = Soul::SoulChargenCmd.new(nil, double, enactor)
+        expect(handler.check_permission).to be_present
+      end
+    end
   end
 end

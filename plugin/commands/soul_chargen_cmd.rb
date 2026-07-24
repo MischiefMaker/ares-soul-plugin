@@ -37,8 +37,13 @@ module AresMUSH
         end
       end
 
+      # Deliberately does NOT gate on Soul.can_play? - chargen is only ever
+      # usable by a character that has NOT been approved yet, and can_play?
+      # (BUG-002, 2026-07-24) now defaults to Character#is_approved?, which
+      # is the exact opposite of who this command is for. The is_approved?
+      # check below is chargen's own, correct gate: block already-approved
+      # characters, allow everyone still going through chargen.
       def check_permission
-        return t('soul.permission_denied') unless Soul.can_play?(enactor)
         return t('soul.chargen_approved') if enactor.is_approved?
         nil
       end

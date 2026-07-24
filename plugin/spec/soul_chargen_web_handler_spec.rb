@@ -6,13 +6,25 @@ module AresMUSH
 
     before do
       allow(Website).to receive(:check_login).and_return(nil)
-      allow(Soul).to receive(:can_play?).and_return(true)
     end
 
     it "rejects an approved character" do
       allow(character).to receive(:is_approved?).and_return(true)
       request = double(cmd: "soulChargenStatus", enactor: character, args: {})
       expect(subject.handle(request)[:error]).to be_present
+    end
+
+    it "allows an unapproved character with no play_permission configured (BUG-005)" do
+      allow(character).to receive(:is_approved?).and_return(false)
+      allow(SoulResonanceApi).to receive(:enabled?).and_return(false)
+      allow(SoulResonanceApi).to receive(:get_resonance).and_return(nil)
+      allow(SoulResonanceApi).to receive(:chargen_allowance).and_return(skill_points: 15, starting_cap: 7)
+      allow(SoulFrameworkApi).to receive(:get_skills).and_return([])
+      allow(SoulFrameworkApi).to receive(:get_aspects).and_return([])
+      allow(SoulBnbApi).to receive(:get_character_entries).and_return([])
+      allow(SoulBnbApi).to receive(:get_catalogue).and_return([])
+      request = double(cmd: "soulChargenStatus", enactor: character, args: {})
+      expect(subject.handle(request)[:error]).to be_nil
     end
 
     it "rejects a Skill allocation over the available budget" do

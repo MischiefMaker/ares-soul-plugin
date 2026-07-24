@@ -4,7 +4,10 @@ module AresMUSH
       error = Website.check_login(request)
       return error if error
       character = request.enactor
-      return { error: t('soul.permission_denied') } unless Soul.can_play?(character)
+      # Deliberately does NOT gate on Soul.can_play? - see the matching
+      # comment on SoulChargenCmd#check_permission (BUG-002/BUG-005,
+      # 2026-07-24). Chargen is only for characters that are NOT approved
+      # yet, the opposite of what can_play? now checks by default.
       return { error: t('soul.chargen_approved') } if character.is_approved?
 
       case request.cmd
