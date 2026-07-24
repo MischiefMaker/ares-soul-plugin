@@ -14,5 +14,13 @@ module AresMUSH
       allow(Soul).to receive(:can_manage_soul?).and_return(false)
       expect(subject.check_permission).to be_present
     end
+
+    it "allows players to use +xp/spend/aspect" do
+      command = double(switch: "spend/aspect")
+      allow(subject).to receive(:cmd).and_return(command)
+      allow(subject).to receive(:enactor).and_return(Fabricate(:character))
+      allow(Soul).to receive(:can_play?).and_return(true)
+      expect(subject.check_permission).to be_nil
+    end
   end
 end
