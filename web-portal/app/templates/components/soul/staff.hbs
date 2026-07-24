@@ -23,6 +23,16 @@
         </div>
       {{/each}}
     {{/if}}
+    <hr>
+    <p class="text-muted">Correct a character rating. A reason is required and the change is recorded.</p>
+    <Input @value={{frameworkCharacter}} class="form-control my-2" placeholder="Character" />
+    <Input @value={{frameworkKey}} class="form-control my-2" placeholder="Skill or Aspect key" />
+    <Input @type="number" @value={{frameworkRating}} class="form-control my-2" placeholder="New rating" />
+    <Input @value={{frameworkReason}} class="form-control my-2" placeholder="Reason" />
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-warning" type="button" onclick={{action "correctFramework" "skill"}}>Correct Skill</button>
+      <button class="btn btn-warning" type="button" onclick={{action "correctFramework" "aspect"}}>Correct Aspect</button>
+    </div>
     {{#if reloadResult.errors}}<ul>{{#each reloadResult.errors as |error|}}<li>{{error}}</li>{{/each}}</ul>{{/if}}
   </details>
 
@@ -49,7 +59,8 @@
       <button class="btn btn-primary" type="button" onclick={{action "xpAward" true}}>Award + Catch-up</button>
       <button class="btn btn-secondary" type="button" onclick={{action "xpScene" false}}>Preview/Confirm Scene</button>
       <button class="btn btn-secondary" type="button" onclick={{action "xpScene" true}}>Preview/Confirm Scene + Catch-up</button>
-      <button class="btn btn-warning" type="button" onclick={{action "xpCorrect"}}>Correct</button>
+      <button class="btn btn-warning" type="button" onclick={{action "xpCorrect" "correction"}}>Add Correction</button>
+      <button class="btn btn-warning" type="button" onclick={{action "xpCorrect" "reversal"}}>Reverse XP</button>
     </div>
     {{#if scenePreview.recipients}}<p>Recipients: {{scenePreview.recipients}}</p>{{/if}}
   </details>
