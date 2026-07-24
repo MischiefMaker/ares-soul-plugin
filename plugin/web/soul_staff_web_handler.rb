@@ -13,6 +13,12 @@ module AresMUSH
           min_rating: SoulFrameworkApi.skill_min_rating,
           max_rating: SoulFrameworkApi.skill_max_rating
         }
+      when "soulFrameworkCorrect"
+        character = Character.find_one_by_name(request.args['character'])
+        SoulCharacterApi.correct_rating(
+          character, request.args['kind'], request.args['key'], request.args['rating'],
+          actor: request.enactor, reason: request.args['reason']
+        )
       when "soulResonance"
         character = Character.find_one_by_name(request.args['character'])
         SoulResonanceApi.correct(character, request.args['value'], actor: request.enactor,
