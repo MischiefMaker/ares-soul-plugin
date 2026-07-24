@@ -523,6 +523,26 @@ aspects:
 
 ---
 
+## 7.1 Aspect Advancement in Chargen and Play
+
+**Status:** ✅ Approved
+
+**Clarification:**
+The canonical chargen flow in the final specification lists Skill allocation but does not explicitly describe Aspect allocation. That omission does not exclude Aspects from chargen or advancement.
+
+**Requirements:**
+- Players **MUST** be able to configure their character's Aspect ratings during chargen.
+- Games **MUST** be able to configure the chargen allowance, starting values, and rating limits used for Aspects.
+- After approval, players **MUST** be able to purchase Aspect rating increases with XP.
+- Games **MUST** be able to configure the XP cost and post-approval rating limits for Aspect advancement.
+- Aspect allocation and advancement **MUST** be available through both the MUSH and web interfaces, with equivalent validation, costs, permissions, and results.
+- All Aspect changes **MUST** use SOUL's authoritative services and normal audit/history mechanisms. Client-supplied costs or eligibility claims must not be trusted.
+
+**Relationship to the Final Specification:**
+This clarification extends REQ-011's canonical character-generation flow to include Aspect allocation and confirms that REQ-009's service-controlled Aspect changes include XP-funded advancement after approval.
+
+---
+
 ## 8. Catch-Up XP Mechanism
 
 **Status:** ✅ Approved
@@ -777,6 +797,7 @@ The configured prefix is used with the outcome appended:
 | Chargen B&Bs | ✅ Approved | 2:1 Boon-to-Bane ratio, per-R-level config (§5) |
 | Pending Roll Expiry | ✅ Approved | ~30 days wall-clock (§6) |
 | Aspect Rounding | ✅ Approved | Round Nearest (§7) |
+| Aspect Chargen and Advancement | ✅ Approved | Configurable in chargen and purchasable with XP (§7.1) |
 | Catch-Up XP | ✅ Approved | Median-based 2x multiplier, weekly calculation (§8) |
 | Degrees of Success | ✅ Approved | Six degrees with GM-less/GM-led output (§8.1) |
 | Extraordinary Luck Messaging | ✅ Approved | Probability-based (<0.01%) (§9) |
