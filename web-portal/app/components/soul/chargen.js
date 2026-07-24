@@ -49,6 +49,16 @@ export default Component.extend({
         rating: event.target.value
       });
     },
+    adjustSkill(skill, delta) {
+      let rating = Number(skill.rating || 0) + delta;
+      if (rating < 0 || rating > Number(this.get('status.starting_cap'))) {
+        return;
+      }
+      return this.request('soulChargenSkill', {
+        skill_key: skill.key,
+        rating
+      });
+    },
     selectCatalogue(entry) {
       this.set('selectedCatalogue', entry);
     },
