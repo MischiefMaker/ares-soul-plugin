@@ -3,10 +3,14 @@ module AresMUSH
     class SoulStaffCmd
       include CommandHandler
 
-      attr_accessor :name, :value, :reason
+      attr_accessor :name, :value, :reason, :rating_key
 
       def parse_args
-        if cmd.switch == "resonance"
+        if %w[framework/skill framework/aspect].include?(cmd.switch)
+          self.name, details = cmd.args.to_s.split("=", 2)
+          key, rating, reason = details.to_s.split("/", 3)
+          self.rating_key, self.value, self.reason = key, integer_arg(rating), reason
+        elsif cmd.switch == "resonance"
           args = cmd.parse_args(ArgParser.arg1_equals_arg2_slash_arg3)
           self.name, self.value, self.reason = args.arg1, integer_arg(args.arg2), args.arg3
         elsif cmd.switch == "audit"
@@ -20,6 +24,8 @@ module AresMUSH
 
       def required_args
         case cmd.switch
+        when "framework/skill", "framework/aspect"
+          [ self.name, self.rating_key, self.value, self.reason ]
         when "resonance"
           [ self.name, self.value, self.reason ]
         when "audit"
@@ -40,6 +46,19 @@ module AresMUSH
               skills: skills.join(', '))
           end
           client.emit t('soul.framework', entries: aspects.join("%r"))
+        when "framework/skill", "framework/aspect"
+          ClassTargetFinder.with_a_character(self.name, client, enactor) do |character|
+            kind = cmd.switch.split('/').last
+            result = SoulCharacterApi.correct_rating(
+              character, kind, self.rating_key, self.value, actor: enactor, reason: self.reason
+            )
+            if result[:error]
+              client.emit_failure result[:error]
+            else
+              client.emit_success t('soul.framework_corrected', kind: kind.capitalize,
+                key: self.rating_key, old: result[:old_rating], new: result[:new_rating])
+            end
+          end
         when "resonance"
           ClassTargetFinder.with_a_character(self.name, client, enactor) do |character|
             emit_result SoulResonanceApi.correct(character, self.value, actor: enactor, reason: self.reason)
