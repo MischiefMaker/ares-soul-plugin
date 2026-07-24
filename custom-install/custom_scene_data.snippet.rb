@@ -37,10 +37,10 @@ end
 # OPTION B: METHOD ALREADY RETURNS OTHER PLUGINS' DATA
 # ---------------------------------------------------------------------------
 # Add these two lines to the existing hash instead of replacing the method:
-#
-#      soul_can_review_rolls: Soul.can_review_rolls?(viewer),
-#      soul_can_manage_soul: Soul.can_manage_soul?(viewer)
-#
+
+      soul_can_review_rolls: Soul.can_review_rolls?(viewer),
+      soul_can_manage_soul: Soul.can_manage_soul?(viewer)
+
 # NOTE: this hash is viewer-level, not scene-specific - it does not tell you
 # whether the viewer participates in any particular scene. Combine it with
 # the scene's own participant list (already part of the base scene payload

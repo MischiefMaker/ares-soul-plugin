@@ -25,12 +25,12 @@ end
 # ===============================================
 #
 # Add the following lines after "fields = {}" and before "return fields":
-#
-#   fields[:soul_enabled] = Soul.enabled?
-#   fields[:can_manage_soul] = Soul.can_manage_soul?(viewer)
-#   fields[:is_approved] = char.is_approved?
-#   fields[:viewer_id] = viewer ? viewer.id : nil
-#
+
+   fields[:soul_enabled] = Soul.enabled?
+   fields[:can_manage_soul] = Soul.can_manage_soul?(viewer)
+   fields[:is_approved] = char.is_approved?
+   fields[:viewer_id] = viewer ? viewer.id : nil
+
 # CROSS-PLUGIN COMPATIBILITY:
 #
 # Inklings and other plugins may already add is_approved and viewer_id to
@@ -43,15 +43,15 @@ end
 # and update both SOUL profile snippets to reference them.
 #
 # A combined method might look like:
-#
-#   def self.get_fields_for_viewing(char, viewer)
-#     fields = {}
-#     fields[:some_other_field] = ...
-#     fields[:soul_enabled] = Soul.enabled?
-#     fields[:can_manage_soul] = Soul.can_manage_soul?(viewer)
-#     fields[:is_approved] = char.is_approved?
-#     fields[:viewer_id] = viewer ? viewer.id : nil
-#     return fields
-#   end
-#
+
+def self.get_fields_for_viewing(char, viewer)
+  fields = {}
+  fields[:some_other_field] = "..."
+  fields[:soul_enabled] = Soul.enabled?
+  fields[:can_manage_soul] = Soul.can_manage_soul?(viewer)
+  fields[:is_approved] = char.is_approved?
+  fields[:viewer_id] = viewer ? viewer.id : nil
+  return fields
+end
+
 # Save the file and restart the game after installing the snippet.
