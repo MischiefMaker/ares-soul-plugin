@@ -9,24 +9,24 @@
     <div class="modal-body">
       <h4>Find a Boon or Bane Here</h4>
       <div class="input-group mb-3">
-        <Input @value={{bnbReference}} class="form-control" placeholder="Tag or catalogue ID" />
+        <Input @value={{this.bnbReference}} class="form-control" placeholder="Tag or catalogue ID" />
         <button type="button" class="btn btn-secondary" onclick={{action "lookupBnb"}}>Look Up</button>
       </div>
-      <ul>{{#each bnbMatches as |match|}}
+      <ul>{{#each this.bnbMatches as |match|}}
         <li>{{match.character}} — {{match.name}} ({{match.level_state}})</li>
       {{/each}}</ul>
 
-      {{#if canViewSheets}}
+      {{#if this.canViewSheets}}
         <hr><h4>View Participant Sheet</h4>
-        <PowerSelect @selected={{selectedParticipant}} @options={{scene.participants}}
+        <PowerSelect @selected={{this.selectedParticipant}} @options={{this.scene.participants}}
           @searchField="name" @onChange={{action "selectParticipant"}} as |participant|>
           {{participant.name}}
         </PowerSelect>
         <button type="button" class="btn btn-secondary mt-2"
-          disabled={{not selectedParticipant}} onclick={{action "viewSheet"}}>View Sheet</button>
-        {{#if participantSheet}}
-          <h5 class="mt-3">{{participantSheet.character}}</h5>
-          {{#each participantSheet.aspects as |aspect|}}
+          disabled={{not this.selectedParticipant}} onclick={{action "viewSheet"}}>View Sheet</button>
+        {{#if this.participantSheet}}
+          <h5 class="mt-3">{{this.participantSheet.character}}</h5>
+          {{#each this.participantSheet.aspects as |aspect|}}
             <p><strong>{{aspect.name}} {{aspect.rating}}</strong>:
               {{#each aspect.skills as |skill|}}{{skill.name}} {{skill.rating}}; {{/each}}</p>
           {{/each}}
