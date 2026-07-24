@@ -3,7 +3,7 @@ require_relative 'spec_helper'
 module AresMUSH
   describe Soul::SoulChargenCmd do
     it "is registered for +soul/cg (not a bare +chargen root - see BUG-004)" do
-      %w[cg cg/resonance cg/skill cg/aspect cg/bnb cg/drop].each do |switch|
+      %w[cg cg/resonance cg/skill cg/aspect cg/catalogue cg/bnb cg/drop].each do |switch|
         cmd = double(root: "soul", switch: switch)
         expect(Soul.get_cmd_handler(nil, cmd, nil)).to eq(Soul::SoulChargenCmd)
       end
@@ -27,6 +27,23 @@ module AresMUSH
         handler = Soul::SoulChargenCmd.new(nil, cmd, nil)
         expect(handler.sub_switch).to eq("aspect")
       end
+
+      it "strips the cg prefix for the catalogue switch" do
+        cmd = double(switch: "cg/catalogue")
+        handler = Soul::SoulChargenCmd.new(nil, cmd, nil)
+        expect(handler.sub_switch).to eq("catalogue")
+      end
+    end
+
+    it "lists only chargen-available catalogue entries" do
+      allow(SoulBnbApi).to receive(:get_catalogue).and_return([])
+      allow(subject).to receive(:client).and_return(double(emit: nil))
+      allow(subject).to receive(:t).with('soul.none').and_return("None")
+      allow(subject).to receive(:t).with('soul.chargen_catalogue_title').and_return("Catalogue")
+
+      subject.show_catalogue
+
+      expect(SoulBnbApi).to have_received(:get_catalogue).with(chargen_available: true)
     end
 
     describe "#check_permission" do
