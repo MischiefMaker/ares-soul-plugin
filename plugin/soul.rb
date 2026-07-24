@@ -8,6 +8,10 @@ module AresMUSH
       Global.read_config("soul", "shortcuts") || {}
     end
 
+    def self.enabled?
+      Global.read_config("soul", "enabled") != false
+    end
+
     # Whether this character can administer SOUL: award/correct XP, manage
     # the Boon/Bane catalogue, correct Resonance, review the Character
     # Framework, and other staff-only operations (FINAL REQ-005). Permission
@@ -66,12 +70,14 @@ module AresMUSH
     end
 
     def self.get_cmd_handler(client, cmd, enactor)
+      return nil unless enabled?
+
       case cmd.root
       when "soul"
         case cmd.switch
         when "history"
           SoulHistoryCmd
-        when "framework", "resonance", "reload", "audit"
+        when "framework", "framework/skill", "framework/aspect", "resonance", "reload", "audit"
           SoulStaffCmd
         when nil
           SoulSheetCmd
@@ -90,6 +96,8 @@ module AresMUSH
     end
 
     def self.get_web_request_handler(request)
+      return nil unless enabled?
+
       case request.cmd
       when "soulSheet"
         SoulSheetWebHandler
@@ -103,7 +111,7 @@ module AresMUSH
         SoulCulminationWebHandler
       when "soulHistory"
         SoulHistoryWebHandler
-      when "soulFramework", "soulResonance", "soulReload", "soulAudit"
+      when "soulFramework", "soulFrameworkCorrect", "soulResonance", "soulReload", "soulAudit"
         SoulStaffWebHandler
       when "soulRoll", "soulRollStart", "soulRollGm", "soulRollSelect",
            "soulRollAbort", "soulRollForceAbort", "soulRollPending",
