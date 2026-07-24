@@ -60,6 +60,8 @@ module AresMUSH
     # Dispatched by AresMUSH::Dispatcher#on_event for every fired event,
     # not just cron ticks - see engine/aresmush/commands/dispatcher.rb.
     def self.get_event_handler(event_name)
+      return nil unless enabled?
+
       case event_name
       when "CronEvent"
         return XpCronHandler

@@ -21,7 +21,7 @@ At startup, SOUL validates YAML structure, required keys, supported values, refe
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `enabled` | bool | `true` | Plugin-wide switch; when false, SOUL command and web routes are not registered |
+| `enabled` | bool | `true` | Plugin-wide switch; when false, SOUL command/web routes and event handlers (cron, scene-share) are not registered |
 | `framework.aspects` | map | Body, Mind, Spirit | Stable Aspect keys mapped to names, descriptions, and ordering |
 | `framework.skills` | map | starter set in `soul.yml` | Stable Skill keys mapped to names, ordering, and exactly one Aspect |
 | `framework.skill_min_rating` | int | `0` | Minimum Skill rating |
