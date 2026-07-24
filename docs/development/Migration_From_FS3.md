@@ -33,7 +33,7 @@ framework:
     investigation:
       name: "Investigation"
       aspect: "mind"
-    ceremonial_magic:
+    ceremonial:
       name: "Ceremonial Magic"
       aspect: "spirit"
 ```
@@ -141,7 +141,7 @@ def map_fs3_to_soul(fs3_name)
   {
     "Melee Weapons" => "melee",
     "Investigation"  => "investigation",
-    "Sorcery"        => "ceremonial_magic",
+    "Sorcery"        => "ceremonial",
     # ... complete this mapping for every FS3 skill in use
   }[fs3_name]
 end
