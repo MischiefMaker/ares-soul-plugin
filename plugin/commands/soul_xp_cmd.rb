@@ -9,7 +9,7 @@ module AresMUSH
         self.confirmed = cmd.args.to_s.end_with?("/confirm")
         raw = cmd.args.to_s.sub(/\/confirm\z/, '')
         case cmd.switch
-        when "spend"
+        when "spend", "spend/aspect"
           args = ArgParser.parse(ArgParser.arg1_equals_arg2, raw)
           self.skill, self.amount = args.arg1, integer_arg(args.arg2)
         when "award", "award/catchup", "correct", "reverse"
@@ -35,7 +35,7 @@ module AresMUSH
 
       def required_args
         case cmd.switch
-        when "spend"
+        when "spend", "spend/aspect"
           [ self.skill, self.amount ]
         when "award", "award/catchup", "correct", "reverse"
           [ self.name, self.amount, self.reason ]
@@ -52,7 +52,7 @@ module AresMUSH
           show_xp
         when "history"
           show_history
-        when "spend"
+        when "spend", "spend/aspect"
           spend_xp
         when "award", "award/catchup", "correct", "reverse"
           with_character { |character| award_or_correct(character) }
@@ -81,19 +81,40 @@ module AresMUSH
       end
 
       def spend_xp
-        skill_data = SoulFrameworkApi.get_skill(self.skill)
-        unless skill_data
-          client.emit_failure t('soul.invalid_skill')
+        is_aspect = cmd.switch == "spend/aspect"
+        if self.amount.to_i <= 0
+          client.emit_failure "Amount must be positive"
           return
         end
-        target = SoulCharacterApi.get_skill_rating(enactor, self.skill) + self.amount.to_i
-        cost = SoulXpApi.calculate_cost(enactor, self.skill, target)
+        trait_data = is_aspect ? SoulFrameworkApi.get_aspect(self.skill) : SoulFrameworkApi.get_skill(self.skill)
+        unless trait_data
+          client.emit_failure t(is_aspect ? 'soul.invalid_aspect' : 'soul.invalid_skill')
+          return
+        end
+        current = if is_aspect
+                    SoulCharacterApi.get_aspect_rating(enactor, self.skill)
+                  else
+                    SoulCharacterApi.get_skill_rating(enactor, self.skill)
+                  end
+        target = current + self.amount.to_i
+        trait_type = is_aspect ? "aspect" : "skill"
+        max_rating = is_aspect ? SoulFrameworkApi.aspect_max_rating : SoulFrameworkApi.skill_max_rating
+        if target > max_rating
+          client.emit_failure "Rating would exceed the maximum of #{max_rating}"
+          return
+        end
+        cost = SoulXpApi.calculate_cost(enactor, self.skill, target, trait_type: trait_type)
         unless self.confirmed
-          body = t('soul.xp_spend_preview', skill: skill_data[:name], target: target, cost: cost)
+          body = t('soul.xp_spend_preview', trait: trait_data[:name], target: target, cost: cost)
           client.emit BorderedDisplayTemplate.new(body, t('soul.xp_spend_title')).render
           return
         end
-        emit_result SoulXpApi.spend(enactor, self.skill, self.amount, enactor), 'soul.xp_spent'
+        result = if is_aspect
+                   SoulXpApi.spend_aspect(enactor, self.skill, self.amount, enactor)
+                 else
+                   SoulXpApi.spend(enactor, self.skill, self.amount, enactor)
+                 end
+        emit_result result, 'soul.xp_spent'
       end
 
       def award_or_correct(character)
