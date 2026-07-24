@@ -12,7 +12,7 @@ module AresMUSH
         when "spend"
           args = ArgParser.parse(ArgParser.arg1_equals_arg2, raw)
           self.skill, self.amount = args.arg1, integer_arg(args.arg2)
-        when "award", "award/catchup", "correct"
+        when "award", "award/catchup", "correct", "reverse"
           args = ArgParser.parse(ArgParser.arg1_equals_arg2_slash_arg3, raw)
           self.name, self.amount, self.reason = args.arg1, integer_arg(args.arg2), args.arg3
         when "scene", "scene/catchup"
@@ -27,7 +27,7 @@ module AresMUSH
       end
 
       def check_permission
-        staff_switches = %w[award award/catchup scene scene/catchup correct]
+        staff_switches = %w[award award/catchup scene scene/catchup correct reverse]
         return t('soul.permission_denied') if staff_switches.include?(cmd.switch) && !Soul.can_manage_soul?(enactor)
         return t('soul.permission_denied') if !staff_switches.include?(cmd.switch) && !Soul.can_play?(enactor)
         nil
@@ -37,7 +37,7 @@ module AresMUSH
         case cmd.switch
         when "spend"
           [ self.skill, self.amount ]
-        when "award", "award/catchup", "correct"
+        when "award", "award/catchup", "correct", "reverse"
           [ self.name, self.amount, self.reason ]
         when "scene", "scene/catchup"
           [ self.amount, self.reason ]
@@ -54,7 +54,7 @@ module AresMUSH
           show_history
         when "spend"
           spend_xp
-        when "award", "award/catchup", "correct"
+        when "award", "award/catchup", "correct", "reverse"
           with_character { |character| award_or_correct(character) }
         when "scene", "scene/catchup"
           scene_award
@@ -93,8 +93,10 @@ module AresMUSH
       end
 
       def award_or_correct(character)
-        if cmd.switch == "correct"
-          result = SoulXpApi.correct(character, self.amount, reason: self.reason, actor: enactor)
+        if %w[correct reverse].include?(cmd.switch)
+          direction = cmd.switch == "reverse" ? "reversal" : "correction"
+          result = SoulXpApi.correct(character, self.amount, reason: self.reason,
+            actor: enactor, direction: direction)
         else
           result = SoulXpApi.award(character, self.amount, source: self.reason,
             apply_catchup: cmd.switch == "award/catchup")
