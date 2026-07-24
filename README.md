@@ -245,8 +245,9 @@ Use an unapproved test character, an approved player, and a staff/GM character:
 - Open an approved character profile and verify Sheet, XP, B&B, Culmination, and
   History sections.
 - Spend XP through both `+xp/spend` and the web form.
-- As staff, validate configuration, search and manage B&Bs, award/correct XP,
-  manage Culminations, correct Resonance, and view the audit log.
+- As staff, validate configuration, search and manage B&Bs, award/correct/reverse
+  XP, correct Skill and Aspect ratings, manage Culminations, correct Resonance,
+  and view the audit log. Test each staff workflow in-game and on the web.
 - In a live scene, complete a standard roll and a GM-assisted roll; verify pending,
   history, abort, force-abort, scene lookup, and participant Sheet controls.
 - Confirm an ordinary player cannot see staff-only controls or inactive B&B search
