@@ -12,6 +12,13 @@ module AresMUSH
       expect(Soul.get_cmd_handler(nil, cmd, nil)).to eq(Soul::SoulStaffCmd)
     end
 
+    it "is registered for framework rating corrections" do
+      skill_cmd = double(root: "soul", switch: "framework/skill")
+      aspect_cmd = double(root: "soul", switch: "framework/aspect")
+      expect(Soul.get_cmd_handler(nil, skill_cmd, nil)).to eq(Soul::SoulStaffCmd)
+      expect(Soul.get_cmd_handler(nil, aspect_cmd, nil)).to eq(Soul::SoulStaffCmd)
+    end
+
     it "rejects audit access without management permission" do
       allow(subject).to receive(:enactor).and_return(Fabricate(:character))
       allow(Soul).to receive(:can_manage_soul?).and_return(false)
