@@ -1,30 +1,30 @@
 <section class="soul-chargen">
   <h3>SOUL Character Framework</h3>
-  {{#if isLoading}}<p class="text-muted">Saving…</p>{{/if}}
-  {{#if error}}<div class="alert alert-danger">{{error}}</div>{{/if}}
+  {{#if this.isLoading}}<p class="text-muted">Saving…</p>{{/if}}
+  {{#if this.error}}<div class="alert alert-danger">{{this.error}}</div>{{/if}}
 
-  {{#if status}}
+  {{#if this.status}}
     <div class="alert alert-info">
-      <strong>Skill Points:</strong> {{status.points_spent}} / {{status.skill_points}} spent;
-      {{status.points_remaining}} remaining.
-      <strong class="ms-2">Starting cap:</strong> {{status.starting_cap}}.
+      <strong>Skill Points:</strong> {{this.status.points_spent}} / {{this.status.skill_points}} spent;
+      {{this.status.points_remaining}} remaining.
+      <strong class="ms-2">Starting cap:</strong> {{this.status.starting_cap}}.
     </div>
     <div class="alert alert-info">
-      <strong>Aspect Points:</strong> {{status.aspect_points_spent}} / {{status.aspect_points}} spent;
-      {{status.aspect_points_remaining}} remaining.
-      <strong class="ms-2">Range:</strong> {{status.aspect_min_rating}}–{{status.aspect_max_rating}}.
+      <strong>Aspect Points:</strong> {{this.status.aspect_points_spent}} / {{this.status.aspect_points}} spent;
+      {{this.status.aspect_points_remaining}} remaining.
+      <strong class="ms-2">Range:</strong> {{this.status.aspect_min_rating}}–{{this.status.aspect_max_rating}}.
     </div>
 
-    {{#if status.resonance_enabled}}
+    {{#if this.status.resonance_enabled}}
       <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong>Resonance</strong>
-          <span class="badge bg-primary">Current: {{status.resonance_label}}</span>
+          <span class="badge bg-primary">Current: {{this.status.resonance_label}}</span>
         </div>
         <div class="card-body">
           <p class="cg-tip">Resonance determines your starting Skill-point allowance and starting cap.</p>
           <div class="btn-group flex-wrap" role="group" aria-label="Select Resonance">
-            {{#each status.resonance_options as |value|}}
+            {{#each this.status.resonance_options as |value|}}
               <button type="button" class="btn btn-outline-primary"
                 onclick={{action "setResonance" value}}>R{{value}}</button>
             {{/each}}
@@ -34,7 +34,7 @@
     {{/if}}
 
     <div class="row">
-      {{#each status.aspects as |aspect|}}
+      {{#each this.status.aspects as |aspect|}}
         <div class="col-lg-4 col-md-6 mb-3">
           <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -42,16 +42,16 @@
               <div class="d-flex align-items-center gap-2" role="group"
                 aria-label="Set {{aspect.name}} rating">
                 <button type="button" class="btn btn-sm btn-outline-secondary"
-                  disabled={{eq aspect.rating status.aspect_min_rating}}
+                  disabled={{eq aspect.rating this.status.aspect_min_rating}}
                   onclick={{action "adjustAspect" aspect -1}} aria-label="Decrease {{aspect.name}}">−</button>
                 <span class="badge bg-primary fs-6">{{aspect.rating}}</span>
                 <button type="button" class="btn btn-sm btn-outline-secondary"
-                  disabled={{eq aspect.rating status.aspect_max_rating}}
+                  disabled={{eq aspect.rating this.status.aspect_max_rating}}
                   onclick={{action "adjustAspect" aspect 1}} aria-label="Increase {{aspect.name}}">+</button>
               </div>
             </div>
             <div class="card-body p-0">
-              {{#each status.skills as |skill|}}
+              {{#each this.status.skills as |skill|}}
                 {{#if (eq skill.aspect_key aspect.key)}}
                   <div class="d-flex justify-content-between align-items-center gap-2 p-3 border-bottom soul-chargen-skill">
                     <div>
@@ -65,7 +65,7 @@
                         onclick={{action "adjustSkill" skill -1}} aria-label="Decrease {{skill.name}}">−</button>
                       <span class="badge bg-primary fs-6">{{skill.rating}}</span>
                       <button type="button" class="btn btn-sm btn-outline-secondary"
-                        disabled={{eq skill.rating status.starting_cap}}
+                        disabled={{eq skill.rating this.status.starting_cap}}
                         onclick={{action "adjustSkill" skill 1}} aria-label="Increase {{skill.name}}">+</button>
                     </div>
                   </div>
@@ -78,14 +78,20 @@
     </div>
 
     <div class="card mb-3">
-      <div class="card-header"><strong>Starting Boons &amp; Banes</strong></div>
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Starting Boons &amp; Banes</strong>
+        <button type="button" class="btn btn-sm btn-outline-primary"
+          onclick={{action "openCatalogue"}}>
+          View Available Boons &amp; Banes
+        </button>
+      </div>
       <div class="card-body">
-        {{#if status.has_selected_bnb}}
+        {{#if this.status.has_selected_bnb}}
           <div class="table-responsive mb-3">
             <table class="table table-sm">
               <thead><tr><th scope="col">Entry</th><th scope="col">Kind</th><th scope="col">Level</th><th scope="col"></th></tr></thead>
               <tbody>
-                {{#each status.selected_bnb as |entry|}}
+                {{#each this.status.selected_bnb as |entry|}}
                   <tr>
                     <td>{{entry.name}} <span class="text-muted">[{{entry.tag}}]</span></td>
                     <td>{{entry.kind}}</td>
@@ -100,33 +106,75 @@
         {{/if}}
 
         <label class="form-label"><strong>Add a Boon or Bane</strong></label>
-        <PowerSelect @selected={{selectedCatalogue}} @options={{status.catalogue}}
+        <PowerSelect @selected={{this.selectedCatalogue}} @options={{this.status.catalogue}}
           @searchField="name" @onChange={{action "selectCatalogue"}} as |entry|>
           {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
         </PowerSelect>
-        {{#if selectedCatalogue.description}}
-          <p class="cg-tip mt-2">{{selectedCatalogue.description}}</p>
+        {{#if this.selectedCatalogue.description}}
+          <p class="cg-tip mt-2">{{this.selectedCatalogue.description}}</p>
         {{/if}}
         <div class="row g-2 mt-2">
           <div class="col-md-3">
             <select class="form-select" aria-label="Boon or Bane level"
-              onchange={{action (mut selectedLevel) value="target.value"}}>
+              onchange={{action (mut this.selectedLevel) value="target.value"}}>
               <option value="minor">Minor</option>
               <option value="major">Major</option>
               <option value="legendary">Legendary</option>
             </select>
           </div>
           <div class="col-md-7">
-            <Input @type="text" @value={{explanation}} class="form-control"
+            <Input @type="text" @value={{this.explanation}} class="form-control"
               placeholder="Why does this apply to your character?" />
           </div>
           <div class="col-md-2">
             <button type="button" class="btn btn-primary w-100"
-              disabled={{or (not selectedCatalogue) (not explanation)}}
+              disabled={{or (not this.selectedCatalogue) (not this.explanation)}}
               onclick={{action "addBnb"}}>Add</button>
           </div>
         </div>
       </div>
     </div>
+
+    <BsModalSimple
+      @title="Available Chargen Boons & Banes"
+      @closeTitle="Close"
+      @submitTitle={{null}}
+      @size="lg"
+      @fade={{true}}
+      @open={{this.catalogueOpen}}
+      @onHide={{action "closeCatalogue"}}
+    >
+      <p>
+        These are the active Boons and Banes currently available during
+        character generation. Select one from the form after closing this list.
+      </p>
+      {{#if this.status.catalogue.length}}
+        <div class="table-responsive">
+          <table class="table table-striped align-middle">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Kind</th>
+                <th scope="col">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each this.status.catalogue as |entry|}}
+                <tr>
+                  <td>
+                    <strong>{{entry.name}}</strong>
+                    <div class="small text-muted">#{{entry.id}} [{{entry.tag}}]</div>
+                  </td>
+                  <td>{{entry.kind}}</td>
+                  <td>{{entry.description}}</td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      {{else}}
+        <p class="text-muted">No Boons or Banes are currently available in chargen.</p>
+      {{/if}}
+    </BsModalSimple>
   {{/if}}
 </section>
