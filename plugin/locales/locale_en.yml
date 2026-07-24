@@ -10,6 +10,12 @@ en:
     no_active_scene: "You are not participating in an active scene."
     no_scene_participants: "No approved participants were found in that scene."
     bnb_not_found: "Boon/Bane not found."
+    bnb_your: "Your"
+    bnb_whose: "%{name}'s"
+    bnb_your_explanation: "Your explanation"
+    bnb_whose_explanation: "%{name}'s explanation"
+    bnb_own_title: "%{whose} Boons & Banes"
+    bnb_own_line: "#%{id} [%{tag}] %{name} (%{kind}, %{level})%r  %{explanation}"
     character_not_found: "Character not found."
     skill_summary: "%{name} %{rating}"
     aspect_summary: "%{name} %{rating}: %{skills}"
@@ -43,7 +49,7 @@ en:
     culminations_title: "Culminations: %{name}"
     culminations: "%{entries}"
     bnb_detail_title: "#%{id} %{name}"
-    bnb_detail: "%xhTag:%xn %{tag}    %xhKind:%xn %{kind}%r%{description}%r%ld%r%xhYour explanation:%xn %{explanation}"
+    bnb_detail: "%xhTag:%xn %{tag}    %xhKind:%xn %{kind}%r%{description}%r%ld%r%xhExplanation:%xn %{explanation}"
     bnb_matches_title: "Scene Boons & Banes"
     bnb_matches: "%{entries}"
     bnb_catalogue_title: "Boon & Bane Catalogue"
@@ -87,11 +93,13 @@ en:
     chargen_approved: "SOUL chargen choices can only be changed before approval."
     chargen_updated: "SOUL chargen selection updated."
     chargen_title: "SOUL Character Generation"
+    chargen_catalogue_title: "Chargen Boons & Banes"
+    chargen_catalogue_line: "#%{id} [%{tag}] %{name} (%{kind})%r  %{description}"
     chargen_status: "%xhResonance:%xn %{resonance}    %xhSkill Points:%xn %{spent} spent / %{remaining} remaining%r%ld%r%{skills}%r%ld%r%xhSelected Boons & Banes:%xn%r%{bnb}"
     commands:
       soul:
-        help: "Usage: +soul [character]"
-        desc: "View an authorized SOUL Sheet."
+        help: "Usage: +soul [character], +soul/history, or +soul/cg (before approval)"
+        desc: "View a SOUL Sheet or manage SOUL chargen."
       bnb:
         help: "Usage: +bnb, +bnb/catalogue, or help soul_bnb"
         desc: "View and manage Boons and Banes."
@@ -104,6 +112,3 @@ en:
       roll:
         help: "Usage: +roll <skill>, +roll suggested, or help soul_rolls"
         desc: "Make and manage SOUL rolls."
-      chargen:
-        help: "Usage: +chargen, +chargen/resonance, +chargen/skill, +chargen/bnb, or +chargen/drop"
-        desc: "Choose your starting SOUL traits before approval."
