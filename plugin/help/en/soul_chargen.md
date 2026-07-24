@@ -18,6 +18,9 @@ select your starting Boons and Banes.
 `+soul/cg/aspect <key>=<rating>` - Set an Aspect (Body/Mind/Spirit) to an
 absolute rating.
 
+`+soul/cg/catalogue` - List every active Boon and Bane available during
+character generation, including the ID and tag used by `+soul/cg/bnb`.
+
 `+soul/cg/bnb <id or tag>[/<level>]=<explanation>` - Select a starting
 Boon or Bane. The level defaults to `minor`.
 
@@ -26,8 +29,8 @@ Boon or Bane. The level defaults to `minor`.
 These commands stop working after approval. Skill ratings cost one point per
 rating level and cannot exceed the starting cap shown by `+soul/cg`. Aspect
 ratings cost one point per rating level and cannot exceed the configured
-Aspect max rating (default 5) shown by `+soul/cg`. Unlike Skills, Aspects
-have no post-chargen advancement path, so choose carefully.
+Aspect max rating (default 5) shown by `+soul/cg`. After approval, both
+Skills and Aspects can be advanced by spending XP.
 
 A bare `+chargen` won't reach these commands — core AresMUSH's own chargen
 system claims that word (it's shorthand for the `+cg` review command). SOUL's
