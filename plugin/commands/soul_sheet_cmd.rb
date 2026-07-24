@@ -2,6 +2,7 @@ module AresMUSH
   module Soul
     class SoulSheetCmd
       include CommandHandler
+      include TemplateFormatters
 
       attr_accessor :name
 
@@ -32,23 +33,26 @@ module AresMUSH
               t('soul.skill_summary', name: skill[:name],
                 rating: SoulCharacterApi.get_skill_rating(character, skill[:key]))
             end
-            t('soul.aspect_summary', name: aspect[:name],
-              rating: SoulCharacterApi.get_aspect_rating(character, aspect[:key]),
-              skills: skills.join(', '))
+            title = "#{aspect[:name]} — #{SoulCharacterApi.get_aspect_rating(character, aspect[:key])}"
+            section = client.screen_reader ? "%xh#{title}%xn" : line_with_text(title)
+            "#{section}%r#{skills.join('%r')}"
           end
           bnb = SoulBnbApi.get_character_entries(character).map do |entry|
             next unless entry.catalogue_entry
             t('soul.bnb_summary', name: entry.catalogue_entry.name, level: entry.level_state)
           end.compact
           resonance = SoulResonanceApi.get_resonance(character)
-          client.emit t('soul.sheet',
+          body = t('soul.sheet',
             name: character.name,
             framework: aspects.join("%r"),
             bnb: bnb.empty? ? t('soul.none') : bnb.join(', '),
-            resonance: resonance.nil? ? t('soul.unset') : resonance,
+            resonance: resonance.nil? ? t('soul.unset') : "R#{resonance}",
             available: SoulXpApi.get_available_xp(character),
             earned: SoulXpApi.get_lifetime_earned_xp(character),
             spent: SoulXpApi.get_lifetime_spent_xp(character))
+          client.emit BorderedDisplayTemplate.new(
+            body, t('soul.sheet_title', name: character.name)
+          ).render
         end
       end
 

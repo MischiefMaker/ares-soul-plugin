@@ -40,13 +40,15 @@ module AresMUSH
       spent = skills.sum { |skill| skill[:rating].to_i }
       {
         resonance_enabled: SoulResonanceApi.enabled?, resonance: resonance,
+        resonance_label: resonance.nil? ? t('soul.unset') : "R#{resonance}",
         resonance_min: SoulResonanceApi.min, resonance_max: SoulResonanceApi.max,
         resonance_options: (SoulResonanceApi.min..SoulResonanceApi.max).to_a,
         skill_points: allowance[:skill_points], starting_cap: allowance[:starting_cap],
         points_spent: spent, points_remaining: allowance[:skill_points] - spent,
         aspects: SoulFrameworkApi.get_aspects, skills: skills,
         catalogue: SoulBnbApi.get_catalogue(chargen_available: true).map { |entry| catalogue_hash(entry) },
-        selected_bnb: selected.map { |entry| selected_hash(entry) }
+        selected_bnb: selected.map { |entry| selected_hash(entry) },
+        has_selected_bnb: selected.any?
       }
     end
 

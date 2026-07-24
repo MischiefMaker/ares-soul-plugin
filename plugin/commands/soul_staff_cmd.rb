@@ -45,7 +45,7 @@ module AresMUSH
             t('soul.framework_aspect', name: aspect[:name], key: aspect[:key],
               skills: skills.join(', '))
           end
-          client.emit t('soul.framework', entries: aspects.join("%r"))
+          client.emit BorderedListTemplate.new(aspects, t('soul.framework_title')).render
         when "framework/skill", "framework/aspect"
           ClassTargetFinder.with_a_character(self.name, client, enactor) do |character|
             kind = cmd.switch.split('/').last
@@ -77,8 +77,10 @@ module AresMUSH
                 actor: entry.actor ? entry.actor.name : t('soul.system_actor'),
                 reason: entry.reason.blank? ? t('soul.none') : entry.reason)
             end
-            client.emit t('soul.audit', name: character.name,
-              entries: lines.empty? ? t('soul.none') : lines.join("%r"))
+            client.emit BorderedListTemplate.new(
+              lines.empty? ? [t('soul.none')] : lines,
+              t('soul.audit_title', name: character.name)
+            ).render
           end
         end
       end

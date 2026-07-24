@@ -2,6 +2,7 @@ module AresMUSH
   module Soul
     class SoulChargenCmd
       include CommandHandler
+      include TemplateFormatters
 
       attr_accessor :value, :skill, :rating, :reference, :level,
                     :explanation, :entry_id
@@ -77,14 +78,21 @@ module AresMUSH
 
       def show_status
         status = SoulChargenWebHandler.status(enactor)
-        skills = status[:skills].map { |skill| "#{skill[:name]} [#{skill[:key]}]: #{skill[:rating]}" }
+        skills = status[:aspects].map do |aspect|
+          title = aspect[:name]
+          section = client.screen_reader ? "%xh#{title}%xn" : line_with_text(title)
+          aspect_skills = status[:skills].select { |skill| skill[:aspect_key] == aspect[:key] }
+            .map { |skill| "#{skill[:name]} [#{skill[:key]}]: #{skill[:rating]}" }
+          "#{section}%r#{aspect_skills.join('%r')}"
+        end
         entries = status[:selected_bnb].map do |entry|
           "##{entry[:id]} [#{entry[:tag]}] #{entry[:name]} (#{entry[:level_state]})"
         end
-        client.emit t('soul.chargen_status',
-          resonance: status[:resonance].nil? ? t('soul.unset') : status[:resonance],
+        body = t('soul.chargen_status',
+          resonance: status[:resonance].nil? ? t('soul.unset') : "R#{status[:resonance]}",
           spent: status[:points_spent], remaining: status[:points_remaining],
           skills: skills.join("%r"), bnb: entries.empty? ? t('soul.none') : entries.join("%r"))
+        client.emit BorderedDisplayTemplate.new(body, t('soul.chargen_title')).render
       end
 
       def emit_result(result)

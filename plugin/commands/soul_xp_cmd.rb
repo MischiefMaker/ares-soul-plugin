@@ -62,11 +62,12 @@ module AresMUSH
       end
 
       def show_xp
-        client.emit t('soul.xp_summary',
+        body = t('soul.xp_summary',
           available: SoulXpApi.get_available_xp(enactor),
           earned: SoulXpApi.get_lifetime_earned_xp(enactor),
           spent: SoulXpApi.get_lifetime_spent_xp(enactor),
           catchup: SoulXpApi.get_catchup_xp_earned(enactor))
+        client.emit BorderedDisplayTemplate.new(body, t('soul.xp_title')).render
       end
 
       def show_history
@@ -74,7 +75,9 @@ module AresMUSH
           t('soul.xp_history_line', at: entry.created_at, direction: entry.direction,
             amount: entry.base_amount, source: entry.source)
         end
-        client.emit t('soul.xp_history', entries: lines.empty? ? t('soul.none') : lines.join("%r"))
+        client.emit BorderedListTemplate.new(
+          lines.empty? ? [t('soul.none')] : lines, t('soul.xp_history_title')
+        ).render
       end
 
       def spend_xp
@@ -86,7 +89,8 @@ module AresMUSH
         target = SoulCharacterApi.get_skill_rating(enactor, self.skill) + self.amount.to_i
         cost = SoulXpApi.calculate_cost(enactor, self.skill, target)
         unless self.confirmed
-          client.emit t('soul.xp_spend_preview', skill: skill_data[:name], target: target, cost: cost)
+          body = t('soul.xp_spend_preview', skill: skill_data[:name], target: target, cost: cost)
+          client.emit BorderedDisplayTemplate.new(body, t('soul.xp_spend_title')).render
           return
         end
         emit_result SoulXpApi.spend(enactor, self.skill, self.amount, enactor), 'soul.xp_spent'
@@ -112,7 +116,8 @@ module AresMUSH
           return
         end
         unless self.confirmed
-          client.emit t('soul.scene_xp_preview', names: participants.map(&:name).join(', '))
+          body = t('soul.scene_xp_preview', names: participants.map(&:name).join(', '))
+          client.emit BorderedDisplayTemplate.new(body, t('soul.scene_xp_title')).render
           return
         end
         results = participants.map do |character|

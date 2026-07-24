@@ -81,8 +81,10 @@ module AresMUSH
               t('soul.culmination_line', id: c.id, status: c.status,
                 title: c.title, description: c.description)
             end
-            client.emit t('soul.culminations', name: character.name,
-              entries: lines.empty? ? t('soul.none') : lines.join("%r"))
+            client.emit BorderedListTemplate.new(
+              lines.empty? ? [t('soul.none')] : lines,
+              t('soul.culminations_title', name: character.name)
+            ).render
           end
         end
       end
