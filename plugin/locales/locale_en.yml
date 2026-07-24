@@ -43,6 +43,8 @@ en:
     culminations: "%{entries}"
     bnb_detail_title: "#%{id} %{name}"
     bnb_detail: "%xhTag:%xn %{tag}    %xhKind:%xn %{kind}%r%{description}%r%ld%r%xhYour explanation:%xn %{explanation}"
+    bnb_own_title: "Your Boons & Banes"
+    bnb_own_line: "#%{id} [%{tag}] %{name} (%{kind}, %{level}): %{explanation}"
     bnb_matches_title: "Scene Boons & Banes"
     bnb_matches: "%{entries}"
     bnb_catalogue_title: "Boon & Bane Catalogue"

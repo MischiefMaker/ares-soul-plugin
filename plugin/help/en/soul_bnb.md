@@ -6,6 +6,9 @@ aliases:
 
 # Boons and Banes
 
+`+bnb` — List all of your own Boons and Banes: ID, name, tag, level, and
+your private explanation for each.
+
 `+bnb <id or tag>` — View a catalogue entry and your private explanation.
 
 `+bnb/here <tag>` — Show public-safe matches among participants in your scene.

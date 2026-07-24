@@ -39,6 +39,14 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 
 ## Recent Changes
 
+### FR-001: `+bnb` Alone Now Lists a Player's Own Boons and Banes (2026-07-24)
+
+User's request during internal testing: *"I'd like 'bnb' on its own to give an expanded list of BNBs with the ID, name, tag, and player's description."* Previously a bare `+bnb` required an argument and just returned an "invalid syntax" error (`required_args` included `self.reference` for the `nil` switch case) — there was no way to see all of your own entries at once, only single-entry lookup by id/tag, the scene-scoped `+bnb/here`, or the public `+bnb/catalogue`.
+
+Added `SoulBnbCmd#show_own_entries`: `required_args` no longer requires a reference for the bare-command case, and `show_entry` now branches to `show_own_entries` when `self.reference.blank?`. Lists every entry from `SoulBnbApi.get_character_entries(enactor)` — catalogue id, tag, name, kind, level, and the character's own private `character_explanation` — operating strictly on `enactor`, so there's no privacy exposure beyond what a player already sees of their own record. New locale strings `bnb_own_title`/`bnb_own_line`, help file and `docs/reference/Commands.md` updated, specs cover both the required-args relaxation and the rendered line content (including the "None" fallback for an unset explanation).
+
+**Flagged, not actioned:** the web Sheet's B&B list doesn't include `character_explanation` either, so there's no web equivalent of this expanded view yet. Didn't add it reflexively because the Sheet is viewable by staff and scene-GMs, not just the owner (`SoulSheetWebHandler#can_view?`), and `character_explanation` is treated as a privacy-sensitive "broader reveal" field elsewhere in this project — naively adding it to `serialize_bnb` would leak private explanations to scene-GMs viewing someone else's sheet. Real decision needed (gate it to `character == enactor` or `can_manage_soul?`), not a copy-paste. See `docs/development/Bug_List.md` FR-001.
+
 ### BUG-005: Chargen's Permission Check Contradicted Itself After BUG-002 — Traced Before Renaming Again (2026-07-24)
 
 User's report: *"soul/cg tells unapproved players they don't have permission to do that. Let's change the command again instead. We'll use soulcg/ for the cg commands."* Read as another namespace collision at first (matching BUG-004's pattern), but traced the actual code before acting on the rename request, since a third rename in one session is real cost if it's not the actual fix.

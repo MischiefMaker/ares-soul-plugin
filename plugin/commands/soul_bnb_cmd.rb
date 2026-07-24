@@ -58,9 +58,12 @@ module AresMUSH
           [ self.name, self.entry_id, self.reason ]
         when "restore"
           [ self.name, self.entry_id ]
-        when "here", "search", nil
+        when "here", "search"
           [ self.reference ]
         else
+          # A bare "+bnb" (nil switch, no reference) is valid - it lists
+          # your own Boons and Banes (show_own_entries) rather than
+          # looking up a specific catalogue entry.
           []
         end
       end
@@ -81,6 +84,8 @@ module AresMUSH
       end
 
       def show_entry
+        return show_own_entries if self.reference.blank?
+
         catalogue = SoulBnbApi.get_catalogue_entry(self.reference)
         unless catalogue
           client.emit_failure t('soul.bnb_not_found')
@@ -93,6 +98,22 @@ module AresMUSH
           explanation: explanation.blank? ? t('soul.none') : explanation)
         client.emit BorderedDisplayTemplate.new(
           body, t('soul.bnb_detail_title', id: catalogue.id, name: catalogue.name)
+        ).render
+      end
+
+      # A bare "+bnb" - the player's own Boons and Banes in full, including
+      # their private explanation for each (owner-only; never shown in the
+      # public catalogue/search/here views).
+      def show_own_entries
+        lines = SoulBnbApi.get_character_entries(enactor).map do |entry|
+          next unless entry.catalogue_entry
+          t('soul.bnb_own_line', id: entry.catalogue_entry.id, tag: entry.catalogue_entry.tag,
+            name: entry.catalogue_entry.name, kind: entry.catalogue_entry.kind,
+            level: entry.level_state,
+            explanation: entry.character_explanation.blank? ? t('soul.none') : entry.character_explanation)
+        end.compact
+        client.emit BorderedListTemplate.new(
+          lines.empty? ? [t('soul.none')] : lines, t('soul.bnb_own_title')
         ).render
       end
 

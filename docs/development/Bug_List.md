@@ -6,6 +6,20 @@ Running log of issues found during internal testing (non-live game install, star
 
 ---
 
+## Feature Requests (from testing)
+
+### FR-001: `+bnb` alone should list the player's own Boons and Banes
+
+**Status:** ✅ Done (`plugin/commands/soul_bnb_cmd.rb`)
+
+**Requested:** 2026-07-24, internal testing: *"I'd like 'bnb' on its own to give an expanded list of BNBs with the ID, name, tag, and player's description."*
+
+A bare `+bnb` previously required an argument and just returned an "invalid syntax" error — there was no command to list all of a player's own entries at once (only single-entry lookup by ID/tag, the scene-scoped `/here`, and the public `/catalogue`). Added `SoulBnbCmd#show_own_entries`, reached when `+bnb` is given with no reference: lists every entry `SoulBnbApi.get_character_entries(enactor)` returns, each showing catalogue ID, tag, name, kind, level, and the character's own private `character_explanation` (never shown to anyone else). Operates strictly on `enactor` — no new privacy exposure, matching the same self-only scope `+xp`/`+soul` already use for private data.
+
+**Not yet done (flagged, not actioned):** the web Sheet's B&B list (`soul_sheet_web_handler.rb#serialize_bnb`) still omits `character_explanation` entirely, so there's no web equivalent of this expanded view yet. Didn't add it in this pass because it's not a simple parity mirror — the Sheet can be viewed by staff and scene-GMs as well as the owner (`can_view?`), and `character_explanation` is a privacy-sensitive "broader reveal" field elsewhere in this project (`docs/reference/Permissions.md`'s GM-reveal-categories). Naively adding it to `serialize_bnb` would leak private explanations to scene-GMs viewing another character's sheet. Needs a real decision (e.g. only include it when `character == enactor` or `Soul.can_manage_soul?(enactor)`) rather than a reflexive copy-paste.
+
+---
+
 ## BUG-005: `+soul/cg` told unapproved players "permission denied" — self-contradictory permission check
 
 **Status:** ✅ Fixed (`plugin/commands/soul_chargen_cmd.rb`, `plugin/web/soul_chargen_web_handler.rb`)

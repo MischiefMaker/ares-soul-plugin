@@ -38,6 +38,7 @@ game's chargen configuration.
 
 | Command | Status | Purpose | Permission |
 |---|---|---|---|
+| `+bnb` | Proposed (implemented 2026-07-24) | List all of your own entries: catalogue ID, name, tag, level, and your private explanation for each | play |
 | `+bnb <id>` | Canonical (REQ-022) | Show catalogue description; if owned, also show the character-specific explanation | play |
 | `+bnb/here <tag>` | Canonical (REQ-022, concise alias configurable) | Minimal scene-scoped lookup limited to involved players and permitted data | play |
 | `+bnb/search <tag>` | Canonical (REQ-022, concise alias configurable) | Staff/admin global search; may support detail/full modes | manage_soul |
