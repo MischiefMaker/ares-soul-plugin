@@ -6,12 +6,13 @@ module AresMUSH
       {
         "enabled" => true,
         "manage_permission" => "manage_jobs",
-        "gm_review_permission" => "manage_scenes",
+        "play_permission" => "play",
+        "gm_review_permission" => "gm",
         "framework" => {
           "skill_min_rating" => 0,
           "skill_max_rating" => 10,
           "aspect_min_rating" => 0,
-          "aspect_max_rating" => 5,
+          "aspect_max_rating" => 10,
           "aspects" => { "body" => { "name" => "Body" } }
         },
         "aspect" => { "weight" => 0.20, "contribution_rounding" => "nearest" },
@@ -19,15 +20,14 @@ module AresMUSH
           "enabled" => true, "min" => -3, "max" => 3,
           "r0_skill_points" => 15, "r0_starting_cap" => 7,
           "positive_skill_points_per_level" => 2, "negative_skill_points_per_level" => 2,
-          "positive_starting_cap_per_level" => 1, "negative_starting_cap_per_level" => 1,
-          "r0_aspect_points" => 5, "positive_aspect_points_per_level" => 1,
-          "negative_aspect_points_per_level" => 1
+          "positive_starting_cap_per_level" => 1, "negative_starting_cap_per_level" => 1
         },
         "xp" => {
           "weekly_award" => 1, "scene_sharer_award" => 2,
           "scene_participant_award" => 1, "forum_award" => 1,
           "cost" => {
             "skill_curve_numerator" => 1, "skill_curve_denominator" => 2,
+            "skill_cost_multiplier" => 1, "aspect_cost_multiplier" => 4,
             "development_base" => 1, "development_scale" => 250,
             "development_exponent" => 1.25,
             "negative_resonance_rate" => 0.12, "positive_resonance_rate" => 0.22
@@ -85,18 +85,6 @@ module AresMUSH
         valid_config["framework"]["skill_max_rating"] = 0
         errors = Soul::SoulConfigValidator.new.validate
         expect(errors).to include(match(/skill_max_rating/))
-      end
-
-      it "flags an aspect_max_rating that isn't greater than aspect_min_rating" do
-        valid_config["framework"]["aspect_max_rating"] = 0
-        errors = Soul::SoulConfigValidator.new.validate
-        expect(errors).to include(match(/aspect_max_rating/))
-      end
-
-      it "flags a missing r0_aspect_points" do
-        valid_config["resonance"].delete("r0_aspect_points")
-        errors = Soul::SoulConfigValidator.new.validate
-        expect(errors).to include(match(/r0_aspect_points/))
       end
 
       it "flags a chargen_ratio below 1" do
