@@ -88,9 +88,12 @@ module AresMUSH
         end
         owned = SoulBnbApi.get_character_entries(enactor).find { |entry| entry.catalogue_entry == catalogue }
         explanation = owned ? owned.character_explanation : nil
-        client.emit t('soul.bnb_detail', id: catalogue.id, tag: catalogue.tag,
+        body = t('soul.bnb_detail', id: catalogue.id, tag: catalogue.tag,
           name: catalogue.name, kind: catalogue.kind, description: catalogue.description,
           explanation: explanation.blank? ? t('soul.none') : explanation)
+        client.emit BorderedDisplayTemplate.new(
+          body, t('soul.bnb_detail_title', id: catalogue.id, name: catalogue.name)
+        ).render
       end
 
       def show_here
@@ -107,7 +110,9 @@ module AresMUSH
           t('soul.bnb_scene_line', character: character.name,
             name: public_entry[:name], level: public_entry[:level_state])
         end.compact
-        client.emit t('soul.bnb_matches', entries: matches.empty? ? t('soul.none') : matches.join("%r"))
+        client.emit BorderedListTemplate.new(
+          matches.empty? ? [t('soul.none')] : matches, t('soul.bnb_matches_title')
+        ).render
       end
 
       def show_search
@@ -123,7 +128,9 @@ module AresMUSH
           t('soul.bnb_catalogue_line', id: entry.id, tag: entry.tag,
             name: entry.name, kind: entry.kind)
         end
-        client.emit t('soul.bnb_catalogue', entries: lines.empty? ? t('soul.none') : lines.join("%r"))
+        client.emit BorderedListTemplate.new(
+          lines.empty? ? [t('soul.none')] : lines, t('soul.bnb_catalogue_title')
+        ).render
       end
 
       def create_entry
