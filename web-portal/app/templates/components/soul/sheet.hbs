@@ -1,21 +1,21 @@
-{{#if isLoading}}
+{{#if this.isLoading}}
   <div class="text-muted">Loading SOUL sheet…</div>
-{{else if sheet.error}}
-  <div class="alert alert-danger">{{sheet.error}}</div>
+{{else if this.sheet.error}}
+  <div class="alert alert-danger">{{this.sheet.error}}</div>
 {{else}}
   <section class="soul-sheet">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-      <h3 class="mb-0">{{sheet.character}}</h3>
+      <h3 class="mb-0">{{this.sheet.character}}</h3>
       <div class="d-flex gap-2 flex-wrap">
-        <span class="badge bg-primary">Resonance {{sheet.resonance_label}}</span>
-        <span class="badge bg-secondary">XP {{sheet.xp.available}}</span>
-        <span class="badge bg-light text-dark">{{sheet.xp.earned}} earned</span>
-        <span class="badge bg-light text-dark">{{sheet.xp.spent}} spent</span>
+        <span class="badge bg-primary">Resonance {{this.sheet.resonance_label}}</span>
+        <span class="badge bg-secondary">XP {{this.sheet.xp.available}}</span>
+        <span class="badge bg-light text-dark">{{this.sheet.xp.earned}} earned</span>
+        <span class="badge bg-light text-dark">{{this.sheet.xp.spent}} spent</span>
       </div>
     </div>
 
     <div class="row">
-      {{#each sheet.aspects as |aspect|}}
+      {{#each this.sheet.aspects as |aspect|}}
         <div class="col-lg-4 col-md-6 mb-3">
           <div class="card h-100 soul-sheet-aspect">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -49,14 +49,14 @@
 
     <div class="card mb-3 soul-sheet-bnb">
       <div class="card-header"><strong>Boons &amp; Banes</strong></div>
-      {{#if sheet.bnb}}
+      {{#if this.sheet.bnb}}
         <div class="table-responsive">
           <table class="table table-sm mb-0">
             <thead>
               <tr><th scope="col">Entry</th><th scope="col">Kind</th><th scope="col">Level</th><th scope="col">State</th></tr>
             </thead>
             <tbody>
-              {{#each sheet.bnb as |entry|}}
+              {{#each this.sheet.bnb as |entry|}}
                 <tr class="soul-sheet-bnb-row" role="button" tabindex="0"
                   onclick={{action "showBnbDetail" entry}}>
                   <td>#{{entry.id}} {{entry.name}} <span class="text-muted">[{{entry.tag}}]</span></td>
@@ -75,24 +75,24 @@
   </section>
 
   <BsModalSimple
-    @title={{if selectedBnb.name selectedBnb.name "Boon/Bane Detail"}}
+    @title={{if this.selectedBnb.name this.selectedBnb.name "Boon/Bane Detail"}}
     @closeTitle="Close"
     @submitTitle={{null}}
-    @open={{bnbModalOpen}}
+    @open={{this.bnbModalOpen}}
     @onHide={{action "closeBnbDetail"}}
   >
-    {{#if selectedBnb}}
+    {{#if this.selectedBnb}}
       <p>
-        <strong>Tag:</strong> {{selectedBnb.tag}}
-        <span class="ms-3"><strong>Kind:</strong> {{selectedBnb.kind}}</span>
-        <span class="ms-3"><strong>Level:</strong> {{selectedBnb.level_state}}</span>
-        <span class="ms-3"><strong>State:</strong> {{if selectedBnb.resolved "Resolved" "Active"}}</span>
+        <strong>Tag:</strong> {{this.selectedBnb.tag}}
+        <span class="ms-3"><strong>Kind:</strong> {{this.selectedBnb.kind}}</span>
+        <span class="ms-3"><strong>Level:</strong> {{this.selectedBnb.level_state}}</span>
+        <span class="ms-3"><strong>State:</strong> {{if this.selectedBnb.resolved "Resolved" "Active"}}</span>
       </p>
-      {{#if selectedBnb.description}}<p>{{selectedBnb.description}}</p>{{/if}}
+      {{#if this.selectedBnb.description}}<p>{{this.selectedBnb.description}}</p>{{/if}}
       <hr>
-      {{#if selectedBnb.explanation_visible}}
+      {{#if this.selectedBnb.explanation_visible}}
         <p><strong>Explanation:</strong></p>
-        <p>{{if selectedBnb.explanation selectedBnb.explanation "None recorded."}}</p>
+        <p>{{if this.selectedBnb.explanation this.selectedBnb.explanation "None recorded."}}</p>
       {{else}}
         <p class="text-muted">This entry's private explanation is only visible to its owner and staff.</p>
       {{/if}}
