@@ -17,19 +17,11 @@ The default Sheet fits roughly one MUSH screen (CI-02); drill-down commands belo
 
 | Command | Purpose | Permission |
 |---|---|---|
-| `+soul/cg` | Review Resonance, Skill/Aspect allocation, and starting B&B selections | unapproved player |
-| `+soul/cg/resonance <value>` | Select or change Resonance | unapproved player |
-| `+soul/cg/skill <key>=<rating>` | Set an absolute starting Skill rating | unapproved player |
-| `+soul/cg/aspect <key>=<rating>` | Set an absolute starting Aspect rating | unapproved player |
-| `+soul/cg/bnb <id or tag>[/<level>]=<explanation>` | Add a chargen-available B&B | unapproved player |
-| `+soul/cg/drop <entry id>` | Remove a chargen-selected B&B | unapproved player |
-
-**Not `+chargen`:** core AresMUSH's own `game/config/chargen.yml` defines a
-built-in shortcut, `chargen: cg`, that rewrites the literal word "chargen" to
-"cg" before command dispatch ever runs — so a SOUL-owned `+chargen` root is
-permanently unreachable on any stock game, shadowed by core's own chargen
-review flow. Namespaced under `+soul/cg` instead (found during internal
-testing, 2026-07-24 — see `docs/development/Bug_List.md` BUG-004).
+| `+chargen` | Review Resonance, Skill allocation, and starting B&B selections | unapproved player |
+| `+chargen/resonance <value>` | Select or change Resonance | unapproved player |
+| `+chargen/skill <key>=<rating>` | Set an absolute starting Skill rating | unapproved player |
+| `+chargen/bnb <id or tag>[/<level>]=<explanation>` | Add a chargen-available B&B | unapproved player |
+| `+chargen/drop <entry id>` | Remove a chargen-selected B&B | unapproved player |
 
 The optional web chargen tab provides the same actions. Install the two
 `chargen-custom` snippets and add the supplied `chargen_stage` entry to the
@@ -39,7 +31,6 @@ game's chargen configuration.
 
 | Command | Status | Purpose | Permission |
 |---|---|---|---|
-| `+bnb` | Proposed (implemented 2026-07-24) | List all of your own entries: catalogue ID, name, tag, level, and your private explanation for each | play |
 | `+bnb <id>` | Canonical (REQ-022) | Show catalogue description; if owned, also show the character-specific explanation | play |
 | `+bnb/here <tag>` | Canonical (REQ-022, concise alias configurable) | Minimal scene-scoped lookup limited to involved players and permitted data | play |
 | `+bnb/search <tag>` | Canonical (REQ-022, concise alias configurable) | Staff/admin global search; may support detail/full modes | manage_soul |
@@ -50,8 +41,6 @@ game's chargen configuration.
 | `+bnb/resolve <character>/<entry id>=<reason>` | Proposed (implemented 2026-07-24) | Resolve/negate an entry, preserving its prior level for restoration (REQ-020) — the recommended non-destructive alternative to `+bnb/delete` | manage_soul |
 | `+bnb/restore <character>/<entry id>` | Proposed (implemented 2026-07-24) | Restore a resolved/negated entry to its preserved level (REQ-020) | manage_soul |
 | `+bnb/delete <entry id>/<reason>/confirm/confirm` | Proposed (implemented; syntax fixed 2026-07-24) | Two-confirmation destructive delete (REQ-021) — counts literal `confirm` tokens; `+bnb/resolve` is preferred for ordinary play | manage_soul |
-| `+bnb/detail <character>` | Proposed (implemented 2026-07-24) | List a character's own entries with their private explanations — staff had no MUSH way to see this before | manage_soul |
-| `+bnb/detail <character>=<id or tag>` | Proposed (implemented 2026-07-24) | Show one of a character's entries in full, including their private explanation | manage_soul |
 
 Name collisions return matching names, IDs, and tags for disambiguation (GL-10).
 
@@ -106,6 +95,7 @@ how and whether to narrate the result. Installation requires
 |---|---|---|---|
 | `+xp` | Proposed | View your `xp_available`, `xp_earned`, `xp_spent`, `catchup_xp_earned` | play |
 | `+xp/spend <skill>=<amount>` | Proposed | Spend XP to advance a Skill (cost shown before commitment, REQ-015) | play |
+| `+xp/spend/aspect <aspect>=<amount>` | Addendum §3/§7.1 | Spend XP to advance an Aspect at the configured multiplier (4× by default) | play |
 | `+xp/history` | Proposed | View your XP ledger | play |
 | `+xp/award <character>=<amount>/<reason>` | Canonical (REQ-015) | Grant the raw amount to one character; no catch-up | manage_soul |
 | `+xp/award/catchup <character>=<amount>/<reason>` | Canonical (REQ-015) | Grant to one character, applying the configured catch-up calculation | manage_soul |
@@ -118,7 +108,7 @@ how and whether to narrate the result. Installation requires
 
 Scene-targeted awards SHOULD preview recipients and MAY require confirmation before applying.
 
-**Confirmation syntax:** `+xp/spend` and `+xp/scene[/catchup]` both show a preview (cost, or recipient list) the first time. Repeat the identical command with `/confirm` appended to the end of the arguments (e.g. `+xp/spend fighting=2/confirm`, `+xp/scene 5/reason/confirm`) to commit.
+**Confirmation syntax:** `+xp/spend`, `+xp/spend/aspect`, and `+xp/scene[/catchup]` show a preview (cost, or recipient list) the first time. Repeat the identical command with `/confirm` appended to the end of the arguments (e.g. `+xp/spend fighting=2/confirm`, `+xp/spend/aspect body=1/confirm`, `+xp/scene 5/reason/confirm`) to commit.
 
 ## Culminations
 
@@ -161,7 +151,7 @@ Staff tools SHALL NOT require direct database manipulation (REQ-036). `+soul/aud
 - `help soul_commands` — This reference
 - `help soul_rolls` — Roll mechanics and GM-assisted workflow
 - `help soul_bnb` — Boons and Banes
-- `help soul_chargen` — Character generation (Resonance, Skills, Aspects, starting B&Bs)
+- `help soul_chargen` — Character generation (Resonance, Skills, starting B&Bs)
 - `help manage soul` — Staff/admin help topic (CI-08 exact naming)
 
 ## Notes
