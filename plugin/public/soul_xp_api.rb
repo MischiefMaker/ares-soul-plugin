@@ -103,8 +103,9 @@ module AresMUSH
     #   resonance_modifier = resonance > 0
     #     ? 1 + positive_resonance_rate*resonance + positive_resonance_surcharge*resonance
     #     : 1 + negative_resonance_rate*resonance
-    #   final_cost = ceil(base_cost * development_modifier * resonance_modifier)
-    def self.calculate_cost(character, skill_key, new_rating)
+    #   equivalent_skill_cost = ceil(base_cost * development_modifier * resonance_modifier)
+    #   final_cost = ceil(equivalent_skill_cost * advancement_type_multiplier)
+    def self.calculate_cost(character, trait_key, new_rating, trait_type: "skill")
       numerator = Global.read_config("soul", "xp", "cost", "skill_curve_numerator") || 1
       denominator = Global.read_config("soul", "xp", "cost", "skill_curve_denominator") || 2
       base_cost = (new_rating.to_i**2 * numerator).fdiv(denominator).ceil
@@ -125,26 +126,52 @@ module AresMUSH
         resonance_modifier = 1 + (negative_rate * resonance)
       end
 
-      (base_cost * development_modifier * resonance_modifier).ceil
+      equivalent_skill_cost = (base_cost * development_modifier * resonance_modifier).ceil
+      multiplier_key = trait_type.to_s == "aspect" ? "aspect_cost_multiplier" : "skill_cost_multiplier"
+      default_multiplier = trait_type.to_s == "aspect" ? 4 : 1
+      multiplier = Global.read_config("soul", "xp", "cost", multiplier_key) || default_multiplier
+      (equivalent_skill_cost * multiplier).ceil
     end
 
     # Skill advancement flow (FINAL REQ-015): validate -> calculate cost ->
     # atomic deduct + advance -> Lifetime Spent XP -> ledger.
     def self.spend(character, skill_key, amount, enactor)
+      spend_trait(character, "skill", skill_key, amount, enactor)
+    end
+
+    # Aspect advancement uses the same authoritative spend flow as Skills,
+    # with Addendum §3's configurable Aspect cost multiplier.
+    def self.spend_aspect(character, aspect_key, amount, enactor)
+      spend_trait(character, "aspect", aspect_key, amount, enactor)
+    end
+
+    def self.spend_trait(character, trait_type, trait_key, amount, enactor)
       return { error: "Character not found" } unless character
-      return { error: "Unknown skill: #{skill_key}" } unless SoulFrameworkApi.valid_skill_key?(skill_key)
       return { error: "Amount must be positive" } if amount.to_i <= 0
 
-      current_rating = SoulCharacterApi.get_skill_rating(character, skill_key)
+      is_aspect = trait_type.to_s == "aspect"
+      valid = is_aspect ? SoulFrameworkApi.valid_aspect_key?(trait_key) : SoulFrameworkApi.valid_skill_key?(trait_key)
+      label = is_aspect ? "aspect" : "skill"
+      return { error: "Unknown #{label}: #{trait_key}" } unless valid
+
+      current_rating = if is_aspect
+                         SoulCharacterApi.get_aspect_rating(character, trait_key)
+                       else
+                         SoulCharacterApi.get_skill_rating(character, trait_key)
+                       end
       new_rating = current_rating + amount.to_i
-      max_rating = SoulFrameworkApi.skill_max_rating
+      max_rating = is_aspect ? SoulFrameworkApi.aspect_max_rating : SoulFrameworkApi.skill_max_rating
       return { error: "Rating would exceed the maximum of #{max_rating}" } if new_rating > max_rating
 
-      cost = calculate_cost(character, skill_key, new_rating)
+      cost = calculate_cost(character, trait_key, new_rating, trait_type: label)
       available = get_available_xp(character)
       return { error: "Insufficient XP: need #{cost}, have #{available}" } if available < cost
 
-      result = SoulCharacterApi.set_skill_rating(character, skill_key, new_rating, enactor)
+      result = if is_aspect
+                 SoulCharacterApi.set_aspect_rating(character, trait_key, new_rating, enactor)
+               else
+                 SoulCharacterApi.set_skill_rating(character, trait_key, new_rating, enactor)
+               end
       return result if result[:error]
 
       character.update(
@@ -155,12 +182,15 @@ module AresMUSH
       SoulXpLedgerEntry.create(
         character: character,
         direction: "spend",
-        source: skill_key.to_s,
+        source: is_aspect ? "aspect:#{trait_key}" : trait_key.to_s,
         base_amount: cost,
         created_at: Time.now
       )
 
-      { success: true, new_rating: new_rating, cost: cost, xp_remaining: available - cost }
+      {
+        success: true, trait_type: label, trait_key: trait_key.to_s,
+        new_rating: new_rating, cost: cost, xp_remaining: available - cost
+      }
     end
 
     def self.get_history(character, limit: 50)
