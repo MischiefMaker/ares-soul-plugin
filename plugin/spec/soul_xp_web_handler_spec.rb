@@ -9,8 +9,30 @@ module AresMUSH
       allow(Website).to receive(:check_login).and_return(nil)
       allow(Soul).to receive(:can_play?).and_return(true)
       allow(SoulXpApi).to receive(:calculate_cost).and_return(1)
+      allow(SoulFrameworkApi).to receive(:get_skill).and_return(key: "strength", name: "Strength")
+      allow(SoulFrameworkApi).to receive(:skill_max_rating).and_return(10)
       allow(SoulCharacterApi).to receive(:get_skill_rating).and_return(0)
       expect(subject.handle(request)[:preview]).to be true
+    end
+
+    it "previews and confirms an Aspect spend through the same web operation" do
+      character = Fabricate(:character)
+      request = double(cmd: "soulXpSpend", enactor: character,
+        args: { 'trait_type' => 'aspect', 'trait_key' => 'body',
+                'amount' => 1, 'confirmed' => 'true' })
+      allow(Website).to receive(:check_login).and_return(nil)
+      allow(Soul).to receive(:can_play?).and_return(true)
+      allow(SoulFrameworkApi).to receive(:get_aspect).with('body')
+        .and_return(key: "body", name: "Body")
+      allow(SoulFrameworkApi).to receive(:aspect_max_rating).and_return(10)
+      allow(SoulCharacterApi).to receive(:get_aspect_rating).and_return(2)
+      allow(SoulXpApi).to receive(:calculate_cost).and_return(20)
+      allow(SoulXpApi).to receive(:spend_aspect).and_return(success: true)
+
+      expect(subject.handle(request)).to eq(success: true)
+      expect(SoulXpApi).to have_received(:calculate_cost)
+        .with(character, 'body', 3, trait_type: 'aspect')
+      expect(SoulXpApi).to have_received(:spend_aspect).with(character, 'body', 1, character)
     end
 
     it "surfaces a failed scene award as an error like the MUSH command" do
