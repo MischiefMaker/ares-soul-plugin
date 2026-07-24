@@ -10,12 +10,12 @@ module AresMUSH
         allow(Global).to receive(:read_config).and_call_original
         allow(Global).to receive(:read_config)
           .with("soul", "integrations", "grimoire", "branch_skill_map")
-          .and_return("evocation" => "ceremonial_magic")
-        allow(SoulFrameworkApi).to receive(:get_skill).with("ceremonial_magic")
-          .and_return(key: "ceremonial_magic", name: "Ceremonial Magic", aspect_key: "spirit", order: 0)
+          .and_return("evocation" => "ceremonial")
+        allow(SoulFrameworkApi).to receive(:get_skill).with("ceremonial")
+          .and_return(key: "ceremonial", name: "Ceremonial Magic", aspect_key: "spirit", order: 0)
 
         result = SoulFrameworkApi.get_skill_for_grimoire_branch("evocation")
-        expect(result[:key]).to eq("ceremonial_magic")
+        expect(result[:key]).to eq("ceremonial")
       end
 
       it "returns nil for an unmapped branch" do
