@@ -21,8 +21,10 @@ module AresMUSH
           lines = history.map do |entry|
             t('soul.history_line', at: entry.created_at, narrative: entry.narrative)
           end
-          client.emit t('soul.history', name: character.name,
-            entries: lines.empty? ? t('soul.none') : lines.join("%r"))
+          client.emit BorderedListTemplate.new(
+            lines.empty? ? [t('soul.none')] : lines,
+            t('soul.history_title', name: character.name)
+          ).render
         end
       end
     end
