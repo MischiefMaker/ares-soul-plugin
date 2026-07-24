@@ -8,6 +8,8 @@ module AresMUSH
       allow(Global).to receive(:read_config).and_call_original
       allow(Global).to receive(:read_config).with("soul", "xp", "cost", "skill_curve_numerator").and_return(1)
       allow(Global).to receive(:read_config).with("soul", "xp", "cost", "skill_curve_denominator").and_return(2)
+      allow(Global).to receive(:read_config).with("soul", "xp", "cost", "skill_cost_multiplier").and_return(1)
+      allow(Global).to receive(:read_config).with("soul", "xp", "cost", "aspect_cost_multiplier").and_return(4)
       allow(Global).to receive(:read_config).with("soul", "xp", "cost", "development_base").and_return(1)
       allow(Global).to receive(:read_config).with("soul", "xp", "cost", "development_scale").and_return(250)
       allow(Global).to receive(:read_config).with("soul", "xp", "cost", "development_exponent").and_return(1.25)
@@ -17,6 +19,8 @@ module AresMUSH
       allow(Global).to receive(:read_config).with("soul", "xp", "catchup", "enabled").and_return(true)
       allow(Global).to receive(:read_config).with("soul", "xp", "catchup", "multiplier").and_return(2.0)
       allow(Global).to receive(:read_config).with("soul", "framework", "skill_max_rating").and_return(10)
+      allow(Global).to receive(:read_config).with("soul", "framework", "aspect_min_rating").and_return(0)
+      allow(Global).to receive(:read_config).with("soul", "framework", "aspect_max_rating").and_return(10)
     end
 
     describe ".calculate_cost" do
@@ -52,6 +56,12 @@ module AresMUSH
       it "never decreases as rating rises (REQ-015 invariant)" do
         costs = (1..10).map { |r| SoulXpApi.calculate_cost(character, "blade", r) }
         expect(costs).to eq(costs.sort)
+      end
+
+      it "prices an Aspect at exactly four times the equivalent Skill cost" do
+        skill_cost = SoulXpApi.calculate_cost(character, "blade", 3)
+        aspect_cost = SoulXpApi.calculate_cost(character, "body", 3, trait_type: "aspect")
+        expect(aspect_cost).to eq(skill_cost * 4)
       end
     end
 
@@ -94,6 +104,22 @@ module AresMUSH
       it "returns an error for an unknown skill" do
         result = SoulXpApi.spend(character, "nonexistent_skill", 1, character)
         expect(result[:error]).to match(/unknown skill/i)
+      end
+
+      it "deducts XP, advances an Aspect, and identifies it in the ledger" do
+        character.update(soul_xp_available: 100)
+        result = SoulXpApi.spend_aspect(character, "body", 1, character)
+
+        expect(result[:success]).to be true
+        expect(result[:trait_type]).to eq("aspect")
+        expect(SoulCharacterApi.get_aspect_rating(character, "body")).to eq(1)
+        expect(SoulXpApi.get_available_xp(character)).to eq(100 - result[:cost])
+        expect(character.soul_xp_ledger_entries.to_a.last.source).to eq("aspect:body")
+      end
+
+      it "returns an error for an unknown Aspect" do
+        result = SoulXpApi.spend_aspect(character, "nonexistent_aspect", 1, character)
+        expect(result[:error]).to match(/unknown aspect/i)
       end
     end
 
