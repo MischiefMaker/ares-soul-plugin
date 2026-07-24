@@ -26,10 +26,10 @@ end
 #
 # Add the following lines after "fields = {}" and before "return fields":
 #
-   fields[:soul_enabled] = Soul.enabled?
-   fields[:can_manage_soul] = Soul.can_manage_soul?(viewer)
-   fields[:is_approved] = char.is_approved?
-   fields[:viewer_id] = viewer ? viewer.id : nil
+#   fields[:soul_enabled] = Soul.enabled?
+#   fields[:can_manage_soul] = Soul.can_manage_soul?(viewer)
+#   fields[:is_approved] = char.is_approved?
+#   fields[:viewer_id] = viewer ? viewer.id : nil
 #
 # CROSS-PLUGIN COMPATIBILITY:
 #
