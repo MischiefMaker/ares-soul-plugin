@@ -1,16 +1,16 @@
 <section class="soul-bnb">
   <h3>Boons &amp; Banes</h3>
-  {{#if canManage}}
+  {{#if this.canManage}}
     <div class="input-group mb-3">
-      <Input @value={{query}} class="form-control" placeholder="Staff search by name or tag" />
+      <Input @value={{this.query}} class="form-control" placeholder="Staff search by name or tag" />
       <button type="button" class="btn btn-secondary" onclick={{action "search"}}>Search</button>
     </div>
   {{/if}}
-  {{#if isLoading}}
+  {{#if this.isLoading}}
     <div class="text-muted">Loading catalogue…</div>
   {{else}}
     <div class="list-group">
-      {{#each entries as |entry|}}
+      {{#each this.entries as |entry|}}
         <button type="button" class="list-group-item list-group-item-action soul-bnb-entry"
           onclick={{action "showDetail" entry}}>
           <h5>#{{entry.id}} [{{entry.tag}}] {{entry.name}}</h5>
@@ -20,13 +20,13 @@
       {{/each}}
     </div>
   {{/if}}
-  {{#if detail.catalogue}}
+  {{#if this.detail.catalogue}}
     <div class="card card-body mt-3">
-      <h4>{{detail.catalogue.name}} [{{detail.catalogue.tag}}]</h4>
-      <p>{{detail.catalogue.description}}</p>
-      {{#if detail.owned_entry}}
-        <p><strong>Your entry:</strong> {{detail.owned_entry.level_state}}</p>
-        <p>{{detail.owned_entry.explanation}}</p>
+      <h4>{{this.detail.catalogue.name}} [{{this.detail.catalogue.tag}}]</h4>
+      <p>{{this.detail.catalogue.description}}</p>
+      {{#if this.detail.owned_entry}}
+        <p><strong>Your entry:</strong> {{this.detail.owned_entry.level_state}}</p>
+        <p>{{this.detail.owned_entry.explanation}}</p>
       {{/if}}
       <button type="button" class="btn btn-secondary" onclick={{action "closeDetail"}}>Close</button>
     </div>
