@@ -16,6 +16,57 @@
    
          > I found a definite chargen bug: both the MUSH and web chargen paths required the normal play permission, which unapproved characters commonly do not have, and the web component silently discarded that error—hence the empty tab. I’m removing that inappropriate gate while retaining the unapproved-only restriction. I’m also replacing the profile XP form’s legacy input/mutation helpers with the component/action pattern used elsewhere, which avoids passing nullish state through Ember’s helper internals—the likely source of the WeakMap exception introduced on the profile.
 
+    From the console:
+                      > WeakMap key null must be an object or an unregistered symbol : reportError@http://178.128.224.21/assets/ares-webportal-2ca7a3f997d1ffe9c473aff4d846ccd7.js:19795:19
+                  initialize/_ember.default.onerror@http://178.128.224.21/assets/ares-webportal-2ca7a3f997d1ffe9c473aff4d846ccd7.js:15960:15
+                  invokeWithOnError@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3246:482
+                  flush@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3241:7
+                  flush@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3260:363
+                  _end@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3290:70
+                  Backburner/this._boundAutorunEnd@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3267:84
+                  promise callback*buildNext/<@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3220:97
+                  flush$1@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3303:327
+                  _scheduleAutorun@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3302:1589
+                  _end@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3290:252
+                  Backburner/this._boundAutorunEnd@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3267:84
+                  promise callback*buildNext/<@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3220:97
+                  flush$1@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3303:327
+                  _scheduleAutorun@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3302:1589
+                  _end@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3290:252
+                  Backburner/this._boundAutorunEnd@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3267:84
+                  promise callback*buildNext/<@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3220:97
+                  flush$1@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3303:327
+                  _scheduleAutorun@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3302:1589
+                  _ensureInstance@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3302:1392
+                  schedule@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3272:267
+                  @http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:17656:13
+                  fulfill@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:4342:2431
+                  handleMaybeThenable@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:4342:1817
+                  resolve$3@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:4342:2048
+                  handleForeignThenable/</error<@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:4342:907
+                  promise callback*tryThen@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:4342:614
+                  handleForeignThenable/<@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:4342:794
+                  @http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:17656:44
+                  invokeWithOnError@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3246:415
+                  flush@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3241:7
+                  flush@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3260:363
+                  _end@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3290:70
+                  Backburner/this._boundAutorunEnd@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3267:84
+                  promise callback*buildNext/<@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3220:97
+                  flush$1@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3303:327
+                  _scheduleAutorun@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3302:1589
+                  _ensureInstance@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3302:1392
+                  schedule@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3272:267
+                  @http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:17656:13
+                  then@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:4342:4684
+                  resolve@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10492:70
+                  Transition@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10313:131
+                  getTransitionByIntent@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10542:15
+                  transitionByIntent@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10538:737
+                  doTransition@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10561:39
+                  ares-webportal-2ca7a3f997d1ffe9c473aff4d846ccd7.js:19796:17
+
+
 6. Getting "More context objects were passed than there are dynamic segments for the route: error" on the web when trying to browse any page after loading a profile. -- Codex tried to fix with message below, but the problem remains.
    > Confirmed and fixed the root cause.
 
