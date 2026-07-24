@@ -59,7 +59,11 @@ in-game commands.
 
 An Ares game usually has two separate checkouts: **`aresmush`** (the game server —
 plugins and `game/config/`) and **`ares-webportal`** (the website). Each step below
-says which one to open.
+says which checkout and file to use.
+
+Install on a development or staging game first. Back up your game configuration and
+any existing custom extension files before merging the snippets. The snippets are
+examples to merge into game-owned files; do not replace other plugins' custom code.
 
 ### Step 1: Install the Plugin
 
@@ -74,9 +78,11 @@ the web portal components into your `ares-webportal` checkout.
 
 **If `plugin/install` is unavailable:** copy this repository's `plugin/` folder to
 `plugins/soul/`, copy `game/config/soul.yml` into your game's `game/config/` folder,
-then restart the MUSH server.
+and copy `web-portal/app/` into the matching `ares-webportal/app/` directories. Then
+restart the MUSH server.
 
-Don't open SOUL to players yet — configure and test it first.
+The files under `custom-install/` are not automatic replacements for your game's
+custom files. Merge them manually in the steps below.
 
 ### Step 2: Configure Your Framework
 
@@ -84,72 +90,166 @@ Open `game/config/soul.yml` and set up your Aspects, Skills, Resonance (if used)
 and catch-up policy, Boon/Bane levels, roll difficulties, and staff permissions. See
 [Configuration](docs/reference/Configuration.md) for the full reference.
 
-Reload your game's configuration (or restart) once you're done. SOUL will report any
-invalid references, such as a Skill assigned to an Aspect that doesn't exist.
+Reload the game configuration, then run:
 
-### Step 3: Add the Approval Hook
+```
++soul/reload
+```
 
-This locks Resonance and finalizes the history for starting Boons and Banes when a
-character is approved.
+This validates the live SOUL configuration and reports invalid references, such as
+a Skill assigned to an Aspect that does not exist. Correct all reported errors
+before continuing.
 
-1. Open `plugins/chargen/custom_approval.rb` in your **aresmush** folder
-2. Inside the `custom_approval` method, add:
+### Step 3: Install the Required Approval Hook
+
+This server-side hook locks Resonance and creates Narrative History for the starting
+Boons and Banes that survive chargen. Install it even if Resonance is disabled.
+
+1. In **aresmush**, open `plugins/chargen/custom_approval.rb`.
+2. Find `custom_approval(char)` and add these lines inside the method:
+
    ```ruby
    AresMUSH::Soul::SoulResonanceApi.lock_at_approval(char)
    AresMUSH::Soul::SoulBnbApi.finalize_chargen_grants(char)
    ```
-3. From the MUSH, run: `load chargen`
+3. Preserve any approval hooks already present for other plugins.
+4. From the MUSH, run:
 
-An example is provided in
+   ```
+   load chargen
+   ```
+
+The complete annotated example is
 [`custom-install/custom_approval.snippet.rb`](custom-install/custom_approval.snippet.rb).
-Both calls are safe to run on every approval.
+Both calls are idempotent and safe on re-approval.
 
-### Step 4: Mount the Web Portal Components (Optional)
+### Step 4: Add the MUSH Chargen Stage
 
-The components (`soul/sheet`, `soul/bnb`, `soul/xp`, `soul/culmination`,
-`soul/history`) are copied into your `ares-webportal` checkout by Step 1. Install
-the three merge-safe profile snippets to make them reachable:
+The `+chargen` command family works once the plugin is installed, but adding a stage
+introduces it at the correct point in the normal character-generation flow.
 
-1. Add `custom-install/profile-custom-tabs.snippet.hbs` to the matching
-   `profile-custom-tabs.hbs` file in your web portal.
-2. Add `custom-install/profile-custom.snippet.hbs` to the matching
-   `profile-custom.hbs` file in your web portal.
-3. Merge `custom-install/custom_char_fields.snippet.rb` into
-   `aresmush/plugins/profile/custom_char_fields.rb`, then restart the game.
-4. Add `custom-install/live-scene-custom-play.snippet.hbs` to the matching
-   web portal file to put SOUL rolls in a live scene's **Play** menu.
-5. Merge `custom-install/custom_scene_data.snippet.rb` into
-   `aresmush/plugins/scenes/custom_scene_data.rb`, then restart the game.
-6. Add `custom-install/chargen-custom-tabs.snippet.hbs` and
-   `custom-install/chargen-custom.snippet.hbs` to their matching web portal files.
-7. Merge `custom-install/chargen_stage.snippet.yml` into `game/config/chargen.yml`
-   to introduce the MUSH-side SOUL chargen stage.
+1. In **aresmush**, open `game/config/chargen.yml`.
+2. Under the existing `stages:` section, add the entry from
+   [`custom-install/chargen_stage.snippet.yml`](custom-install/chargen_stage.snippet.yml)
+   at the desired point in the stage order.
+3. Keep the indentation consistent with the surrounding stages.
+4. Run `load chargen`.
 
-Read the comments at the top of each snippet before copying it. They explain how to
-coexist with other profile plugins, including Inklings, without duplicating the
-shared approval-status and viewer-ID fields.
+The stage points players to `help soul_chargen`, which documents Resonance, Skill,
+and starting Boon/Bane selection.
 
-The scene widget opens rolls in a private modal. Players select suggested
-Boons and Banes with checkboxes, and authorized scene GMs use a similar modal
-to mark entries mandatory or optional. Results are not automatically posted
-to the scene transcript.
+### Step 5: Add Profile Data for the Web Portal
 
-If your game uses different profile property names or shared custom-field keys,
-adjust the snippets as their comments describe. If you skip this optional step,
-SOUL remains usable through in-game commands.
+The profile tab and staff administration panel need viewer-specific fields from the
+game server.
 
-After adding the components, rebuild and deploy the portal:
+1. In **aresmush**, open `plugins/profile/custom_char_fields.rb`.
+2. Merge
+   [`custom-install/custom_char_fields.snippet.rb`](custom-install/custom_char_fields.snippet.rb)
+   into `get_fields_for_viewing(char, viewer)`.
+3. If Inklings or another plugin already supplies `is_approved` or `viewer_id`,
+   reuse those fields instead of defining duplicates.
+4. Restart the game server.
+
+These fields only control what the portal displays. Every web operation still
+performs its own server-side permission check.
+
+### Step 6: Mount the Profile and Staff Interface
+
+In **ares-webportal**:
+
+1. Merge
+   [`custom-install/profile-custom-tabs.snippet.hbs`](custom-install/profile-custom-tabs.snippet.hbs)
+   into `app/components/profile-custom-tabs.hbs`.
+2. Merge
+   [`custom-install/profile-custom.snippet.hbs`](custom-install/profile-custom.snippet.hbs)
+   into `app/components/profile-custom.hbs`.
+3. Keep `href="#soul-tab-pane"` and `id="soul-tab-pane"` unchanged so the tab and
+   pane remain connected.
+
+This mounts the character Sheet, XP spending, B&B catalogue and staff search,
+Culminations, Narrative History, and the staff administration panel.
+
+### Step 7: Mount the Web Chargen Interface
+
+In **ares-webportal**:
+
+1. Merge
+   [`custom-install/chargen-custom-tabs.snippet.hbs`](custom-install/chargen-custom-tabs.snippet.hbs)
+   into `app/components/chargen-custom-tabs.hbs`.
+2. Merge
+   [`custom-install/chargen-custom.snippet.hbs`](custom-install/chargen-custom.snippet.hbs)
+   into `app/components/chargen-custom.hbs`.
+3. Keep `href="#soul-chargen-tab"` and `id="soul-chargen-tab"` unchanged.
+
+The new tab lets unapproved players select Resonance, allocate starting Skill
+ratings, and add or remove chargen-available Boons and Banes. Each choice is
+validated and saved immediately.
+
+### Step 8: Add Scene Permission Data
+
+GM-assisted roll review and scene-GM sheet viewing need two viewer permission flags.
+
+1. In **aresmush**, open `plugins/scenes/custom_scene_data.rb`.
+2. Merge
+   [`custom-install/custom_scene_data.snippet.rb`](custom-install/custom_scene_data.snippet.rb)
+   into `custom_scene_data(viewer)`.
+3. If the method already returns a hash for another plugin, add the two SOUL fields
+   to that hash rather than replacing it.
+4. Restart the game server.
+
+These flags are for interface visibility only. Roll and Sheet handlers independently
+verify staff/GM authority and scene participation.
+
+### Step 9: Mount the Live-Scene Tools
+
+In **ares-webportal**, merge
+[`custom-install/live-scene-custom-play.snippet.hbs`](custom-install/live-scene-custom-play.snippet.hbs)
+into `app/components/live-scene-custom-play.hbs`.
+
+This adds the following to a live scene's **Play** menu:
+
+- Standard and GM-assisted SOUL rolls.
+- Pending-roll management, roll history, abort, and authorized force-abort.
+- GM candidate review and mandatory/optional B&B selection.
+- Scene-scoped B&B lookup.
+- Authorized participant Sheet viewing.
+
+Roll results remain private to the roller and are never automatically posted to the
+scene transcript.
+
+### Step 10: Build and Deploy the Portal
+
+After merging all web snippets, rebuild and deploy from the game:
 
 ```
 website/deploy
 ```
 
-### Step 5: Try It Before Opening to Players
+If your installation uses a separate web deployment process, run its normal build
+and deployment commands instead. A server restart alone does not publish Ember
+template changes.
 
-With a staff or test character: view the sheet, confirm Skills appear under the
-right Aspects, approve a test character and confirm Resonance locks, create a few
-Boons and Banes, award and spend some XP, and make both a standard and a
-GM-assisted roll.
+### Step 11: Verify the Installation
+
+Use an unapproved test character, an approved player, and a staff/GM character:
+
+- Confirm the SOUL chargen stage and web tab appear before approval.
+- Select Resonance, allocate Skills, add and remove a starting B&B, then approve the
+  test character.
+- Confirm Resonance locks and each surviving starting B&B receives exactly one
+  Narrative History entry.
+- Open an approved character profile and verify Sheet, XP, B&B, Culmination, and
+  History sections.
+- Spend XP through both `+xp/spend` and the web form.
+- As staff, validate configuration, search and manage B&Bs, award/correct XP,
+  manage Culminations, correct Resonance, and view the audit log.
+- In a live scene, complete a standard roll and a GM-assisted roll; verify pending,
+  history, abort, force-abort, scene lookup, and participant Sheet controls.
+- Confirm an ordinary player cannot see staff-only controls or inactive B&B search
+  results.
+
+Do not open SOUL to players until these checks pass.
 
 ## Upgrading
 
@@ -160,8 +260,16 @@ plugin/install https://github.com/MischiefMaker/ares-soul-plugin
 ```
 
 Compare the newly supplied config against your saved copy and merge in anything new,
-confirm the approval hook (Step 3) is still in place, redeploy the web portal if you
-use it, and reload or restart the game.
+then compare every file under `custom-install/` with the version you previously
+merged. In particular:
+
+- Keep both approval-hook calls from Step 3.
+- Keep the SOUL entry in `game/config/chargen.yml`.
+- Merge any new profile or scene custom-data fields.
+- Re-merge changed profile, chargen, and live-scene templates.
+
+Reload or restart the affected server plugins and redeploy the web portal after every
+upgrade that changes Ember components or snippets.
 
 ## Further Reading
 
