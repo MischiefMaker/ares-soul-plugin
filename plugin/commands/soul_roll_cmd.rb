@@ -119,8 +119,10 @@ module AresMUSH
         view = SoulRollApi.get_player_candidate_view(pending.id, enactor)
         return if view[:error]
         lines = view[:candidates].map { |candidate| candidate_line(candidate) }
-        client.emit t('soul.roll_candidates',
-          entries: lines.empty? ? t('soul.roll_no_candidates') : lines.join("%r"))
+        client.emit BorderedListTemplate.new(
+          lines.empty? ? [t('soul.roll_no_candidates')] : lines,
+          t('soul.roll_candidates_title')
+        ).render
       end
 
       def show_pending
@@ -128,12 +130,16 @@ module AresMUSH
           t('soul.roll_pending_line', id: pending.id, skill: pending.skill_key,
             status: pending.status, gm_assisted: pending.gm_assisted)
         end
-        client.emit t('soul.roll_pending', entries: lines.empty? ? t('soul.none') : lines.join("%r"))
+        client.emit BorderedListTemplate.new(
+          lines.empty? ? [t('soul.none')] : lines, t('soul.roll_pending_title')
+        ).render
       end
 
       def show_history
         lines = SoulRollApi.get_roll_history(enactor).map { |roll| roll_line(roll) }
-        client.emit t('soul.roll_history', entries: lines.empty? ? t('soul.none') : lines.join("%r"))
+        client.emit BorderedListTemplate.new(
+          lines.empty? ? [t('soul.none')] : lines, t('soul.roll_history_title')
+        ).render
       end
 
       def review_rolls
@@ -143,8 +149,10 @@ module AresMUSH
             client.emit_failure result[:error]
           else
             lines = result[:candidates].map { |candidate| candidate_line(candidate) }
-            client.emit t('soul.roll_candidates',
-              entries: lines.empty? ? t('soul.none') : lines.join("%r"))
+            client.emit BorderedListTemplate.new(
+              lines.empty? ? [t('soul.none')] : lines,
+              t('soul.roll_candidates_title')
+            ).render
           end
           return
         end
@@ -164,7 +172,9 @@ module AresMUSH
           t('soul.roll_review_line', id: pending.id, character: pending.character.name,
             skill: pending.skill_key)
         end
-        client.emit t('soul.roll_reviews', entries: lines.empty? ? t('soul.none') : lines.join("%r"))
+        client.emit BorderedListTemplate.new(
+          lines.empty? ? [t('soul.none')] : lines, t('soul.roll_reviews_title')
+        ).render
       end
 
       def mark_roll
@@ -207,7 +217,9 @@ module AresMUSH
         if result[:error]
           client.emit_failure result[:error]
         else
-          client.emit_success roll_line(result[:roll])
+          client.emit BorderedDisplayTemplate.new(
+            roll_line(result[:roll]), t('soul.roll_result_title', id: result[:roll].id)
+          ).render
         end
       end
 
