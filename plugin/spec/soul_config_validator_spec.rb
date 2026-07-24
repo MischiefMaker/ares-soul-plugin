@@ -104,8 +104,8 @@ module AresMUSH
       end
 
       it "accepts a branch_skill_map referencing a real Skill" do
-        valid_config["framework"]["skills"] = { "ceremonial_magic" => { "name" => "Ceremonial Magic", "aspect" => "spirit" } }
-        valid_config["integrations"] = { "grimoire" => { "branch_skill_map" => { "evocation" => "ceremonial_magic" } } }
+        valid_config["framework"]["skills"] = { "ceremonial" => { "name" => "Ceremonial Magic", "aspect" => "spirit" } }
+        valid_config["integrations"] = { "grimoire" => { "branch_skill_map" => { "evocation" => "ceremonial" } } }
         expect(Soul::SoulConfigValidator.new.validate).to eq([])
       end
 
