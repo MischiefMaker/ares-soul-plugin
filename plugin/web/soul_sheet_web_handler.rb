@@ -9,6 +9,12 @@ module AresMUSH
       return { error: t('soul.character_not_found') } unless character
       return { error: t('soul.permission_denied') } unless can_view?(enactor, character, request.args['scene_id'])
       resonance = SoulResonanceApi.get_resonance(character)
+      # Explanations are private (FINAL REQ-018) - only the owner or
+      # manage_soul staff get them here, never a scene-GM viewer (tier 3 of
+      # can_view? below). That's a narrower privacy bar than can_view? itself
+      # uses, matching the "broader reveal" caution already established for
+      # GM-assisted roll review (docs/reference/Permissions.md).
+      private_view = character == enactor || Soul.can_manage_soul?(enactor)
 
       {
         character: character.name,
@@ -25,7 +31,7 @@ module AresMUSH
             end
           }
         end,
-        bnb: SoulBnbApi.get_character_entries(character).map { |entry| serialize_bnb(entry) }.compact,
+        bnb: SoulBnbApi.get_character_entries(character).map { |entry| serialize_bnb(entry, private_view) }.compact,
         resonance: resonance,
         resonance_label: resonance.nil? ? t('soul.unset') : "R#{resonance}",
         xp: {
@@ -45,13 +51,16 @@ module AresMUSH
       scene && scene.participants.include?(enactor) && scene.participants.include?(character)
     end
 
-    def serialize_bnb(entry)
+    def serialize_bnb(entry, private_view)
       return nil unless entry.catalogue_entry
-      {
+      data = {
         id: entry.id, name: entry.catalogue_entry.name, tag: entry.catalogue_entry.tag,
-        kind: entry.catalogue_entry.kind, level_state: entry.level_state,
-        resolved: entry.resolved == "true"
+        kind: entry.catalogue_entry.kind, description: entry.catalogue_entry.description,
+        level_state: entry.level_state, resolved: entry.resolved == "true",
+        explanation_visible: private_view
       }
+      data[:explanation] = entry.character_explanation if private_view
+      data
     end
   end
 end

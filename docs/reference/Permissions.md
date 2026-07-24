@@ -53,6 +53,7 @@ Staff administration SHALL require explicit permission — never inferred from s
 - Grant/correct XP (`+xp/award`, `+xp/award/catchup`, `+xp/scene`, `+xp/correct`)
 - Create/manage the B&B catalogue (`+bnb/create`)
 - Grant/progress/resolve character B&B entries (`+bnb/grant`, `+bnb/progress`)
+- View a character's own B&B entries and private explanations (`+bnb/detail`, or the Sheet's B&B detail view on the web) — the only role besides the owner that can
 - Approve Culminations
 - Correct Resonance (with recorded actor + reason)
 - Review Character Framework state, permitted Narrative History, and audit

@@ -58,6 +58,12 @@ entry. Both explicit confirmations and a reason are required.
 
 `+bnb/search <tag>` — Staff catalogue search.
 
+`+bnb/detail <character>` — List a character's own entries with their
+private explanations.
+
+`+bnb/detail <character>=<id or tag>` — Show one of a character's entries
+in full, including their private explanation.
+
 ## XP
 
 `+xp/award <character>=<amount>/<reason>` — Award XP without catch-up.

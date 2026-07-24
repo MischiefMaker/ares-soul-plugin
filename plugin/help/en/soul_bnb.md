@@ -31,3 +31,6 @@ preserving its level for later restoration. Preferred over deletion.
 
 `+bnb/delete <entry id>/<reason>/confirm/confirm` — Permanently delete an
 entry. Both explicit confirmations and a reason are required.
+
+`+bnb/detail <character>[=<id or tag>]` — Staff: view a character's own
+entries, or one entry in full, including their private explanation.

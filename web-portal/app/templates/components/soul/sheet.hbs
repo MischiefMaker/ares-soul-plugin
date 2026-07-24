@@ -57,7 +57,8 @@
             </thead>
             <tbody>
               {{#each sheet.bnb as |entry|}}
-                <tr>
+                <tr class="soul-sheet-bnb-row" role="button" tabindex="0"
+                  onclick={{action "showBnbDetail" entry}}>
                   <td>#{{entry.id}} {{entry.name}} <span class="text-muted">[{{entry.tag}}]</span></td>
                   <td>{{entry.kind}}</td>
                   <td>{{entry.level_state}}</td>
@@ -72,4 +73,29 @@
       {{/if}}
     </div>
   </section>
+
+  <BsModalSimple
+    @title={{if selectedBnb.name selectedBnb.name "Boon/Bane Detail"}}
+    @closeTitle="Close"
+    @submitTitle={{null}}
+    @open={{bnbModalOpen}}
+    @onHide={{action "closeBnbDetail"}}
+  >
+    {{#if selectedBnb}}
+      <p>
+        <strong>Tag:</strong> {{selectedBnb.tag}}
+        <span class="ms-3"><strong>Kind:</strong> {{selectedBnb.kind}}</span>
+        <span class="ms-3"><strong>Level:</strong> {{selectedBnb.level_state}}</span>
+        <span class="ms-3"><strong>State:</strong> {{if selectedBnb.resolved "Resolved" "Active"}}</span>
+      </p>
+      {{#if selectedBnb.description}}<p>{{selectedBnb.description}}</p>{{/if}}
+      <hr>
+      {{#if selectedBnb.explanation_visible}}
+        <p><strong>Explanation:</strong></p>
+        <p>{{if selectedBnb.explanation selectedBnb.explanation "None recorded."}}</p>
+      {{else}}
+        <p class="text-muted">This entry's private explanation is only visible to its owner and staff.</p>
+      {{/if}}
+    {{/if}}
+  </BsModalSimple>
 {{/if}}

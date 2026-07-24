@@ -8,6 +8,18 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-003: Owners and staff need private B&B detail on both MUSH and web (FR-001's flagged follow-up)
+
+**Status:** ✅ Done (`plugin/commands/soul_bnb_cmd.rb`, `plugin/web/soul_sheet_web_handler.rb`, `web-portal/app/components/soul/sheet.js`/`.hbs`)
+
+**Requested:** 2026-07-24, internal testing, closing the gap FR-001 flagged: *"We need people and staff to be able to see the player-specific details of their own bnbs on both the web and MUSH. I suggest on the web it be a pop up modal on the list of bnbs."*
+
+**MUSH — a real gap, not just missing polish:** staff had no way at all to see another character's private B&B explanation. `+bnb <id or tag>` (and FR-001's bare `+bnb`) only ever looked at `enactor` — there was no staff path to view someone *else's* explanation on the MUSH side, even though the equivalent web `soulBnb` lookup operation already supported it via a `character` arg. Added `+bnb/detail <character>[=<id or tag>]` (staff-only, added to `staff_switches`): bare lists that character's own entries with explanations (mirrors FR-001's `show_own_entries`); with `=<id or tag>` shows one entry in full. Refactored `show_own_entries`/`show_entry` into shared `show_entries_for(character, whose:)`/`show_entry_for(character, reference, label:)` methods so self-view and staff-view share one code path — no duplicated logic. New locale strings (`bnb_own_title` and `bnb_detail`'s label are now parameterized: "Your Boons & Banes" / "Jordan's Boons & Banes", "Your explanation" / "Jordan's explanation").
+
+**Web — the privacy-gated fix flagged in FR-001:** `SoulSheetWebHandler#serialize_bnb` now includes `description` (always, it's public) and `explanation` (only when `character == enactor || Soul.can_manage_soul?(enactor)` — explicitly *not* for the scene-GM viewer tier `can_view?` otherwise allows, matching `docs/reference/Permissions.md`'s existing "a GM does not gain global visibility into a character's private B&B explanations... by virtue of being a GM"). Added an `explanation_visible` boolean so the client can distinguish "not authorized to see this" from "authorized, but nothing was written" — collapsing both to a falsy `explanation` would have been misleading. On the web, each row in the Sheet's B&B table is now clickable and opens a `BsModalSimple` (the same modal component `roll.hbs` already established as this project's convention) showing tag/kind/level/state/description, plus the explanation section when visible, or an explanatory placeholder when not.
+
+Specs cover: `+bnb/detail`'s staff-only gate, its two argument shapes, and the three-way explanation-visibility split (owner, staff, scene-GM) on the web handler.
+
 ### FR-002: Custom-install snippets must never show copy-target code as commented-out text
 
 **Status:** ✅ Fixed (`custom-install/custom_approval.snippet.rb`, `custom_char_fields.snippet.rb`, `custom_scene_data.snippet.rb`)
@@ -30,7 +42,7 @@ One inherent consequence, not a bug: `custom_scene_data.snippet.rb` no longer pa
 
 A bare `+bnb` previously required an argument and just returned an "invalid syntax" error — there was no command to list all of a player's own entries at once (only single-entry lookup by ID/tag, the scene-scoped `/here`, and the public `/catalogue`). Added `SoulBnbCmd#show_own_entries`, reached when `+bnb` is given with no reference: lists every entry `SoulBnbApi.get_character_entries(enactor)` returns, each showing catalogue ID, tag, name, kind, level, and the character's own private `character_explanation` (never shown to anyone else). Operates strictly on `enactor` — no new privacy exposure, matching the same self-only scope `+xp`/`+soul` already use for private data.
 
-**Not yet done (flagged, not actioned):** the web Sheet's B&B list (`soul_sheet_web_handler.rb#serialize_bnb`) still omits `character_explanation` entirely, so there's no web equivalent of this expanded view yet. Didn't add it in this pass because it's not a simple parity mirror — the Sheet can be viewed by staff and scene-GMs as well as the owner (`can_view?`), and `character_explanation` is a privacy-sensitive "broader reveal" field elsewhere in this project (`docs/reference/Permissions.md`'s GM-reveal-categories). Naively adding it to `serialize_bnb` would leak private explanations to scene-GMs viewing another character's sheet. Needs a real decision (e.g. only include it when `character == enactor` or `Soul.can_manage_soul?(enactor)`) rather than a reflexive copy-paste.
+**Web/staff follow-up:** flagged here as needing a real privacy decision rather than a reflexive copy-paste — done in FR-003 above.
 
 ---
 

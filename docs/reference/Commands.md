@@ -49,6 +49,8 @@ game's chargen configuration.
 | `+bnb/resolve <character>/<entry id>=<reason>` | Proposed (implemented 2026-07-24) | Resolve/negate an entry, preserving its prior level for restoration (REQ-020) — the recommended non-destructive alternative to `+bnb/delete` | manage_soul |
 | `+bnb/restore <character>/<entry id>` | Proposed (implemented 2026-07-24) | Restore a resolved/negated entry to its preserved level (REQ-020) | manage_soul |
 | `+bnb/delete <entry id>/<reason>/confirm/confirm` | Proposed (implemented; syntax fixed 2026-07-24) | Two-confirmation destructive delete (REQ-021) — counts literal `confirm` tokens; `+bnb/resolve` is preferred for ordinary play | manage_soul |
+| `+bnb/detail <character>` | Proposed (implemented 2026-07-24) | List a character's own entries with their private explanations — staff had no MUSH way to see this before | manage_soul |
+| `+bnb/detail <character>=<id or tag>` | Proposed (implemented 2026-07-24) | Show one of a character's entries in full, including their private explanation | manage_soul |
 
 Name collisions return matching names, IDs, and tags for disambiguation (GL-10).
 

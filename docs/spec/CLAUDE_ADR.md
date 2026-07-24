@@ -39,6 +39,16 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 
 ## Recent Changes
 
+### FR-002 and FR-003: Snippet Comment Policy Corrected, Private B&B Detail on MUSH+Web (2026-07-24)
+
+**FR-002:** A direct push to `main` (`9a219fd`) had uncommented `custom_char_fields.snippet.rb`'s OPTION B block. My prior turn's response (`71a3901`) recommented it, treating it as an accidental formatting break — wrong. User's correction: *"All code that should be copied SHOULD NOT EVER BE COMMENTED."* Audited every file under `custom-install/`: the `.hbs`/`.yml` snippets were already correct (comments used only for instructions, code always plain). Three `.rb` files had it backwards — `custom_approval.snippet.rb`'s EXAMPLE block, `custom_char_fields.snippet.rb`'s OPTION B lines and "combined method" example, `custom_scene_data.snippet.rb`'s OPTION B lines — all uncommented now. One side effect, not a bug: `custom_scene_data.snippet.rb` no longer passes a standalone `ruby -c`, since its OPTION B block is a bare two-line hash fragment meant to be pasted inside an existing hash literal, never valid as top-level Ruby alone — verified the fragment itself is correct once embedded in real context.
+
+**FR-003:** Closed the privacy-gated follow-up FR-001 had flagged. Two real gaps, both closed:
+- **MUSH:** staff had no way to see another character's private B&B explanation at all — `+bnb <id or tag>`/bare `+bnb` only ever looked at `enactor`. Added `+bnb/detail <character>[=<id or tag>]` (staff-only), refactoring the self-view logic into shared `show_entries_for`/`show_entry_for` methods so there's one code path for both.
+- **Web:** `SoulSheetWebHandler#serialize_bnb` now includes the character's private explanation, but only when `character == enactor || Soul.can_manage_soul?(enactor)` — explicitly excluding the scene-GM viewer tier `can_view?` otherwise permits, matching the privacy stance `docs/reference/Permissions.md` already documented ("a GM does not gain global visibility into a character's private B&B explanations... by virtue of being a GM"). Added an `explanation_visible` flag so the client can tell "not authorized" apart from "authorized, nothing written" rather than collapsing both to falsy. Sheet B&B rows are now clickable, opening a `BsModalSimple` (matching `roll.hbs`'s established modal pattern) with the full detail.
+
+See `docs/development/Bug_List.md` FR-002/FR-003 for full detail and the specs covering both.
+
 ### FR-001: `+bnb` Alone Now Lists a Player's Own Boons and Banes (2026-07-24)
 
 User's request during internal testing: *"I'd like 'bnb' on its own to give an expanded list of BNBs with the ID, name, tag, and player's description."* Previously a bare `+bnb` required an argument and just returned an "invalid syntax" error (`required_args` included `self.reference` for the `nil` switch case) — there was no way to see all of your own entries at once, only single-entry lookup by id/tag, the scene-scoped `+bnb/here`, or the public `+bnb/catalogue`.
