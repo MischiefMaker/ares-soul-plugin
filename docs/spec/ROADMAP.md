@@ -99,7 +99,7 @@ FS3 migration validation, full documentation currency pass, coverage targets, FI
 
 ### Character Generation UI: Codex paused on three real gaps, all resolved
 
-- `docs/handoffs/Phase_9_Character_Generation_UI.md` — no chargen B&B removal API existed (fixed directly, along with a deeper Narrative-History-timing bug it exposed in `SoulBnbApi.grant`); no canonical MUSH syntax was specified (resolved: new `+chargen` command family; also removed Aspect allocation from scope, since FINAL's canonical chargen flow never actually calls for it); the web mounting mechanism wasn't identified (resolved: real `chargen-custom-tabs.hbs`/`chargen-custom.hbs` snippet pair for the tab, dedicated `soulChargen*` operations for the data).
+- `docs/handoffs/Phase_9_Character_Generation_UI.md` — no chargen B&B removal API existed (fixed directly, along with a deeper Narrative-History-timing bug it exposed in `SoulBnbApi.grant`); no canonical MUSH syntax was specified (resolved: new `+chargen` command family; also removed Aspect allocation from scope, since FINAL's canonical chargen flow never actually calls for it — **reversed by the project owner 2026-07-24, see FR-005 in `docs/development/Bug_List.md`/`CLAUDE_ADR.md`; chargen now includes Aspect point-buy**); the web mounting mechanism wasn't identified (resolved: real `chargen-custom-tabs.hbs`/`chargen-custom.hbs` snippet pair for the tab, dedicated `soulChargen*` operations for the data).
 
 ### All three handoffs implemented by Codex and merged (`469995b`)
 

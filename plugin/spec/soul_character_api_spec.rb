@@ -58,6 +58,24 @@ module AresMUSH
       end
     end
 
+    describe ".set_aspect_rating / .get_aspect_rating" do
+      it "sets and reads back a rating" do
+        result = SoulCharacterApi.set_aspect_rating(character, "body", 3, character)
+        expect(result[:success]).to be true
+        expect(SoulCharacterApi.get_aspect_rating(character, "body")).to eq(3)
+      end
+
+      it "rejects an Aspect rating above the configured maximum" do
+        result = SoulCharacterApi.set_aspect_rating(character, "body", 6, character)
+        expect(result[:error]).to match(/between/i)
+      end
+
+      it "rejects an unknown aspect key" do
+        result = SoulCharacterApi.set_aspect_rating(character, "nonexistent", 1, character)
+        expect(result[:error]).to match(/unknown aspect/i)
+      end
+    end
+
     describe ".correct_rating" do
       it "corrects a skill and records audit and narrative history" do
         staff = Fabricate(:character)

@@ -19,6 +19,9 @@ module AresMUSH
       when "soulChargenSkill"
         result = self.class.set_skill(character, request.args['skill_key'], request.args['rating'].to_i)
         result[:error] ? result : self.class.status(character)
+      when "soulChargenAspect"
+        result = self.class.set_aspect(character, request.args['aspect_key'], request.args['rating'].to_i)
+        result[:error] ? result : self.class.status(character)
       when "soulChargenBnb"
         result = SoulBnbApi.grant(character, request.args['reference'],
           level_state: request.args['level_state'] || "minor", source: "chargen",
@@ -36,8 +39,12 @@ module AresMUSH
       skills = SoulFrameworkApi.get_skills.map do |skill|
         skill.merge(rating: SoulCharacterApi.get_skill_rating(character, skill[:key]))
       end
+      aspects = SoulFrameworkApi.get_aspects.map do |aspect|
+        aspect.merge(rating: SoulCharacterApi.get_aspect_rating(character, aspect[:key]))
+      end
       selected = SoulBnbApi.get_character_entries(character).select { |entry| entry.source == "chargen" }
       spent = skills.sum { |skill| skill[:rating].to_i }
+      aspect_spent = aspects.sum { |aspect| aspect[:rating].to_i }
       {
         resonance_enabled: SoulResonanceApi.enabled?, resonance: resonance,
         resonance_label: resonance.nil? ? t('soul.unset') : "R#{resonance}",
@@ -45,7 +52,10 @@ module AresMUSH
         resonance_options: (SoulResonanceApi.min..SoulResonanceApi.max).to_a,
         skill_points: allowance[:skill_points], starting_cap: allowance[:starting_cap],
         points_spent: spent, points_remaining: allowance[:skill_points] - spent,
-        aspects: SoulFrameworkApi.get_aspects, skills: skills,
+        aspect_points: allowance[:aspect_points],
+        aspect_min_rating: SoulFrameworkApi.aspect_min_rating, aspect_max_rating: SoulFrameworkApi.aspect_max_rating,
+        aspect_points_spent: aspect_spent, aspect_points_remaining: allowance[:aspect_points] - aspect_spent,
+        aspects: aspects, skills: skills,
         catalogue: SoulBnbApi.get_catalogue(chargen_available: true).map { |entry| catalogue_hash(entry) },
         selected_bnb: selected.map { |entry| selected_hash(entry) },
         has_selected_bnb: selected.any?
@@ -67,6 +77,24 @@ module AresMUSH
         proposed > allowance[:skill_points]
 
       SoulCharacterApi.set_skill_rating(character, skill_key, rating.to_i, character)
+    end
+
+    def self.set_aspect(character, aspect_key, rating)
+      resonance = SoulResonanceApi.get_resonance(character) || 0
+      allowance = SoulResonanceApi.chargen_allowance(resonance)
+      min = SoulFrameworkApi.aspect_min_rating
+      max = SoulFrameworkApi.aspect_max_rating
+      return { error: "Rating must be between #{min} and #{max}." } if rating.to_i < min || rating.to_i > max
+
+      current = SoulFrameworkApi.get_aspects.sum do |aspect|
+        SoulCharacterApi.get_aspect_rating(character, aspect[:key])
+      end
+      old_rating = SoulCharacterApi.get_aspect_rating(character, aspect_key)
+      proposed = current - old_rating + rating.to_i
+      return { error: "That allocation would spend #{proposed} of #{allowance[:aspect_points]} Aspect points." } if
+        proposed > allowance[:aspect_points]
+
+      SoulCharacterApi.set_aspect_rating(character, aspect_key, rating.to_i, character)
     end
 
     def self.catalogue_hash(entry)

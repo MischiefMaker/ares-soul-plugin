@@ -92,7 +92,7 @@ en:
     chargen_approved: "SOUL chargen choices can only be changed before approval."
     chargen_updated: "SOUL chargen selection updated."
     chargen_title: "SOUL Character Generation"
-    chargen_status: "%xhResonance:%xn %{resonance}    %xhSkill Points:%xn %{spent} spent / %{remaining} remaining%r%ld%r%{skills}%r%ld%r%xhSelected Boons & Banes:%xn%r%{bnb}"
+    chargen_status: "%xhResonance:%xn %{resonance}    %xhSkill Points:%xn %{spent} spent / %{remaining} remaining    %xhAspect Points:%xn %{aspect_spent} spent / %{aspect_remaining} remaining%r%ld%r%{skills}%r%ld%r%xhSelected Boons & Banes:%xn%r%{bnb}"
     commands:
       soul:
         help: "Usage: +soul [character]"
@@ -110,5 +110,5 @@ en:
         help: "Usage: +roll <skill>, +roll suggested, or help soul_rolls"
         desc: "Make and manage SOUL rolls."
       chargen:
-        help: "Usage: +soul/cg, +soul/cg/resonance, +soul/cg/skill, +soul/cg/bnb, or +soul/cg/drop"
+        help: "Usage: +soul/cg, +soul/cg/resonance, +soul/cg/skill, +soul/cg/aspect, +soul/cg/bnb, or +soul/cg/drop"
         desc: "Choose your starting SOUL traits before approval."

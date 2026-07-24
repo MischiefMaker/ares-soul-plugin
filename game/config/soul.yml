@@ -39,6 +39,13 @@ soul:
     skill_min_rating: 0
     skill_max_rating: 10   # Ultimate cap at every Resonance tier (FINAL REQ-010)
 
+    # Aspects have no post-chargen advancement path (no XP-spend equivalent
+    # exists for them, unlike Skills) - this range applies for the
+    # character's whole lifetime, not just chargen. Correctable afterward
+    # only via +soul/framework/aspect (staff).
+    aspect_min_rating: 0
+    aspect_max_rating: 5
+
     aspects:
       body:
         name: "Body"
@@ -115,6 +122,12 @@ soul:
     negative_skill_points_per_level: 2
     positive_starting_cap_per_level: 1
     negative_starting_cap_per_level: 1
+    # Chargen Aspect point-buy pool (Body/Mind/Spirit). Same shape as the
+    # Skill point allowance above: a base at R0, plus a per-level rate that
+    # can differ for positive vs. negative Resonance.
+    r0_aspect_points: 5
+    positive_aspect_points_per_level: 1
+    negative_aspect_points_per_level: 1
     review_flag_at_extremes: true
 
   # ==========================================================================

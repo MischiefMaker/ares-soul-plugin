@@ -9,6 +9,11 @@
       {{status.points_remaining}} remaining.
       <strong class="ms-2">Starting cap:</strong> {{status.starting_cap}}.
     </div>
+    <div class="alert alert-info">
+      <strong>Aspect Points:</strong> {{status.aspect_points_spent}} / {{status.aspect_points}} spent;
+      {{status.aspect_points_remaining}} remaining.
+      <strong class="ms-2">Range:</strong> {{status.aspect_min_rating}}–{{status.aspect_max_rating}}.
+    </div>
 
     {{#if status.resonance_enabled}}
       <div class="card mb-3">
@@ -32,7 +37,19 @@
       {{#each status.aspects as |aspect|}}
         <div class="col-lg-4 col-md-6 mb-3">
           <div class="card h-100">
-            <div class="card-header"><strong>{{aspect.name}}</strong></div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <strong>{{aspect.name}}</strong>
+              <div class="d-flex align-items-center gap-2" role="group"
+                aria-label="Set {{aspect.name}} rating">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                  disabled={{eq aspect.rating status.aspect_min_rating}}
+                  onclick={{action "adjustAspect" aspect -1}} aria-label="Decrease {{aspect.name}}">−</button>
+                <span class="badge bg-primary fs-6">{{aspect.rating}}</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                  disabled={{eq aspect.rating status.aspect_max_rating}}
+                  onclick={{action "adjustAspect" aspect 1}} aria-label="Increase {{aspect.name}}">+</button>
+              </div>
+            </div>
             <div class="card-body p-0">
               {{#each status.skills as |skill|}}
                 {{#if (eq skill.aspect_key aspect.key)}}

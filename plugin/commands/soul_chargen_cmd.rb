@@ -4,7 +4,7 @@ module AresMUSH
       include CommandHandler
       include TemplateFormatters
 
-      attr_accessor :value, :skill, :rating, :reference, :level,
+      attr_accessor :value, :skill, :aspect, :rating, :reference, :level,
                     :explanation, :entry_id
 
       # Dispatched under the "soul" root as a compound switch ("cg",
@@ -29,6 +29,9 @@ module AresMUSH
         when "skill"
           args = cmd.parse_args(ArgParser.arg1_equals_arg2)
           self.skill, self.rating = args.arg1, integer_arg(args.arg2)
+        when "aspect"
+          args = cmd.parse_args(ArgParser.arg1_equals_arg2)
+          self.aspect, self.rating = args.arg1, integer_arg(args.arg2)
         when "bnb"
           left, self.explanation = cmd.args.to_s.split("=", 2)
           self.reference, self.level = left.to_s.split("/", 2)
@@ -53,6 +56,7 @@ module AresMUSH
         case sub_switch
         when "resonance" then [ self.value ]
         when "skill" then [ self.skill, self.rating ]
+        when "aspect" then [ self.aspect, self.rating ]
         when "bnb" then [ self.reference, self.explanation ]
         when "drop" then [ self.entry_id ]
         else []
@@ -64,6 +68,7 @@ module AresMUSH
         when "" then show_status
         when "resonance" then emit_result SoulResonanceApi.set_resonance(enactor, self.value, enactor)
         when "skill" then set_skill
+        when "aspect" then set_aspect
         when "bnb"
           emit_result SoulBnbApi.grant(enactor, self.reference, level_state: self.level,
             source: "chargen", explanation: self.explanation)
@@ -76,10 +81,15 @@ module AresMUSH
         emit_result result
       end
 
+      def set_aspect
+        result = SoulChargenWebHandler.set_aspect(enactor, self.aspect, self.rating)
+        emit_result result
+      end
+
       def show_status
         status = SoulChargenWebHandler.status(enactor)
         skills = status[:aspects].map do |aspect|
-          title = aspect[:name]
+          title = "#{aspect[:name]} [#{aspect[:key]}]: #{aspect[:rating]}"
           section = client.screen_reader ? "%xh#{title}%xn" : line_with_text(title)
           aspect_skills = status[:skills].select { |skill| skill[:aspect_key] == aspect[:key] }
             .map { |skill| "#{skill[:name]} [#{skill[:key]}]: #{skill[:rating]}" }
@@ -91,6 +101,7 @@ module AresMUSH
         body = t('soul.chargen_status',
           resonance: status[:resonance].nil? ? t('soul.unset') : "R#{status[:resonance]}",
           spent: status[:points_spent], remaining: status[:points_remaining],
+          aspect_spent: status[:aspect_points_spent], aspect_remaining: status[:aspect_points_remaining],
           skills: skills.join("%r"), bnb: entries.empty? ? t('soul.none') : entries.join("%r"))
         client.emit BorderedDisplayTemplate.new(body, t('soul.chargen_title')).render
       end

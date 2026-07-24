@@ -15,15 +15,18 @@ module AresMUSH
       allow(Global).to receive(:read_config).with("soul", "resonance", "negative_skill_points_per_level").and_return(2)
       allow(Global).to receive(:read_config).with("soul", "resonance", "positive_starting_cap_per_level").and_return(1)
       allow(Global).to receive(:read_config).with("soul", "resonance", "negative_starting_cap_per_level").and_return(1)
+      allow(Global).to receive(:read_config).with("soul", "resonance", "r0_aspect_points").and_return(5)
+      allow(Global).to receive(:read_config).with("soul", "resonance", "positive_aspect_points_per_level").and_return(1)
+      allow(Global).to receive(:read_config).with("soul", "resonance", "negative_aspect_points_per_level").and_return(1)
     end
 
     describe ".chargen_allowance" do
-      it "matches the canonical symmetric table (FINAL REQ-012)" do
-        expect(SoulResonanceApi.chargen_allowance(-3)).to eq(skill_points: 9, starting_cap: 4)
-        expect(SoulResonanceApi.chargen_allowance(-1)).to eq(skill_points: 13, starting_cap: 6)
-        expect(SoulResonanceApi.chargen_allowance(0)).to eq(skill_points: 15, starting_cap: 7)
-        expect(SoulResonanceApi.chargen_allowance(1)).to eq(skill_points: 17, starting_cap: 8)
-        expect(SoulResonanceApi.chargen_allowance(3)).to eq(skill_points: 21, starting_cap: 10)
+      it "matches the canonical symmetric table (FINAL REQ-012) and the Aspect point-buy pool (added 2026-07-24 at the project owner's direction)" do
+        expect(SoulResonanceApi.chargen_allowance(-3)).to eq(skill_points: 9, starting_cap: 4, aspect_points: 2)
+        expect(SoulResonanceApi.chargen_allowance(-1)).to eq(skill_points: 13, starting_cap: 6, aspect_points: 4)
+        expect(SoulResonanceApi.chargen_allowance(0)).to eq(skill_points: 15, starting_cap: 7, aspect_points: 5)
+        expect(SoulResonanceApi.chargen_allowance(1)).to eq(skill_points: 17, starting_cap: 8, aspect_points: 6)
+        expect(SoulResonanceApi.chargen_allowance(3)).to eq(skill_points: 21, starting_cap: 10, aspect_points: 8)
       end
     end
 

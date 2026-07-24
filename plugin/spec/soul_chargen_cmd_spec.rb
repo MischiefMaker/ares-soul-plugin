@@ -3,7 +3,7 @@ require_relative 'spec_helper'
 module AresMUSH
   describe Soul::SoulChargenCmd do
     it "is registered for +soul/cg (not a bare +chargen root - see BUG-004)" do
-      %w[cg cg/resonance cg/skill cg/bnb cg/drop].each do |switch|
+      %w[cg cg/resonance cg/skill cg/aspect cg/bnb cg/drop].each do |switch|
         cmd = double(root: "soul", switch: switch)
         expect(Soul.get_cmd_handler(nil, cmd, nil)).to eq(Soul::SoulChargenCmd)
       end
@@ -20,6 +20,12 @@ module AresMUSH
         cmd = double(switch: "cg")
         handler = Soul::SoulChargenCmd.new(nil, cmd, nil)
         expect(handler.sub_switch).to eq("")
+      end
+
+      it "strips the cg prefix for the aspect switch" do
+        cmd = double(switch: "cg/aspect")
+        handler = Soul::SoulChargenCmd.new(nil, cmd, nil)
+        expect(handler.sub_switch).to eq("aspect")
       end
     end
 

@@ -10,7 +10,7 @@ Running log of issues found during internal testing (non-live game install, star
 
 ### FR-004: Default Skill set changed to setting-specific names
 
-**Status:** 🟡 Partially done — skills changed; a related open question on Aspect ratings needs an answer
+**Status:** ✅ Done — skills changed; the related Aspect-values question was resolved by the user and implemented as FR-005 below.
 
 **Requested:** 2026-07-24, internal testing: *"We need to change the default skills. Also Body, Mind and Spirit need to take values -- these are the aspects in the roll."* New Skill set specified per Aspect:
 - Body: Strength, Speed, Stamina
@@ -19,7 +19,24 @@ Running log of issues found during internal testing (non-live game install, star
 
 **Done:** Updated the shipped default Skill list (`game/config/soul.yml`, mirrored in `docs/reference/Default_Config.md`) to the set above. Net change from the old starter set: Body's Reflexes → Speed (Strength/Stamina unchanged); Mind fully replaced (Investigation/Empathy/Academics → Intelligence/Learning/Wit); Spirit fully replaced except Ceremonial Magic, which was already there (Resolve/Presence → Hedgecraft/Natural). Stable keys: `strength`, `speed`, `stamina`, `intelligence`, `learning`, `wit`, `ceremonial_magic`, `hedgecraft`, `natural`. This is the shipped *default* — an already-installed game's own `game/config/soul.yml` is a separate copy and needs the same edit applied by hand (or a fresh `plugin/install` merge) to take effect there.
 
-**Open question — not yet acted on:** "Body, Mind and Spirit need to take values" reads as flagging a real gap: Aspect ratings currently default to 0 for every character and nothing in normal play ever sets them — chargen only lets players allocate Skills (FINAL REQ-011's canonical flow lists Skills only), so the Aspect Contribution term (`rating × 0.20`) in the roll formula is effectively always 0 right now. `+soul/framework/aspect` (staff correction) is the only way an Aspect rating ever changes today. Asked the user which mechanism should actually set the value — derive it from the Aspect's own Skills automatically, add Aspect allocation to chargen (a deviation from FINAL's canonical flow), or give every character a flat starting value — and got no answer yet. Not implementing any of the three without that answer, since they're meaningfully different designs, not variations on one mechanical fix.
+**Open question, now resolved:** "Body, Mind and Spirit need to take values" flagged a real gap: Aspect ratings defaulted to 0 for every character and nothing in normal play ever set them — chargen only let players allocate Skills (FINAL REQ-011's canonical flow lists Skills only), so the Aspect Contribution term (`rating × 0.20`) in the roll formula was effectively always 0. Asked the user which mechanism should set the value (derive from Skills / add to chargen / flat default); the user answered directly — see FR-005.
+
+### FR-005: Aspect point-buy added to chargen
+
+**Status:** ✅ Done (`plugin/public/soul_resonance_api.rb`, `soul_framework_api.rb`, `soul_character_api.rb`, `plugin/web/soul_chargen_web_handler.rb`, `plugin/commands/soul_chargen_cmd.rb`, `plugin/soul_config_validator.rb`, `game/config/soul.yml`, web `chargen.js`/`.hbs`)
+
+**Requested:** 2026-07-24, internal testing, resolving FR-004's open question with an explicit decision that reverses FINAL's REQ-011 canonical chargen flow (chargen previously excluded Aspect allocation — a decision `docs/spec/CLAUDE_ADR.md` had documented as intentional during Phase 9): *"Aspect point-buy to chargen. That should not have been excluded. We will need a configurable min and max -- 0 and 5 by default. Let's allocate 5 points in chargen, with 1 extra point for each resonance level (or 1 less for R-). these should be configurable as well."*
+
+**Done:** Added a full Aspect point-buy allocation step to chargen, mirroring the existing Skill point-buy architecture end-to-end rather than inventing a parallel mechanism (CP-09 "One Rule One Home"):
+- New config: `framework.aspect_min_rating`/`aspect_max_rating` (default `0`/`5`) — a single lifetime range, not a two-tier starting-cap/ultimate-cap split like Skills, because Aspects have no post-chargen XP-spend advancement path for a lower "starting" cap to protect against being exceeded later. `resonance.r0_aspect_points` (default `5`), `positive_aspect_points_per_level`/`negative_aspect_points_per_level` (default `1` each) — same `base + (Resonance × rate)` formula Skills already use in `SoulResonanceApi.chargen_allowance`, extended to also return `aspect_points`.
+- `plugin/soul_config_validator.rb` validates the new range and integer keys.
+- `SoulCharacterApi.set_aspect_rating` gained min/max range validation it previously completely lacked (a real pre-existing bug, not introduced by this feature — found while wiring up player-facing Aspect allocation; low-consequence while Aspect-setting was staff-only via `+soul/framework/aspect`, load-bearing once exposed via point-buy).
+- `SoulChargenWebHandler.set_aspect`/`status` enforce the same spend-budget pattern as `set_skill`/`status` (shared class methods, used by both the MUSH command and the web handler).
+- `+soul/cg/aspect <key>=<rating>` (MUSH), new `soulChargenAspect` web operation, and an Aspect point-buy card with +/- controls in the Ember chargen UI (`chargen.js`/`.hbs`), matching the existing Skill controls' bounds-checking and disabled-state pattern.
+
+Aspect point math (base 5, rate 1) verified by hand: R-3→2, R-1→4, R0→5, R+1→6, R+3→8.
+
+This is a deliberate reversal of the Phase 9 ADR entry documenting "Aspects are never part of the chargen point-buy" — see the corresponding `docs/spec/CLAUDE_ADR.md` entry for the correction. Shipped in the *default* `game/config/soul.yml` — an already-installed game's own copy is a separate file and needs the same config keys added by hand (or a fresh `plugin/install` merge) to take effect there.
 
 ### FR-003: Owners and staff need private B&B detail on both MUSH and web (FR-001's flagged follow-up)
 

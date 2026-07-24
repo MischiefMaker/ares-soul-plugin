@@ -98,7 +98,7 @@ module AresMUSH
           SoulHistoryCmd
         when "framework", "framework/skill", "framework/aspect", "resonance", "reload", "audit"
           SoulStaffCmd
-        when "cg", "cg/resonance", "cg/skill", "cg/bnb", "cg/drop"
+        when "cg", "cg/resonance", "cg/skill", "cg/aspect", "cg/bnb", "cg/drop"
           SoulChargenCmd
         when nil
           SoulSheetCmd
@@ -137,7 +137,7 @@ module AresMUSH
            "soulRollHistory", "soulRollReview", "soulRollMark",
            "soulRollCandidates", "soulRollDifficulties"
         SoulRollWebHandler
-      when "soulChargenStatus", "soulChargenResonance", "soulChargenSkill",
+      when "soulChargenStatus", "soulChargenResonance", "soulChargenSkill", "soulChargenAspect",
            "soulChargenBnb", "soulChargenDrop"
         SoulChargenWebHandler
       end

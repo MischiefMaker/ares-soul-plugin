@@ -40,6 +40,10 @@ module AresMUSH
       return { error: "Character not found" } unless character
       return { error: "Unknown aspect: #{aspect_key}" } unless SoulFrameworkApi.valid_aspect_key?(aspect_key)
 
+      min = SoulFrameworkApi.aspect_min_rating
+      max = SoulFrameworkApi.aspect_max_rating
+      return { error: "Rating must be between #{min} and #{max}" } if rating < min || rating > max
+
       char_aspect = CharacterAspect.find_one(character_id: character.id, aspect_key: aspect_key.to_s)
       if char_aspect
         char_aspect.update(rating: rating)

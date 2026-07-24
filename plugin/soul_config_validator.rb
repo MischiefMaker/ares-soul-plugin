@@ -63,6 +63,18 @@ module AresMUSH
           @validator.add_error("soul:framework.skill_max_rating must be greater than skill_min_rating.")
         end
 
+        aspect_min = framework["aspect_min_rating"]
+        aspect_max = framework["aspect_max_rating"]
+        if !aspect_min.kind_of?(Integer)
+          @validator.add_error("soul:framework.aspect_min_rating must be a whole number.")
+        end
+        if !aspect_max.kind_of?(Integer)
+          @validator.add_error("soul:framework.aspect_max_rating must be a whole number.")
+        end
+        if aspect_min.kind_of?(Integer) && aspect_max.kind_of?(Integer) && aspect_min >= aspect_max
+          @validator.add_error("soul:framework.aspect_max_rating must be greater than aspect_min_rating.")
+        end
+
         aspects = framework["aspects"]
         if !aspects.kind_of?(Hash) || aspects.empty?
           @validator.add_error("soul:framework.aspects must be a non-empty hash of Aspect definitions.")
@@ -112,7 +124,8 @@ module AresMUSH
         end
 
         %w[r0_skill_points r0_starting_cap positive_skill_points_per_level negative_skill_points_per_level
-           positive_starting_cap_per_level negative_starting_cap_per_level].each do |key|
+           positive_starting_cap_per_level negative_starting_cap_per_level
+           r0_aspect_points positive_aspect_points_per_level negative_aspect_points_per_level].each do |key|
           if !resonance[key].kind_of?(Integer)
             @validator.add_error("soul:resonance.#{key} must be a whole number.")
           end

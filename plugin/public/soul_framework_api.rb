@@ -57,6 +57,16 @@ module AresMUSH
       Global.read_config("soul", "framework", "skill_max_rating") || 10
     end
 
+    # Unlike Skills, Aspects have no post-chargen advancement path, so this
+    # range applies for a character's whole lifetime, not just chargen.
+    def self.aspect_min_rating
+      Global.read_config("soul", "framework", "aspect_min_rating") || 0
+    end
+
+    def self.aspect_max_rating
+      Global.read_config("soul", "framework", "aspect_max_rating") || 5
+    end
+
     # Grimoire branch -> Skill mapping (FINAL REQ-040: "map configured
     # Grimoire branches to Spirit Skills" - no dedicated Arcana Skill is
     # created). Returns the mapped skill's full hash (via get_skill, so an

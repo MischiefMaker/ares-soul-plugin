@@ -17,9 +17,10 @@ The default Sheet fits roughly one MUSH screen (CI-02); drill-down commands belo
 
 | Command | Purpose | Permission |
 |---|---|---|
-| `+soul/cg` | Review Resonance, Skill allocation, and starting B&B selections | unapproved player |
+| `+soul/cg` | Review Resonance, Skill/Aspect allocation, and starting B&B selections | unapproved player |
 | `+soul/cg/resonance <value>` | Select or change Resonance | unapproved player |
 | `+soul/cg/skill <key>=<rating>` | Set an absolute starting Skill rating | unapproved player |
+| `+soul/cg/aspect <key>=<rating>` | Set an absolute starting Aspect rating | unapproved player |
 | `+soul/cg/bnb <id or tag>[/<level>]=<explanation>` | Add a chargen-available B&B | unapproved player |
 | `+soul/cg/drop <entry id>` | Remove a chargen-selected B&B | unapproved player |
 
@@ -160,7 +161,7 @@ Staff tools SHALL NOT require direct database manipulation (REQ-036). `+soul/aud
 - `help soul_commands` — This reference
 - `help soul_rolls` — Roll mechanics and GM-assisted workflow
 - `help soul_bnb` — Boons and Banes
-- `help soul_chargen` — Character generation (Resonance, Skills, starting B&Bs)
+- `help soul_chargen` — Character generation (Resonance, Skills, Aspects, starting B&Bs)
 - `help manage soul` — Staff/admin help topic (CI-08 exact naming)
 
 ## Notes

@@ -30,28 +30,36 @@ module AresMUSH
       Global.read_config("soul", "resonance", "max") || 3
     end
 
-    # Chargen Skill point allowance and starting cap for a given Resonance
-    # value (FINAL REQ-012 formula). Positive and negative rates are
-    # independently configurable so asymmetric scaling is supported.
+    # Chargen Skill point allowance, starting cap, and Aspect point
+    # allowance for a given Resonance value (FINAL REQ-012 formula, Aspect
+    # point-buy added at the project owner's direction 2026-07-24 -
+    # overriding FINAL's original chargen scope, which excluded Aspects).
+    # Positive and negative rates are independently configurable so
+    # asymmetric scaling is supported.
     def self.chargen_allowance(resonance)
       r = resonance.to_i
       base_points = Global.read_config("soul", "resonance", "r0_skill_points") || 15
       base_cap = Global.read_config("soul", "resonance", "r0_starting_cap") || 7
+      base_aspect_points = Global.read_config("soul", "resonance", "r0_aspect_points") || 5
 
       if r > 0
         points_rate = Global.read_config("soul", "resonance", "positive_skill_points_per_level") || 0
         cap_rate = Global.read_config("soul", "resonance", "positive_starting_cap_per_level") || 0
+        aspect_points_rate = Global.read_config("soul", "resonance", "positive_aspect_points_per_level") || 0
       elsif r < 0
         points_rate = Global.read_config("soul", "resonance", "negative_skill_points_per_level") || 0
         cap_rate = Global.read_config("soul", "resonance", "negative_starting_cap_per_level") || 0
+        aspect_points_rate = Global.read_config("soul", "resonance", "negative_aspect_points_per_level") || 0
       else
         points_rate = 0
         cap_rate = 0
+        aspect_points_rate = 0
       end
 
       {
         skill_points: base_points + (r * points_rate),
-        starting_cap: base_cap + (r * cap_rate)
+        starting_cap: base_cap + (r * cap_rate),
+        aspect_points: base_aspect_points + (r * aspect_points_rate)
       }
     end
 

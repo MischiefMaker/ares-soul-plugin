@@ -59,6 +59,17 @@ export default Component.extend({
         rating
       });
     },
+    adjustAspect(aspect, delta) {
+      let rating = Number(aspect.rating || 0) + delta;
+      if (rating < Number(this.get('status.aspect_min_rating')) ||
+          rating > Number(this.get('status.aspect_max_rating'))) {
+        return;
+      }
+      return this.request('soulChargenAspect', {
+        aspect_key: aspect.key,
+        rating
+      });
+    },
     selectCatalogue(entry) {
       this.set('selectedCatalogue', entry);
     },
