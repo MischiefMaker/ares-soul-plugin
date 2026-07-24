@@ -1,14 +1,14 @@
-{{#if isSelf}}
+{{#if this.isSelf}}
   <section class="soul-xp">
     <h3>Experience</h3>
-    {{#if isLoading}}
+    {{#if this.isLoading}}
       <div class="text-muted">Loading XP…</div>
     {{else}}
       <div class="row g-2 mb-3">
-        <div class="col"><div class="card card-body">Available: {{xp.available}}</div></div>
-        <div class="col"><div class="card card-body">Earned: {{xp.earned}}</div></div>
-        <div class="col"><div class="card card-body">Spent: {{xp.spent}}</div></div>
-        <div class="col"><div class="card card-body">Catch-up: {{xp.catchup}}</div></div>
+        <div class="col"><div class="card card-body">Available: {{this.xp.available}}</div></div>
+        <div class="col"><div class="card card-body">Earned: {{this.xp.earned}}</div></div>
+        <div class="col"><div class="card card-body">Spent: {{this.xp.spent}}</div></div>
+        <div class="col"><div class="card card-body">Catch-up: {{this.xp.catchup}}</div></div>
       </div>
 
       <div class="card card-body mb-3">
@@ -30,15 +30,15 @@
             <select
               id="soul-xp-trait"
               class="form-select"
-              onchange={{action (mut selectedTrait) value="target.value"}}
+              onchange={{action "selectTrait" value="target.value"}}
             >
               <option value="">Choose a Trait</option>
-              {{#if (eq selectedTraitType "aspect")}}
-                {{#each aspects as |aspect|}}
+              {{#if (eq this.selectedTraitType "aspect")}}
+                {{#each this.aspects as |aspect|}}
                   <option value={{aspect.key}}>{{aspect.name}} — current rating {{aspect.rating}}</option>
                 {{/each}}
               {{else}}
-                {{#each skills as |skill|}}
+                {{#each this.skills as |skill|}}
                   <option value={{skill.key}}>{{skill.name}} — current rating {{skill.rating}}</option>
                 {{/each}}
               {{/if}}
@@ -46,47 +46,47 @@
           </div>
           <div class="col-md-3">
             <label for="soul-xp-amount" class="form-label">Increase by</label>
-            {{input
+            <Input
+              @type="number"
+              @value={{this.spendAmount}}
               id="soul-xp-amount"
-              type="number"
               min="1"
               step="1"
               class="form-control"
-              value=spendAmount
-            }}
+            />
           </div>
           <div class="col-md-2">
             <button
               type="button"
               class="btn btn-primary w-100"
-              disabled={{or (not selectedTrait) (not spendAmount)}}
-              onclick={{action "previewSpend" selectedTraitType selectedTrait spendAmount}}
+              disabled={{or (not this.selectedTrait) (not this.spendAmount)}}
+              onclick={{action "previewSpend" this.selectedTraitType this.selectedTrait this.spendAmount}}
             >
               Preview
             </button>
           </div>
         </div>
 
-        {{#if spendError}}
-          <div class="alert alert-danger mt-3 mb-0">{{spendError}}</div>
+        {{#if this.spendError}}
+          <div class="alert alert-danger mt-3 mb-0">{{this.spendError}}</div>
         {{/if}}
 
-        {{#if spendPreview}}
+        {{#if this.spendPreview}}
           <div class="border-start border-3 ps-3 mt-3">
             <p>
               This increases
-              <strong>{{spendPreview.trait_name}}</strong>
-              to rating <strong>{{spendPreview.target_rating}}</strong>
-              for <strong>{{spendPreview.cost}} XP</strong>.
+              <strong>{{this.spendPreview.trait_name}}</strong>
+              to rating <strong>{{this.spendPreview.target_rating}}</strong>
+              for <strong>{{this.spendPreview.cost}} XP</strong>.
             </p>
             <button
               type="button"
               class="btn btn-primary"
               onclick={{action
                 "confirmSpend"
-                spendPreview.trait_type
-                spendPreview.trait_key
-                spendPreviewAmount
+                this.spendPreview.trait_type
+                this.spendPreview.trait_key
+                this.spendPreviewAmount
               }}
             >
               Confirm Spend
@@ -96,7 +96,7 @@
       </div>
 
       <ul class="list-group soul-xp-history">
-        {{#each xp.history as |entry|}}
+        {{#each this.xp.history as |entry|}}
           <li class="list-group-item">{{entry.direction}} {{entry.base_amount}} — {{entry.source}}</li>
         {{/each}}
       </ul>
