@@ -44,6 +44,7 @@ en:
     bnb_resolved: "Boon/Bane resolved/negated."
     bnb_restored: "Boon/Bane restored."
     framework: "%xhSOUL Framework%xn%r%{entries}"
+    framework_corrected: "%{kind} %{key} corrected from %{old} to %{new}."
     resonance_corrected: "Resonance corrected."
     config_live: "SOUL configuration is read live; no plugin cache needs reloading. Current configuration is valid."
     config_invalid: "SOUL configuration is read live; no plugin cache needs reloading. Current configuration has errors:%r%{errors}"
