@@ -5,6 +5,7 @@ export default Component.extend({
   tagName: '',
   api: service('game-api'),
   isLoading: false,
+  catalogueOpen: false,
 
   didInsertElement() {
     this._super(...arguments);
@@ -13,9 +14,11 @@ export default Component.extend({
 
   async refreshStatus() {
     let result = await this.api.requestOne('soulChargenStatus', {});
-    if (!result.error) {
-      this.set('status', result);
+    if (result.error) {
+      this.setProperties({ status: null, error: result.error });
+      return;
     }
+    this.setProperties({ status: result, error: null });
   },
 
   async request(cmd, args) {
@@ -40,6 +43,12 @@ export default Component.extend({
   },
 
   actions: {
+    openCatalogue() {
+      this.set('catalogueOpen', true);
+    },
+    closeCatalogue() {
+      this.set('catalogueOpen', false);
+    },
     setResonance(value) {
       return this.request('soulChargenResonance', { value });
     },
