@@ -17,5 +17,9 @@ aliases:
 
 `+culmination [character]` — View Culminations.
 
-See `help soul_bnb` for Boons and Banes, `help soul_rolls` for rolls, and
-`help manage soul` for staff tools.
+Before approval, see `help soul_chargen` for Resonance, Skill, and starting
+Boon/Bane choices.
+
+See `help soul_bnb` for Boons and Banes, `help soul_rolls` for rolls,
+`help soul_chargen` for character generation, and `help manage soul` for
+staff tools.
