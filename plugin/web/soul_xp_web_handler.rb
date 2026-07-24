@@ -36,7 +36,9 @@ module AresMUSH
         error || { success: true, results: results }
       when "soulXpCorrect"
         character = Character.find_one_by_name(request.args['character'])
-        SoulXpApi.correct(character, request.args['amount'], reason: request.args['reason'], actor: enactor)
+        direction = request.args['direction'].to_s == "reversal" ? "reversal" : "correction"
+        SoulXpApi.correct(character, request.args['amount'], reason: request.args['reason'],
+          actor: enactor, direction: direction)
       end
     end
 
