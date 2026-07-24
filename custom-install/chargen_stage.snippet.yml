@@ -1,4 +1,5 @@
 # Add this entry at the desired point under stages: in game/config/chargen.yml.
 # Keep your existing stages and indentation.
 soul:
+  title: SOUL
   help: soul_chargen
