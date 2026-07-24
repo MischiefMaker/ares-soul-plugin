@@ -1,4 +1,9 @@
-<!-- Add inside ares-webportal/app/components/chargen-custom.hbs. -->
-<div class="tab-pane fade" id="soul-chargen-tab">
+<!--
+  Add inside ares-webportal/app/components/chargen-custom.hbs.
+  This file contains tab-pane elements only. The id must match the href in
+  chargen-custom-tabs.snippet.hbs. Do not add active/show unless you want
+  SOUL to replace the game's existing default chargen tab on page load.
+-->
+<div class="tab-pane fade" id="soul-chargen-tab" role="tabpanel">
   {{soul/chargen}}
 </div>
