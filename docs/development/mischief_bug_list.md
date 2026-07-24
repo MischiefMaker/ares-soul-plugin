@@ -16,7 +16,8 @@
    
          > I found a definite chargen bug: both the MUSH and web chargen paths required the normal play permission, which unapproved characters commonly do not have, and the web component silently discarded that error—hence the empty tab. I’m removing that inappropriate gate while retaining the unapproved-only restriction. I’m also replacing the profile XP form’s legacy input/mutation helpers with the component/action pattern used elsewhere, which avoids passing nullish state through Ember’s helper internals—the likely source of the WeakMap exception introduced on the profile.
 
-    From the console:
+ From the console:
+ 
                       > WeakMap key null must be an object or an unregistered symbol : reportError@http://178.128.224.21/assets/ares-webportal-2ca7a3f997d1ffe9c473aff4d846ccd7.js:19795:19
                   initialize/_ember.default.onerror@http://178.128.224.21/assets/ares-webportal-2ca7a3f997d1ffe9c473aff4d846ccd7.js:15960:15
                   invokeWithOnError@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3246:482
