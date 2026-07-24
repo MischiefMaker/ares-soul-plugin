@@ -50,6 +50,46 @@ module AresMUSH
       { success: true, new_rating: rating }
     end
 
+    # Staff correction wrapper for an existing character rating.  The lower-level
+    # setters are also used during chargen, where a correction audit/history entry
+    # would be inappropriate.
+    def self.correct_rating(character, kind, key, rating, actor:, reason:)
+      return { error: "Character not found" } unless character
+      return { error: "Reason is required for a framework correction" } if reason.to_s.blank?
+
+      normalized_kind = kind.to_s.downcase
+      old_rating =
+        case normalized_kind
+        when "skill"
+          get_skill_rating(character, key)
+        when "aspect"
+          get_aspect_rating(character, key)
+        else
+          return { error: "Rating type must be skill or aspect" }
+        end
+
+      result =
+        if normalized_kind == "skill"
+          set_skill_rating(character, key, rating.to_i, actor)
+        else
+          set_aspect_rating(character, key, rating.to_i, actor)
+        end
+      return result if result[:error]
+
+      audit = SoulAuditApi.create(
+        action: "framework_rating_correction", character: character, actor: actor, reason: reason,
+        source: "#{normalized_kind}:#{key}",
+        before_state: { "rating" => old_rating }, after_state: { "rating" => result[:new_rating] }
+      )
+      SoulNarrativeHistoryApi.create(
+        character, event_type: "correction",
+        narrative: "#{normalized_kind.capitalize} #{key} corrected from #{old_rating} to #{result[:new_rating]}. Reason: #{reason}",
+        audit_entry: audit
+      )
+
+      result.merge(old_rating: old_rating, kind: normalized_kind, key: key.to_s)
+    end
+
     def self.aspect_weight
       Global.read_config("soul", "aspect", "weight") || 0.20
     end
