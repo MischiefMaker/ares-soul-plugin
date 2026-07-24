@@ -17,6 +17,8 @@ test your configuration before opening it to players.
 
 ### For Players
 
+- Choose your Resonance, allocate starting Skills, and select starting Boons and
+  Banes during character generation
 - View your character sheet: Aspects, Skills, Resonance, XP, and Boons/Banes
 - Spend XP on Skill advancement, with a cost preview before you confirm
 - Track Boons and Banes — advantages, complications, relationships, and conditions
@@ -39,6 +41,7 @@ test your configuration before opening it to players.
 ### Key Features
 
 - Fully configurable Aspects and Skills — no fixed genre or setting assumptions
+- A dedicated character generation stage for Resonance, Skills, and starting B&Bs
 - Optional Resonance, locked at character approval
 - A full XP ledger with previews, confirmations, corrections, and catch-up awards
 - Boons and Banes with levels, history, and non-destructive resolution
@@ -281,9 +284,11 @@ upgrade that changes Ember components or snippets.
 ## Known Limitations
 
 - Pre-release: migration from FS3 hasn't completed final production validation
-- The web portal profile tab requires manual placement (see Step 4 above)
+- The web portal's profile, chargen, and live-scene interfaces all require manual
+  snippet placement (see Steps 5-9 above) — none of them mount automatically
 - The Inklings integration needs a companion update in Inklings before approved
-  outcomes flow automatically into SOUL
+  outcomes flow automatically into SOUL; SOUL's own side of that contract
+  (`SoulInklingsHook`) is complete and ready for Inklings to call into
 
 See the [Roadmap](docs/spec/ROADMAP.md) for current development status.
 

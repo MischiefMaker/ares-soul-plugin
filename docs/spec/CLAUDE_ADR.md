@@ -39,6 +39,17 @@ This was caught during a 2026-07-23 documentation review (prompted by the user a
 
 ## Recent Changes
 
+### Final Audit: Help Files, README, and Spec-Doc Cross-Check (2026-07-24)
+
+Performed a final full-project audit at the user's request: every MUSH command switch cross-checked against `plugin/help/en/*.md` and `docs/reference/Commands.md`; every `t('soul.*')` locale key used in `plugin/commands|web|events|public` confirmed present in `locale_en.yml` (53 used, all defined, zero gaps); all 49 FINAL REQ numbers checked for at least one citation across the checklist/reference/handoff docs (the 11 with none — REQ-001/003/004/034/035/041/043/046-049 — are architecture/data-domain/dual-UI/config-area/hook-contract requirements satisfied structurally by the whole codebase, not individual features, so no separate line item was expected or added); confirmed the real AresMUSH help-loading mechanism (`HelpReader#load_help_file`, `Help.find_topic`) keys topics by filename with automatic plural/`manage_`-prefix matching, verifying `manage_soul.md` genuinely resolves `help manage soul` per CI-08 and every cross-reference between help topics is reachable.
+
+**Found and fixed:**
+- `plugin/help/en/soul.md` (the `help soul` topic — the first thing a player would read) was untouched since Phase 1: it still said "SOUL is under active development... will appear here as each subsystem is implemented" and linked only to `manage soul`, with no mention of `soul_commands`/`soul_bnb`/`soul_rolls`/`soul_chargen` even though all four now exist. Rewrote it to describe `+soul`/`+soul/history` and cross-link every real topic.
+- `docs/reference/Commands.md`'s "Help Files" list was missing `help soul_chargen` (added in Phase 9, never added to this list). Added it, and a missing note on `+xp/spend`/`+xp/scene`'s `/confirm` syntax (previously only described in prose in the help topics themselves, not the technical reference table).
+- `README.md`'s Known Limitations section referenced "Step 4" for web portal mounting, stale since the install steps were renumbered 1-11 by Codex's most recent README rewrite (now Steps 5-9). Also added chargen to "For Players"/"Key Features" (present in the Overview since Phase 9's chargen UI landed, but the README's feature bullets were never updated to mention it), and clarified the Inklings-limitation note to state SOUL's own side of that contract (`SoulInklingsHook`) is complete.
+
+No functional/code gaps found — this was a documentation-currency pass. All command switches, web operations, and locale strings check out against actual behavior.
+
 ### Phase 11 Closed: Command Parity Fixes and Repeat Audit (2026-07-24)
 
 Codex implemented all five findings below plus the required repeat audit, pushed to `Codex` (`fabcfc8`, 12 commits over `469995b`, 226 lines across 12 files). Merged via clean fast-forward. Reviewed the actual diff file-by-file before merging, checked Ruby/JS syntax on every changed file, and independently re-verified each fix against the resolution direction the handoff specified rather than trusting the completion summary:

@@ -106,6 +106,8 @@ how and whether to narrate the result. Installation requires
 
 Scene-targeted awards SHOULD preview recipients and MAY require confirmation before applying.
 
+**Confirmation syntax:** `+xp/spend` and `+xp/scene[/catchup]` both show a preview (cost, or recipient list) the first time. Repeat the identical command with `/confirm` appended to the end of the arguments (e.g. `+xp/spend fighting=2/confirm`, `+xp/scene 5/reason/confirm`) to commit.
+
 ## Culminations
 
 | Command | Status | Purpose | Permission |
@@ -145,6 +147,7 @@ Staff tools SHALL NOT require direct database manipulation (REQ-036). `+soul/aud
 - `help soul_commands` — This reference
 - `help soul_rolls` — Roll mechanics and GM-assisted workflow
 - `help soul_bnb` — Boons and Banes
+- `help soul_chargen` — Character generation (Resonance, Skills, starting B&Bs)
 - `help manage soul` — Staff/admin help topic (CI-08 exact naming)
 
 ## Notes
