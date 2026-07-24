@@ -8,6 +8,7 @@ module AresMUSH
       character = Character.find_one_by_name(request.args['character'] || enactor.name)
       return { error: t('soul.character_not_found') } unless character
       return { error: t('soul.permission_denied') } unless can_view?(enactor, character, request.args['scene_id'])
+      resonance = SoulResonanceApi.get_resonance(character)
 
       {
         character: character.name,
@@ -25,7 +26,8 @@ module AresMUSH
           }
         end,
         bnb: SoulBnbApi.get_character_entries(character).map { |entry| serialize_bnb(entry) }.compact,
-        resonance: SoulResonanceApi.get_resonance(character),
+        resonance: resonance,
+        resonance_label: resonance.nil? ? t('soul.unset') : "R#{resonance}",
         xp: {
           available: SoulXpApi.get_available_xp(character),
           earned: SoulXpApi.get_lifetime_earned_xp(character),
