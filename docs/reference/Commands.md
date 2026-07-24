@@ -102,7 +102,8 @@ how and whether to narrate the result. Installation requires
 | `+xp/scene <scene id>=<amount>/<reason>` | Canonical (REQ-015) | Award to approved participants of a named scene; no catch-up | manage_soul |
 | `+xp/scene/catchup <amount>/<reason>` | Canonical (REQ-015) | Scene award (current scene) with catch-up applied | manage_soul |
 | `+xp/scene/catchup <scene id>=<amount>/<reason>` | Canonical (REQ-015) | Scene award (named scene) with catch-up applied | manage_soul |
-| `+xp/correct <character>=<amount>/<reason>` | Proposed | Correct/reverse a prior award or spend, preserving the original ledger entry | manage_soul |
+| `+xp/correct <character>=<amount>/<reason>` | Proposed | Add available XP through a linked correction record | manage_soul |
+| `+xp/reverse <character>=<amount>/<reason>` | Proposed | Subtract available XP through a linked reversal record; does not undo a Skill advance | manage_soul |
 
 Scene-targeted awards SHOULD preview recipients and MAY require confirmation before applying.
 
@@ -134,9 +135,11 @@ Per CI-08, the admin help topic for these commands SHALL be named `manage soul` 
 
 | Command | Status | Purpose | Permission |
 |---|---|---|---|
-| `+soul/framework` | Proposed | Review/correct Character Framework state (Aspects, Skills) | manage_soul |
+| `+soul/framework` | Proposed | Review configured Aspects and Skills | manage_soul |
+| `+soul/framework/skill <character>=<key>/<rating>/<reason>` | Proposed | Correct a character's Skill rating with history and audit | manage_soul |
+| `+soul/framework/aspect <character>=<key>/<rating>/<reason>` | Proposed | Correct a character's Aspect rating with history and audit | manage_soul |
 | `+soul/resonance <character>=<value>/<reason>` | Proposed | Correct a character's locked Resonance | manage_soul |
-| `+soul/reload` | Proposed | Reload live configuration from `game/config/soul.yml` | manage_soul |
+| `+soul/reload` | Proposed | Validate the currently loaded SOUL configuration after the game's normal config reload | manage_soul |
 | `+soul/audit <character>` | Proposed | View a character's staff-only technical audit log (`SoulAuditApi`) | manage_soul |
 
 Staff tools SHALL NOT require direct database manipulation (REQ-036). `+soul/audit` closes a gap noted since the Phase 1-3 command handoff: Permissions.md documents audit review as a staff capability, but no command surface existed for it until now — unlike Narrative History, the audit log is staff-only even for the character it concerns (`SoulAuditApi.get_audit`'s existing contract, unchanged).
