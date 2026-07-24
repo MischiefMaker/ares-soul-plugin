@@ -5,6 +5,7 @@ export default Component.extend({
   tagName: '',
   api: service('game-api'),
   isLoading: false,
+  selectedTraitType: 'skill',
 
   didReceiveAttrs() {
     this._super(...arguments);
@@ -14,6 +15,7 @@ export default Component.extend({
       this.setProperties({
         xp: null,
         skills: [],
+        aspects: [],
         spendPreview: null,
         isLoading: false
       });
@@ -38,16 +40,32 @@ export default Component.extend({
         });
       });
 
-      this.setProperties({ xp, skills });
+      let aspects = (sheet.aspects || []).map((aspect) => ({
+        key: aspect.key,
+        name: aspect.name,
+        rating: aspect.rating
+      }));
+
+      this.setProperties({ xp, skills, aspects });
     } finally {
       this.set('isLoading', false);
     }
   },
 
   actions: {
-    async previewSpend(skillKey, amount) {
+    selectTraitType(traitType) {
+      this.setProperties({
+        selectedTraitType: traitType,
+        selectedTrait: null,
+        spendError: null,
+        spendPreview: null
+      });
+    },
+
+    async previewSpend(traitType, traitKey, amount) {
       let preview = await this.api.requestOne('soulXpSpend', {
-        skill_key: skillKey,
+        trait_type: traitType,
+        trait_key: traitKey,
         amount
       });
       if (preview.error) {
@@ -61,9 +79,10 @@ export default Component.extend({
       }
     },
 
-    async confirmSpend(skillKey, amount) {
+    async confirmSpend(traitType, traitKey, amount) {
       let result = await this.api.requestOne('soulXpSpend', {
-        skill_key: skillKey,
+        trait_type: traitType,
+        trait_key: traitKey,
         amount,
         confirmed: 'true'
       });
