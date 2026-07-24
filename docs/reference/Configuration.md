@@ -21,13 +21,13 @@ At startup, SOUL validates YAML structure, required keys, supported values, refe
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `enabled` | bool | `true` | Plugin-wide switch; when false, SOUL command/web routes and event handlers (cron, scene-share) are not registered |
+| `enabled` | bool | `true` | Plugin-wide switch; when false, SOUL command and web routes are not registered |
 | `framework.aspects` | map | Body, Mind, Spirit | Stable Aspect keys mapped to names, descriptions, and ordering |
 | `framework.skills` | map | starter set in `soul.yml` | Stable Skill keys mapped to names, ordering, and exactly one Aspect |
 | `framework.skill_min_rating` | int | `0` | Minimum Skill rating |
 | `framework.skill_max_rating` | int | `10` | Ultimate Skill cap, all Resonance tiers (REQ-010) |
 | `framework.aspect_min_rating` | int | `0` | Minimum Aspect rating |
-| `framework.aspect_max_rating` | int | `5` | Maximum Aspect rating. Unlike Skills, Aspects have no post-chargen XP-spend advancement path, so this single range applies for a character's whole lifetime, not just chargen — correctable afterward only via `+soul/framework/aspect` (staff) |
+| `framework.aspect_max_rating` | int | `10` | Ultimate Aspect cap |
 
 ## Aspect Roll Contribution
 
@@ -54,24 +54,19 @@ CP-03 invariant: equivalent Skill investment SHALL matter substantially more tha
 | `resonance.negative_skill_points_per_level` | int | `2` | Reduced chargen points per negative Resonance level |
 | `resonance.positive_starting_cap_per_level` | int | `1` | Additional starting cap per positive Resonance level |
 | `resonance.negative_starting_cap_per_level` | int | `1` | Reduced starting cap per negative Resonance level |
-| `resonance.r0_aspect_points` | int | `5` | Chargen Aspect point-buy allowance at R0 |
-| `resonance.positive_aspect_points_per_level` | int | `1` | Additional chargen Aspect points per positive Resonance level |
-| `resonance.negative_aspect_points_per_level` | int | `1` | Reduced chargen Aspect points per negative Resonance level |
 | `resonance.review_flag_at_extremes` | bool | `true` | R3/R-3 require strong justification and heightened review |
 
 Canonical symmetric table (REQ-012):
 
-| Resonance | Skill points | Chargen cap | Aspect points |
-|---:|---:|---:|---:|
-| R-3 | 9 | 4 | 2 |
-| R-2 | 11 | 5 | 3 |
-| R-1 | 13 | 6 | 4 |
-| R0 | 15 | 7 | 5 |
-| R1 | 17 | 8 | 6 |
-| R2 | 19 | 9 | 7 |
-| R3 | 21 | 10 | 8 |
-
-Aspect point-buy allocation was added to chargen at the project owner's explicit direction on 2026-07-24, overriding the original FINAL-derived scope decision (Phase 9) that had excluded Aspects from chargen entirely. Aspects use the same `base + (Resonance × per-level rate)` formula as Skill points (see `SoulResonanceApi.chargen_allowance`), just with their own configurable base and per-level rates so the two pools can be tuned independently.
+| Resonance | Skill points | Chargen cap |
+|---:|---:|---:|
+| R-3 | 9 | 4 |
+| R-2 | 11 | 5 |
+| R-1 | 13 | 6 |
+| R0 | 15 | 7 |
+| R1 | 17 | 8 |
+| R2 | 19 | 9 |
+| R3 | 21 | 10 |
 
 ## XP
 
@@ -84,6 +79,8 @@ Aspect point-buy allocation was added to chargen at the project owner's explicit
 | `xp.forum_award` | int | `1` | First qualifying player-authored forum topic/reply per week (later contributions that week award 0) |
 | `xp.cost.skill_curve_numerator` | int | `1` | Numerator of the skill rating curve (`rating² / denominator`) |
 | `xp.cost.skill_curve_denominator` | int | `2` | Denominator of the skill rating curve |
+| `xp.cost.skill_cost_multiplier` | decimal | `1` | Multiplier applied to the equivalent Skill cost |
+| `xp.cost.aspect_cost_multiplier` | decimal | `4` | Multiplier applied to Aspect advancement |
 | `xp.cost.development_base` | int | `1` | Baseline development multiplier |
 | `xp.cost.development_scale` | int | `250` | XP-spent threshold in the development curve |
 | `xp.cost.development_exponent` | decimal | `1.25` | Development curve shape |
@@ -98,8 +95,13 @@ development_modifier = xp.cost.development_base + (xp_spent / xp.cost.developmen
 resonance_modifier = (resonance > 0)
   ? 1 + xp.cost.positive_resonance_rate × resonance + xp.cost.positive_resonance_surcharge × resonance
   : 1 + xp.cost.negative_resonance_rate × resonance
-final_cost = ceil(base_cost × development_modifier × resonance_modifier)
+equivalent_skill_cost = ceil(base_cost × development_modifier × resonance_modifier)
+final_cost = ceil(equivalent_skill_cost × advancement_type_multiplier)
 ```
+
+Both trait types use the same rating, development, and Resonance calculation.
+The advancement multiplier is `xp.cost.skill_cost_multiplier` for Skills and
+`xp.cost.aspect_cost_multiplier` for Aspects.
 
 ### Catch-Up XP (Addendum §8, resolves REQ-014's schedule/multiplier)
 
