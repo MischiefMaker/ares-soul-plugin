@@ -82,9 +82,65 @@
          
          The production Ember build now completes successfully. Changes remain local and have not yet been pushed.
 
-7. bnbs need to take 'impacted skills' when adding them to a player, so that the roll command knows what to suggest. This could be added in a second step, but it needs to be required and explained, including in chargen.
+   Still not working. From the console:
 
-8. CG help says:
+            undefined : reportError@http://178.128.224.21/assets/ares-webportal-2ca7a3f997d1ffe9c473aff4d846ccd7.js:19795:19
+                  error@http://178.128.224.21/assets/ares-webportal-2ca7a3f997d1ffe9c473aff4d846ccd7.js:16203:20
+                  triggerEvent@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:13665:540
+                  triggerEvent@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:13345:158
+                  trigger@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10414:89
+                  transitionDidError@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:13352:12
+                  Transition/this.promise<@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10313:182
+                  invokeCallback@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:4342:3550
+                  publish@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:4342:3305
+                  publishRejection@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:4342:2198
+                  @http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:17656:44
+                  invokeWithOnError@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3246:415
+                  flush@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3241:7
+                  flush@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3260:363
+                  _end@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3290:70
+                  Backburner/this._boundAutorunEnd@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3267:84
+                  promise callback*buildNext/<@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3220:97
+                  flush$1@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3303:327
+                  _scheduleAutorun@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3302:1589
+                  _end@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3290:252
+                  Backburner/this._boundAutorunEnd@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3267:84
+                  promise callback*buildNext/<@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3220:97
+                  flush$1@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3303:327
+                  _scheduleAutorun@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3302:1589
+                  _end@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3290:252
+                  Backburner/this._boundAutorunEnd@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3267:84
+                  promise callback*buildNext/<@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3220:97
+                  flush$1@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3303:327
+                  _scheduleAutorun@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3302:1589
+                  _end@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3290:252
+                  Backburner/this._boundAutorunEnd@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3267:84
+                  promise callback*buildNext/<@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3220:97
+                  flush$1@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3303:327
+                  _scheduleAutorun@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3302:1589
+                  _end@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3290:252
+                  Backburner/this._boundAutorunEnd@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3267:84
+                  promise callback*buildNext/<@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3220:97
+                  flush$1@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3303:327
+                  _scheduleAutorun@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3302:1589
+                  _ensureInstance@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3302:1392
+                  schedule@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:3272:267
+                  @http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:17656:13
+                  then@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:4342:4684
+                  resolve@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10492:70
+                  Transition@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10313:131
+                  getTransitionByIntent@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10542:15
+                  transitionByIntent@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10538:737
+                  doTransition@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10561:39
+                  transitionTo@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:10696:157
+                  _doTransition@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:13506:699
+                  transitionTo@http://178.128.224.21/assets/vendor-207efe70966ad6a76ba0beb1e6aeba20.js:14155:460
+                  ares-webportal-2ca7a3f997d1ffe9c473aff4d846ccd7.js:19796:17
+
+
+8. bnbs need to take 'impacted skills' when adding them to a player, so that the roll command knows what to suggest. This could be added in a second step, but it needs to be required and explained, including in chargen.
+
+9. CG help says:
           These commands stop working after approval. Skill ratings cost one point per
           rating level and cannot exceed the starting cap shown by +soul/cg. Aspect
           ratings cost one point per rating level and cannot exceed the configured
@@ -97,19 +153,19 @@
     This is wrong: Aspects will allow post-chargen advancement. Resonance does not allow changing after chargen. Everything else does.
    Remove the language about the chargen command. Players do not care. Just tell them the commands they need.
 
-9. We need to add explanations how to disable FS3, including de-listing it in chargen, including: disabling the plugin, removing the chargen steps and app_review_commands for sheet.
+10. We need to add explanations how to disable FS3, including de-listing it in chargen, including: disabling the plugin, removing the chargen steps and app_review_commands for sheet.
   
-10. Installers should add to app_review_commands : - soul %{name} -- Note: we should add inkling/list ${name} to the Inkling instructions as well.
+11. Installers should add to app_review_commands : - soul %{name} -- Note: we should add inkling/list ${name} to the Inkling instructions as well.
 
-11. Add cg checks for: Points spent on Aspects < Points allowed, points spent on skills < points allowed, bnbs < allowed number and ratio as 3 separate items. See inklings for how to implement.
+12. Add cg checks for: Points spent on Aspects < Points allowed, points spent on skills < points allowed, bnbs < allowed number and ratio as 3 separate items. See inklings for how to implement.
        
-12. We were going to include some default bnbs in the install instructions which never got added. Add the following:
+13. We were going to include some default bnbs in the install instructions which never got added. Add the following:
          #1 Cursed, Tag: cursed    Kind: bane,         Your character carries some sort of curse.
          #2 Artifact, Tag: artifact    Kind: boon,         Your character possesses some sort of magical artifact that grants them something extra.
          #3 Contacts, tag: contacts         Kind: boon,         Your character knows important people.
          #4 Bad Reputation, tag: bad_rep,         Kind: bane,         Your character has some sort of bad reputation that preceeds them.
 
-13. Using app/approve gives the following error, but does complete the approval:
+14. Using app/approve gives the following error, but does complete the approval:
     
 >           %% Sorry! The code lost its mind while executing a command.  Not your fault.
                   Please send this error information to the admins and tell them what you were doing at the time:
