@@ -46,7 +46,7 @@ soul:
         order: 2
       spirit:
         name: "Spirit"
-        description: "Willpower, emotional depth, and the arcane"
+        description: "Magical, specialness and the arcane"
         order: 3
 
     # Skills map to exactly one Aspect by stable key (FINAL REQ-010).
