@@ -42,5 +42,23 @@ module AresMUSH
       expect(SoulChargenWebHandler.set_skill(character, "blade", 3)[:success]).to be true
       expect(SoulCharacterApi).to have_received(:set_skill_rating).with(character, "blade", 3, character)
     end
+
+    it "provides display-ready summary fields for the chargen layout" do
+      allow(SoulResonanceApi).to receive(:get_resonance).and_return(1)
+      allow(SoulResonanceApi).to receive(:chargen_allowance).and_return(
+        skill_points: 17, starting_cap: 8
+      )
+      allow(SoulResonanceApi).to receive(:enabled?).and_return(true)
+      allow(SoulResonanceApi).to receive(:min).and_return(-3)
+      allow(SoulResonanceApi).to receive(:max).and_return(3)
+      allow(SoulFrameworkApi).to receive(:get_skills).and_return([])
+      allow(SoulFrameworkApi).to receive(:get_aspects).and_return([])
+      allow(SoulBnbApi).to receive(:get_character_entries).and_return([])
+      allow(SoulBnbApi).to receive(:get_catalogue).and_return([])
+
+      status = SoulChargenWebHandler.status(character)
+      expect(status[:resonance_label]).to eq("R1")
+      expect(status[:has_selected_bnb]).to be false
+    end
   end
 end
