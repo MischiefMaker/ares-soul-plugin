@@ -9,12 +9,12 @@
 # OPTION A: THE METHOD IS EMPTY
 # =============================
 #
-# If get_fields_for_viewing only initializes and returns an empty hash,
-# replace the entire method with this:
+# If get_fields_for_viewing only returns an empty hash (the stock method is
+# `return {}`), replace the entire method with this:
 
 def self.get_fields_for_viewing(char, viewer)
   fields = {}
-  fields[:soul_enabled] = Global.read_config("soul", "enabled") != false
+  fields[:soul_enabled] = Soul.enabled?
   fields[:can_manage_soul] = Soul.can_manage_soul?(viewer)
   fields[:is_approved] = char.is_approved?
   fields[:viewer_id] = viewer ? viewer.id : nil
@@ -26,7 +26,7 @@ end
 #
 # Add the following lines after "fields = {}" and before "return fields":
 #
-#   fields[:soul_enabled] = Global.read_config("soul", "enabled") != false
+#   fields[:soul_enabled] = Soul.enabled?
 #   fields[:can_manage_soul] = Soul.can_manage_soul?(viewer)
 #   fields[:is_approved] = char.is_approved?
 #   fields[:viewer_id] = viewer ? viewer.id : nil
@@ -47,7 +47,7 @@ end
 #   def self.get_fields_for_viewing(char, viewer)
 #     fields = {}
 #     fields[:some_other_field] = ...
-#     fields[:soul_enabled] = Global.read_config("soul", "enabled") != false
+#     fields[:soul_enabled] = Soul.enabled?
 #     fields[:can_manage_soul] = Soul.can_manage_soul?(viewer)
 #     fields[:is_approved] = char.is_approved?
 #     fields[:viewer_id] = viewer ? viewer.id : nil
