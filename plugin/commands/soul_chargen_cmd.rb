@@ -72,6 +72,7 @@ module AresMUSH
         when "bnb"
           emit_result SoulBnbApi.grant(enactor, self.reference, level_state: self.level,
             source: "chargen", explanation: self.explanation)
+        when "catalogue" then show_catalogue
         when "drop" then emit_result SoulBnbApi.drop_chargen_selection(self.entry_id, enactor)
         end
       end
@@ -84,6 +85,19 @@ module AresMUSH
       def set_aspect
         result = SoulChargenWebHandler.set_aspect(enactor, self.aspect, self.rating)
         emit_result result
+      end
+
+      def show_catalogue
+        entries = SoulBnbApi.get_catalogue(chargen_available: true)
+        lines = entries.map do |entry|
+          t('soul.chargen_catalogue_line',
+            id: entry.id, tag: entry.tag, name: entry.name,
+            kind: entry.kind, description: entry.description)
+        end
+        client.emit BorderedListTemplate.new(
+          lines.empty? ? [t('soul.none')] : lines,
+          t('soul.chargen_catalogue_title')
+        ).render
       end
 
       def show_status
