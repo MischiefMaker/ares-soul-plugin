@@ -19,7 +19,7 @@ Players MAY perform supported actions for their own characters:
 - View own XP, Resonance, roll history
 - Spend XP to advance Skills
 - Start rolls (`+roll`), select suggested/tagged/none B&Bs
-- View/search the public B&B catalogue
+- Browse the active public B&B catalogue
 - View own Narrative History
 
 **Override example** — restrict XP spending to staff:
@@ -69,14 +69,16 @@ Privacy-sensitive fields require explicit authorization — no permission SHALL 
 - Character explanation
 - GM notes
 
-Defaults are conservative (name + public description + mechanical effect only). Enabling a broader reveal (character explanation or GM notes) SHOULD produce an operator-facing warning when configured.
+Defaults are conservative (name + public description only). Enabling mechanical
+effects, character explanations, or GM notes SHOULD produce an operator-facing
+warning when configured.
 
 ```yaml
 privacy:
   gm_reveal_categories:
     - "name"
     - "public_description"
-    - "mechanical_effect"
+    # - "mechanical_effect"       # broader reveal; triggers operator warning
     # - "character_explanation"   # broader reveal; triggers operator warning
     # - "gm_notes"                # broadest reveal; triggers operator warning
   warn_on_broader_reveal: true
@@ -133,15 +135,13 @@ def handle(request)
 end
 ```
 
-### In APIs
+### In Shared Services
 
-Per REQ-002, handlers SHALL NOT trust client-supplied permissions — the API layer re-checks:
-```ruby
-def self.award(character, amount, source:, enactor:)
-  return { error: "You don't have permission." } unless Soul.can_manage_soul?(enactor)
-  # ... apply award
-end
-```
+Commands and web handlers both authorize the acting character before calling the
+same shared service methods. Services revalidate the target, requested transition,
+cost, and state; serializers and privacy-filtered query methods independently
+enforce what data a viewer may receive. Callers must not invoke mutation services
+directly without first applying the documented permission check.
 
 ## Admin Help Topic Naming (CI-08)
 
