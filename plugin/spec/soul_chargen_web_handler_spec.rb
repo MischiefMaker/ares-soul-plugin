@@ -124,6 +124,7 @@ module AresMUSH
       expect(status[:aspect_points]).to eq(6)
       expect(status[:aspect_min_rating]).to eq(0)
       expect(status[:aspect_max_rating]).to eq(5)
+      expect(SoulBnbApi).to have_received(:get_catalogue).with(chargen_available: true)
     end
   end
 end
