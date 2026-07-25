@@ -260,6 +260,43 @@ A bare `+bnb` previously required an argument and just returned an "invalid synt
 
 ---
 
+## BUG-016: New B&B request web commands were never registered in the dispatch table — "Oops! Something went wrong..."
+
+**Status:** ✅ Fixed (`plugin/soul.rb`, `plugin/spec/soul_spec.rb`)
+
+**Reported:** 2026-07-25, live testing, right after FR-015's profile rework deployed: loading a profile
+produced "Character not found." and "Oops! Something went wrong when the website talked to the game.
+Please try again and alert staff is the problem persists." The profile still loaded and the SOUL tab still
+opened, so this wasn't fatal, just noisy.
+
+**Root cause:** `SoulBnbWebHandler#handle`'s own `case request.cmd` recognizes `soulBnbList`,
+`soulBnbRequest`, `soulBnbRequestsList`, `soulBnbRequestApprove`, `soulBnbRequestDeny`, and
+`soulBnbSetSkills` (all added for FR-015), but `Soul.get_web_request_handler` — the actual dispatch table
+core AresMUSH's `Dispatcher#on_web_request` consults to decide which handler class even gets to run for a
+given `cmd` — was never updated to route them there. An unrecognized `cmd` never reaches any handler at
+all; core's dispatcher (`engine/aresmush/commands/dispatcher.rb`) falls through to its own generic
+fallback, the exact "Oops! Something went wrong when the website talked to the game" string, instead of
+ever reaching `SoulBnbWebHandler`'s real logic. `soul-bnb.js` calls `soulBnbList` on every profile-tab
+mount, so this fired immediately on every profile page load. The registration list and a handler's own
+internal `case` are two separate places that must be kept in sync by hand — nothing enforces it, and this
+is exactly the kind of gap that's invisible until it's exercised live.
+
+**Fix:** added the six missing command names to `Soul.get_web_request_handler`'s `soulBnb*` `when` clause.
+Added a regression spec (`Soul.get_web_request_handler` describe block in `soul_spec.rb`) that asserts
+every command string used anywhere in this plugin routes to its expected handler class, so a future
+addition to a handler's own `case request.cmd` that forgets this step fails a test instead of shipping
+silently.
+
+**Still open:** the separate "Character not found." error reported alongside this was NOT reproduced from
+this root cause (an unrouted command never reaches the code that returns that specific message) - it must
+come from an already-correctly-routed handler (Sheet, History, Culminations, or Audit all return exactly
+this string when `Character.find_one_by_name` fails). Plausibly a pre-existing transient race on initial
+profile load that BUG-014's fix (no longer silently redirecting home on any error) simply made visible for
+the first time, rather than a new bug - but not confirmed. Needs retesting after this fix and BUG-014 to
+see if it still reproduces, and if so, exactly which action or component triggers it.
+
+---
+
 ## BUG-015: Web chargen's "Add a Boon or Bane" form had no way to specify the affected Skill
 
 **Status:** ✅ Fixed (`plugin/web/soul_chargen_web_handler.rb`, `webportal/components/soul-chargen.js`,
