@@ -81,7 +81,7 @@ the web portal components into your `ares-webportal` checkout.
 
 **If `plugin/install` is unavailable:** copy this repository's `plugin/` folder to
 `plugins/soul/`, copy `game/config/soul.yml` into your game's `game/config/` folder,
-and copy `web-portal/app/` into the matching `ares-webportal/app/` directories. Then
+and copy the contents of `webportal/` into the matching `ares-webportal/app/` directories. Then
 restart the MUSH server.
 
 The files under `custom-install/` are not automatic replacements for your game's

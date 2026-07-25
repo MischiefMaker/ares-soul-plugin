@@ -204,7 +204,7 @@ Progress tracking for SOUL subsystem implementation, structured around `docs/spe
 - Namespace issue: some specs reference `Soul::SoulXpApi` while implementation defines `AresMUSH::SoulXpApi`
 
 **8. Web Route Integration**
-- Ember components and templates provided (`web-portal/app/components/soul/` and `/templates/components/soul/`)
+- Ember components and templates provided (`webportal/components/soul/` and `/templates/components/soul/`)
 - Game must mount these in its own profile route or SOUL-specific route
 - Audit-viewing command syntax (`+soul/audit <character>`) is now designed and handed to Codex (`docs/handoffs/Phase_6_Roll_Commands_and_Audit.md`) — no longer an open design question, pending implementation
 - Rationale: Route integration depends on host game's architecture (still open); Audit viewing's design gap is resolved
