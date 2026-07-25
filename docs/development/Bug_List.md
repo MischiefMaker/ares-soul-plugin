@@ -8,6 +8,31 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-036: Staff-proposed Culminations auto-approve immediately; automated sources (Inklings) still gated
+
+**Status:** ✅ Done (`plugin/public/soul_culmination_api.rb`, spec)
+
+**Requested:** 2026-07-25, live testing: "I don't understand why when admin add a new culmination, it's just
+proposed? Who is approving it? Are we proposing it to the player? To other admin?" - then, after explanation:
+"Yes, auto-approve when a staff proposes one. I agree about gating Inklings."
+
+**Background:** `SoulCulminationApi.propose`'s propose/approve split (Addendum REQ-023: "Staff approval is
+required by default unless automation is explicitly enabled") exists so a human reviews an automated or
+semi-trusted proposal source - an Inkling resolution, a workflow - before it becomes a permanent record. It
+applied uniformly to every `source` including `"staff"` (the admin/profile panel's direct-create path) only
+because the code path is shared (REQ-019) - nothing routed a staff-proposed Culmination to a player or
+another admin for review; any staffer, including the one who just proposed it, could immediately approve
+their own proposal from the same panel. That's real but pointless friction for a staffer creating one
+directly - the propose step already *is* the review.
+
+**Fix:** `.propose` now ignores `culminations.approval_required` and creates directly at `status: "approved"`
+(with `approved_by`/`approved_at` set and the Narrative History/`SoulCulminationApprovedEvent` fired
+immediately, same as calling `.approve` right after) whenever `source == "staff"` - regardless of the config
+value. Every other source (`"inkling:234"`, `"workflow:<name>"`, etc.) is untouched and still goes through
+the normal proposed → approve/deny gate. No caller changes needed - the web handler and MUSH command already
+passed `source: "staff"` and `enactor:`.
+
+
 ### FR-035: Culmination "?" wasn't actually clickable - a `title` attribute is hover-only
 
 **Status:** ✅ Done (`webportal/components/soul-culmination.js`, `webportal/templates/components/soul-culmination.hbs`)

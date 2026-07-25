@@ -18,6 +18,13 @@ module AresMUSH
 
       approval_required = Global.read_config("soul", "culminations", "approval_required")
       approval_required = true if approval_required.nil?
+      # A staffer proposing a Culmination directly IS the approval - the
+      # propose/approve gate exists so a human reviews an automated/
+      # semi-trusted source (an Inkling, a workflow) before it becomes
+      # permanent, not to make a staffer re-approve their own direct
+      # action a second time (staff request, 2026-07-25). Automated
+      # sources still go through the gate regardless of this config.
+      approval_required = false if source.to_s == "staff"
 
       culmination = Culmination.create(
         character: character,
@@ -29,7 +36,7 @@ module AresMUSH
       )
 
       if !approval_required
-        culmination.update(approved_at: Time.now)
+        culmination.update(approved_at: Time.now, approved_by: enactor)
         create_approval_history(culmination)
       end
 

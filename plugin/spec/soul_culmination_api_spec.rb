@@ -14,10 +14,24 @@ module AresMUSH
     end
 
     describe ".propose" do
-      it "creates a proposed (not approved) Culmination when approval is required" do
-        result = SoulCulminationApi.propose(character, title: "First Blood", description: "Won a duel", source: "staff")
+      it "creates a proposed (not approved) Culmination for a non-staff source when approval is required" do
+        result = SoulCulminationApi.propose(character, title: "First Blood", description: "Won a duel",
+          source: "inkling:1")
         expect(result[:success]).to be true
         expect(result[:culmination].status).to eq("proposed")
+      end
+
+      it "auto-approves immediately when a staffer proposes directly, even with approval_required true " \
+        "(staff request, 2026-07-25: the gate exists to let a human review an automated/semi-trusted " \
+        "source, not to make a staffer re-approve their own direct action)" do
+        result = SoulCulminationApi.propose(character, title: "Survived Alpha Testing", description: "Braved bugs",
+          source: "staff", enactor: staff)
+        expect(result[:success]).to be true
+        culmination = result[:culmination]
+        expect(culmination.status).to eq("approved")
+        expect(culmination.approved_by).to eq(staff)
+        expect(culmination.approved_at).to be_present
+        expect(character.narrative_history_entries.to_a.any? { |e| e.event_type == "culmination_approved" }).to be true
       end
 
       it "does not create a duplicate for the same source" do
@@ -29,13 +43,13 @@ module AresMUSH
 
     describe ".approve" do
       it "requires manage_soul permission" do
-        culmination = SoulCulminationApi.propose(character, title: "X", description: "Y", source: "staff")[:culmination]
+        culmination = SoulCulminationApi.propose(character, title: "X", description: "Y", source: "inkling:1")[:culmination]
         result = SoulCulminationApi.approve(culmination.id, character)
         expect(result[:error]).to match(/permission/i)
       end
 
       it "approves a proposed Culmination and creates Narrative History" do
-        culmination = SoulCulminationApi.propose(character, title: "X", description: "Y", source: "staff")[:culmination]
+        culmination = SoulCulminationApi.propose(character, title: "X", description: "Y", source: "inkling:1")[:culmination]
         result = SoulCulminationApi.approve(culmination.id, staff)
         expect(result[:success]).to be true
         expect(Culmination[culmination.id].status).to eq("approved")
@@ -45,8 +59,8 @@ module AresMUSH
 
     describe ".revoke" do
       it "preserves the original record and appends a correction entry rather than deleting" do
-        culmination = SoulCulminationApi.propose(character, title: "X", description: "Y", source: "staff")[:culmination]
-        SoulCulminationApi.approve(culmination.id, staff)
+        culmination = SoulCulminationApi.propose(character, title: "X", description: "Y", source: "staff",
+          enactor: staff)[:culmination]
         SoulCulminationApi.revoke(culmination.id, staff, reason: "Granted in error")
 
         culmination = Culmination[culmination.id]
@@ -56,8 +70,8 @@ module AresMUSH
       end
 
       it "requires a reason" do
-        culmination = SoulCulminationApi.propose(character, title: "X", description: "Y", source: "staff")[:culmination]
-        SoulCulminationApi.approve(culmination.id, staff)
+        culmination = SoulCulminationApi.propose(character, title: "X", description: "Y", source: "staff",
+          enactor: staff)[:culmination]
         result = SoulCulminationApi.revoke(culmination.id, staff, reason: "")
         expect(result[:error]).to match(/reason/i)
       end
