@@ -3,19 +3,7 @@
 # FILE: aresmush/plugins/chargen/custom_app_review.rb
 #       (in your game folder, NOT the plugin folder)
 #
-# ===========================================================================
-# WHY THIS IS NEEDED
-# ===========================================================================
-#
-# Adding "soul %{name}" to game/config/chargen.yml's app_review_commands
-# (see README Step 4) only affects +app/review <character> - it does NOT
-# make SOUL data appear in the plain +app <character> checklist or the web
-# portal's app-review view. Those two both render AppTemplate, which has
-# exactly one plugin extension point: the custom_app_review hook below.
-# Installing this snippet is what actually gets SOUL's Resonance/Skill/
-# Aspect/B&B status onto the same screen as the demographics/background/
-# hooks checklist.
-#
+
 # ===========================================================================
 # INSTALLATION
 # ===========================================================================
