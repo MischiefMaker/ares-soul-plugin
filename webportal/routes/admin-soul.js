@@ -10,11 +10,19 @@
 // route doesn't duplicate that check client-side.
 import Route from '@ember/routing/route';
 import { inject as service } from '@ember/service';
+import RSVP from 'rsvp';
 
 export default Route.extend({
   gameApi: service(),
 
   model() {
-    return this.gameApi.requestOne('soulBnbRequestsList', { status: 'pending' }, 'home');
+    return RSVP.hash({
+      requests: this.gameApi.requestOne('soulBnbRequestsList', { status: 'pending' }, 'home')
+        .then((response) => response.requests || []),
+      // Every character, not just approved ones - matches Jobs'/Inklings'
+      // own "characters" fetch for an admin character-picker dropdown
+      // (select: 'all').
+      characters: this.gameApi.requestMany('characters', { select: 'all' })
+    });
   }
 });

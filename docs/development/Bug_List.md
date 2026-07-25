@@ -8,6 +8,32 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-017: Admin page section renames, a config-editing note, and an "Award XP to Players" section with a character-picker dropdown
+
+**Status:** ✅ Done (`webportal/routes/admin-soul.js`, `webportal/controllers/admin-soul.js`, `webportal/templates/admin-soul.hbs`)
+
+**Requested:** 2026-07-25, live testing: "bnb requests is fine. Next section, 'View Available Aspects and
+Skills' (add a note to the section that these need to be changed in the config section), BNB catalogue is
+fine, 'Award XP to Scene' -- let's add an 'Award XP to Players' as well. Use a dropdown of player names
+like we did for Inklings, anywhere that player names need to be entered manually."
+
+**Renames:** "Framework and configuration" → "View Available Aspects and Skills" (added a note that
+adding/removing/renaming an Aspect or Skill happens in the game's SOUL config, not on this page - this
+section only ever showed the current list plus a config-validation button, it never edited anything).
+"Scene Experience Award" → "Award XP to Scene". "Pending Boon/Bane Requests" and "Boon & Bane catalogue"
+left as-is (confirmed fine).
+
+**New:** "Award XP to Players" section - award/correct XP for any single character from the admin page,
+without needing to be on that character's own profile first. Uses a `PowerSelect` character-picker
+dropdown (`@options={{this.model.characters}}`, `@searchField="name"`) instead of a free-text character
+field, matching Inklings' own admin-page pattern (`inkling-create-form.hbs`'s Main Character picker) -
+verified against real AresMUSH source (`plugins/profile/web/characters_request_handler.rb`) that the
+underlying `"characters"` command with `select: "all"` returns every character (not just approved ones)
+sorted by name, exactly what a staff picker needs. The route's `model()` now fetches both the pending-
+request queue and this character list via `RSVP.hash`, mirroring `admin-inklings.js`'s own route shape.
+
+---
+
 ### FR-016: `manage_permission`'s default changed from `manage_jobs` to `manage_apps`
 
 **Status:** ✅ Done (`game/config/soul.yml`, `plugin/soul.rb`, `plugin/help/en/manage_soul.md`,

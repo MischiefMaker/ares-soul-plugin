@@ -39,7 +39,9 @@
   </section>
 
   <section class="card card-body mb-3">
-    <h4>Framework and configuration</h4>
+    <h4>View Available Aspects and Skills</h4>
+    <p class="text-muted">Read-only. To add, remove, or rename an Aspect or Skill, edit the Aspects/Skills
+      section of the game's SOUL configuration - this page only shows what's currently configured.</p>
     <button class="btn btn-secondary m-2" type="button" onclick={{action "loadFramework"}}>View Framework</button>
     <button class="btn btn-secondary m-2" type="button" onclick={{action "reloadConfig"}}>Validate Configuration</button>
     {{#if this.framework}}
@@ -78,8 +80,8 @@
     <button class="btn btn-warning" type="button" onclick={{action "bnbSetSkills"}}>Update Associated Skills</button>
   </section>
 
-  <section class="card card-body">
-    <h4>Scene Experience Award</h4>
+  <section class="card card-body mb-3">
+    <h4>Award XP to Scene</h4>
     <Input @type="number" @value={{this.xpAmount}} class="form-control my-2" placeholder="Amount" />
     <Input @value={{this.xpReason}} class="form-control my-2" placeholder="Reason" />
     <Input @type="number" @value={{this.xpSceneId}} class="form-control my-2" placeholder="Scene ID" />
@@ -88,5 +90,31 @@
       <button class="btn btn-secondary" type="button" onclick={{action "xpScene" true}}>Preview/Confirm Scene + Catch-up</button>
     </div>
     {{#if this.scenePreview.recipients}}<p>Recipients: {{this.scenePreview.recipients}}</p>{{/if}}
+  </section>
+
+  <section class="card card-body">
+    <h4>Award XP to Players</h4>
+    <div class="mb-2">
+      <label for="soul-admin-xp-player" class="form-label">Player</label>
+      <PowerSelect
+        @selected={{this.xpPlayer}}
+        @options={{this.model.characters}}
+        @searchField="name"
+        @searchEnabled=true
+        @placeholder="Select a player..."
+        @onChange={{action "selectXpPlayer"}}
+        as |char|
+      >
+        {{char.name}}
+      </PowerSelect>
+    </div>
+    <Input @type="number" @value={{this.xpPlayerAmount}} class="form-control my-2" placeholder="Amount" />
+    <Input @value={{this.xpPlayerReason}} class="form-control my-2" placeholder="Reason" />
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-primary" type="button" onclick={{action "xpAwardPlayer" false}}>Award</button>
+      <button class="btn btn-primary" type="button" onclick={{action "xpAwardPlayer" true}}>Award + Catch-up</button>
+      <button class="btn btn-warning" type="button" onclick={{action "xpCorrectPlayer" "correction"}}>Add Correction</button>
+      <button class="btn btn-warning" type="button" onclick={{action "xpCorrectPlayer" "reversal"}}>Reverse XP</button>
+    </div>
   </section>
 </div>

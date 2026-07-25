@@ -2,13 +2,15 @@
 // ares-webportal/app/controllers/ via plugin/install. Pairs with
 // webportal/routes/admin-soul.js and webportal/templates/admin-soul.hbs.
 //
-// Everything here is global/catalogue-scoped, not tied to one character -
-// per-character staff actions (XP award, Resonance correction, B&B grant,
-// Culminations, audit) live on the profile tab instead (soul-staff.js),
-// scoped to whichever character's profile is open. model.requests is the
-// pending Boon/Bane request queue (see the route) - reload() re-fetches it
-// after every approve/deny so the list never shows a stale, already-
-// resolved request.
+// Everything here is global/catalogue-scoped, not tied to one already-open
+// profile - Resonance correction, B&B grant, Culminations, and audit stay
+// on the profile tab instead (soul-staff.js), scoped to whichever
+// character's profile is open. XP award/correction exists in both places:
+// here via a character-picker dropdown (model.characters, see the route)
+// for staff not currently on that player's profile; there implicitly
+// scoped to the open profile. model.requests is the pending Boon/Bane
+// request queue (see the route) - reload() re-fetches it after every
+// approve/deny so the list never shows a stale, already-resolved request.
 import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 
@@ -98,6 +100,33 @@ export default Controller.extend({
         }
         return result;
       });
+    },
+    selectXpPlayer(char) {
+      this.set('xpPlayer', char);
+    },
+    xpAwardPlayer(catchup) {
+      if (!this.xpPlayer) {
+        return;
+      }
+      return this.call('soulXpAward', {
+        character: this.xpPlayer.name, amount: this.xpPlayerAmount, reason: this.xpPlayerReason,
+        apply_catchup: catchup
+      }, null, (result) =>
+        `Awarded ${result.awarded} XP to ${this.xpPlayer.name}` +
+          `${result.catchup_portion ? ` (${result.catchup_portion} catch-up)` : ''}.`
+      );
+    },
+    xpCorrectPlayer(direction) {
+      if (!this.xpPlayer) {
+        return;
+      }
+      return this.call('soulXpCorrect', {
+        character: this.xpPlayer.name, amount: this.xpPlayerAmount, reason: this.xpPlayerReason,
+        direction: direction
+      }, null, (result) =>
+        `${direction === 'reversal' ? 'Reversed' : 'Corrected'} ${this.xpPlayer.name}'s available XP from ` +
+          `${result.old_available} to ${result.new_available}.`
+      );
     }
   }
 });
