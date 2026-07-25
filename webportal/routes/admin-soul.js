@@ -33,7 +33,13 @@ export default Route.extend({
       // ~20 server-side, plenty for a dropdown; a scene older than that
       // isn't realistically the target of a fresh XP award anyway.
       scenes: this.gameApi.requestOne('scenes', { filter: 'Recent' }, 'home')
-        .then((response) => response.scenes || [])
+        .then((response) => response.scenes || []),
+      // Resonance's configured min/max, for the Resonance-value dropdown -
+      // soulFramework already exposes it (SoulStaffWebHandler), no new
+      // command needed. Fetched eagerly, unlike the Aspect/Skill listing
+      // below (behind the "View Framework" button), since the dropdown
+      // needs it as soon as the page loads.
+      resonanceConfig: this.gameApi.requestOne('soulFramework', {}, 'home')
     });
   }
 });

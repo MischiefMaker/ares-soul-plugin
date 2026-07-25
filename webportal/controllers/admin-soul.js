@@ -3,12 +3,14 @@
 // webportal/routes/admin-soul.js and webportal/templates/admin-soul.hbs.
 //
 // Most of this is global/catalogue-scoped, not tied to one already-open
-// profile - Resonance correction, Culminations, and audit stay on the
-// profile tab instead (soul-staff.js), scoped to whichever character's
-// profile is open. XP award/correction and per-character B&B management
-// (grant/progress/regress/resolve/restore/delete) exist in both places:
-// here via a character-picker dropdown (model.characters, see the route)
-// for staff not currently on that player's profile; there implicitly
+// profile - Culminations and audit stay on the profile tab only
+// (soul-staff.js), scoped to whichever character's profile is open.
+// Resonance correction, XP award/correction, and per-character B&B
+// management (grant/progress/regress/resolve/restore/delete) exist in
+// both places: here via a character-picker dropdown (model.characters,
+// see the route) for staff not currently on that player's profile - moved
+// here from the profile panel entirely (2026-07-25: rarely needed enough
+// that it didn't belong cluttering every profile visit); there implicitly
 // scoped to the open profile. model.requests is the pending Boon/Bane
 // request queue (see the route) - reload() re-fetches it after every
 // approve/deny so the list never shows a stale, already-resolved request.
@@ -108,6 +110,23 @@ export default Controller.extend({
       return this.call('soulBnbSetSkills', {
         id_or_tag: this.bnbSkillsEntry.id, skill_associations: skillAssociations
       }, null, (result) => `Associated Skills for ${result.entry.name} updated.`);
+    },
+    selectResonancePlayer(player) {
+      this.set('resonancePlayer', player);
+    },
+    selectResonanceValue(value) {
+      this.set('resonanceValue', value);
+    },
+    correctResonance() {
+      if (!this.resonancePlayer || this.resonanceValue === undefined || this.resonanceValue === null) {
+        return;
+      }
+      return this.call('soulResonance', {
+        character: this.resonancePlayer.name, value: this.resonanceValue, reason: this.resonanceReason
+      }, null, (result) =>
+        `${this.resonancePlayer.name}'s Resonance changed from ` +
+          `${result.old_value === null ? 'Unset' : `R${result.old_value}`} to R${result.new_value}.`
+      );
     },
     selectBnbPlayer(player) {
       this.setProperties({ bnbPlayer: player, bnbEntry: null, characterBnbEntries: [] });

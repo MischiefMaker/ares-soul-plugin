@@ -37,6 +37,10 @@ module AresMUSH
         { rolls: SoulRollApi.get_roll_history(enactor, limit: 5).map { |roll| roll_hash(roll) } }
       when "soulRollReview"
         review(request)
+      when "soulRollOpenForReview"
+        return { error: t('soul.permission_denied') } unless
+          Soul.can_manage_soul?(enactor) || Soul.can_review_rolls?(enactor)
+        { pending_rolls: SoulRollApi.get_open_pending_rolls_for_reviewer(enactor).map { |pending| pending_hash(pending) } }
       when "soulRollMark"
         mark(request)
       when "soulRollCandidates"

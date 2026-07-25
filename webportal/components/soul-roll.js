@@ -222,18 +222,20 @@ export default Component.extend({
   async loadGmReviews() {
     this.set('gmIsLoading', true);
     try {
-      let response = await this.api.requestOne(
-        'soulRollReview',
-        { scene_id: this.get('scene.id') },
-        null
-      );
-      if (!response.error) {
+      let [sceneResponse, openResponse] = await Promise.all([
+        this.api.requestOne('soulRollReview', { scene_id: this.get('scene.id') }, null),
+        this.api.requestOne('soulRollOpenForReview', {}, null)
+      ]);
+      if (!sceneResponse.error) {
         this.setProperties({
-          gmPendingRolls: response.pending_rolls || [],
+          gmPendingRolls: sceneResponse.pending_rolls || [],
           selectedGmRoll: null,
           gmCandidates: [],
           gmReviewStage: 'list'
         });
+      }
+      if (!openResponse.error) {
+        this.set('allOpenPendingRolls', openResponse.pending_rolls || []);
       }
     } finally {
       this.set('gmIsLoading', false);
@@ -379,12 +381,16 @@ export default Component.extend({
       return this.abortRoll(pending, true);
     },
 
+    selectForceAbortRoll(pending) {
+      this.set('selectedForceAbortRoll', pending);
+    },
+
     forceAbortById() {
-      if (!this.forceAbortRollId) {
-        this.flashMessages.danger('A pending roll ID is required.');
+      if (!this.selectedForceAbortRoll) {
+        this.flashMessages.danger('Select a pending roll first.');
         return;
       }
-      return this.abortRoll({ id: this.forceAbortRollId }, true);
+      return this.abortRoll(this.selectedForceAbortRoll, true);
     },
 
     newRoll() {

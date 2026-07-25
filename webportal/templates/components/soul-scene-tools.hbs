@@ -15,8 +15,13 @@
 >
   <h4>Find a Boon or Bane Here</h4>
   <div class="input-group mb-3">
-    <Input @value={{this.bnbReference}} class="form-control" placeholder="Tag or catalogue ID" />
-    <button type="button" class="btn btn-secondary" onclick={{action "lookupBnb"}}>Look Up</button>
+    <PowerSelect @selected={{this.bnbReference}} @options={{this.catalogueEntries}}
+      @searchField="name" @searchEnabled=true @placeholder="Select a Boon/Bane..."
+      @onChange={{action "selectBnbReference"}} as |entry|>
+      {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
+    </PowerSelect>
+    <button type="button" class="btn btn-secondary" disabled={{not this.bnbReference}}
+      onclick={{action "lookupBnb"}}>Look Up</button>
   </div>
   <ul>{{#each this.bnbMatches as |match|}}
     <li>{{match.character}} — {{match.name}} ({{match.level_state}})</li>

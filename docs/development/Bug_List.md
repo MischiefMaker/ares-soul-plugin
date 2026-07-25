@@ -96,12 +96,48 @@ trap caught before shipping it.
 - `admin-soul.hbs`'s free-text "boon or bane" Kind field (create catalogue entry) → a native `<select>` -
   not an ID/tag, but the same class of "typo silently fails validation" problem the user asked to eliminate.
 
-**Deliberately left alone:** the GM Review modal's "Force-Abort Any Open Roll" Roll ID field
-(`soul-roll.hbs`) - it's an escape hatch for a roll that may not be in the current scene's own pending list at
-all (the only other force-abort path is scoped to `scene_id`), so a dropdown there would need a new
-system-wide "all open rolls" fetch; flagging as a known follow-up rather than building it speculatively.
-Catalogue Tag fields (chargen B&B, admin catalogue create) also stay free text deliberately - a Tag is new
-data staff are choosing for a record that doesn't exist yet, not a reference to something already there.
+**Deliberately left free text:** Catalogue Tag fields (chargen B&B, admin catalogue create) - a Tag is new
+data staff are choosing for a record that doesn't exist yet, not a reference to something already there. The
+GM Review modal's "Force-Abort Any Open Roll" field and Scene Tools' "Find a Boon or Bane Here" field were
+initially left as free text too (flagged as follow-ups needing more than a simple "load an existing list"),
+then converted anyway - see FR-031.
+
+---
+
+### FR-031: Resonance correction added to the admin page; the two remaining free-text lookups (Force-Abort any roll, Scene Tools B&B lookup) converted to dropdowns
+
+**Status:** ✅ Done (`plugin/public/soul_roll_api.rb`, `plugin/web/soul_roll_web_handler.rb`, `plugin/soul.rb`,
+`plugin/web/soul_staff_web_handler.rb`, `webportal/routes/admin-soul.js`, `webportal/controllers/admin-soul.js`,
+`webportal/templates/admin-soul.hbs`, `webportal/components/soul-roll.js`,
+`webportal/templates/components/soul-roll.hbs`, `webportal/components/soul-scene-tools.js`,
+`webportal/templates/components/soul-scene-tools.hbs`, spec)
+
+**Requested:** 2026-07-25, live testing: "Let's add resonance to the admin page with a dropdown character
+selector," then "And yes, convert all ID requests to dropdowns if possible" (in response to being told about
+the two fields FR-028 had flagged as follow-ups rather than converting on the spot).
+
+**Resonance on the admin page:** FR-023 removed Resonance correction from the profile staff panel entirely,
+leaving no web path to it at all (only the MUSH `+soul/resonance` staff command) - flagged as open at the
+time. Added an "Adjust Resonance" section to `admin-soul.hbs` (hidden entirely if Resonance is disabled),
+matching the "Award XP to Players" character-picker pattern: a Player `PowerSelect`, a Resonance-value
+`PowerSelect` (options `SoulResonanceApi.min..max`, newly exposed on the existing `soulFramework` command
+rather than a new one), a Reason field, and a Correct button calling the pre-existing `soulResonance`/
+`SoulResonanceApi.correct` - no backend change needed there, it was only ever missing a web entry point.
+
+**Force-Abort Any Open Roll** (`soul-roll.hbs`'s GM Review modal) now offers a `PowerSelect` instead of a
+typed Roll ID. This needed real new backend work, not just wiring an existing list to a dropdown:
+`SoulRollApi.get_open_pending_rolls_for_reviewer(actor)` is new, and deliberately privacy-scoped rather than
+listing every open roll to everyone - manage_soul staff see every open pending roll system-wide, but a
+scene-scoped reviewer (`can_review_rolls?` only) sees only rolls in scenes they actually participate in,
+exactly matching `can_review_pending?`'s own existing authorization (nothing appears in the dropdown that
+`force_abort_pending` would reject anyway - a picker must never leak the existence of a roll outside the
+viewer's real authority, even just by name/Skill in a dropdown list). New `soulRollOpenForReview` web command,
+registered in the central dispatch table and the regression spec covering it (BUG-016's lesson).
+
+**Scene Tools' "Find a Boon or Bane Here"** (`soul-scene-tools.hbs`, open to every scene participant, not
+staff-only) replaced its "Tag or catalogue ID" text field with a `PowerSelect` over the full catalogue
+(`soulBnbCatalogue`, already player-reachable - no permission change), lazily fetched the first time the
+modal opens rather than on every page load.
 
 ---
 

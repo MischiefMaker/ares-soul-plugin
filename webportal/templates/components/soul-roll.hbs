@@ -246,18 +246,21 @@
     {{else if (eq this.gmReviewStage "list")}}
       <div class="card card-body mb-3">
         <h4>Force-Abort Any Open Roll</h4>
-        <p>Use the pending roll ID and provide the required audit reason.</p>
+        <p>Select any open roll you're authorized to review and provide the required audit reason.</p>
         <div class="row g-2">
-          <div class="col-md-3">
-            <Input @type="number" @value={{this.forceAbortRollId}} class="form-control"
-              placeholder="Roll ID" />
+          <div class="col-md-5">
+            <PowerSelect @selected={{this.selectedForceAbortRoll}} @options={{this.allOpenPendingRolls}}
+              @searchField="character" @searchEnabled=true @placeholder="Select a pending roll..."
+              @onChange={{action "selectForceAbortRoll"}} as |pending|>
+              #{{pending.id}} {{pending.character}} — {{pending.skill_key}}
+            </PowerSelect>
           </div>
-          <div class="col-md-7">
+          <div class="col-md-5">
             <Input @value={{this.forceAbortReason}} class="form-control"
               placeholder="Required reason" />
           </div>
           <div class="col-md-2">
-            <button type="button" class="btn btn-danger w-100"
+            <button type="button" class="btn btn-danger w-100" disabled={{not this.selectedForceAbortRoll}}
               onclick={{action "forceAbortById"}}>Force Abort</button>
           </div>
         </div>

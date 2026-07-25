@@ -762,5 +762,40 @@ module AresMUSH
         expect(SoulRollApi.get_pending_gm_review(nil)).to eq([])
       end
     end
+
+    describe ".get_open_pending_rolls_for_reviewer" do
+      it "returns every open pending roll, system-wide, for manage_soul staff" do
+        allow(Soul).to receive(:can_manage_soul?).with(gm).and_return(true)
+        scene = Fabricate(:scene)
+        other_scene = Fabricate(:scene)
+        one = pending_for(character, status: "awaiting_gm", gm_assisted: "true", scene_id: scene.id)
+        two = pending_for(other_character, status: "awaiting_selection", scene_id: other_scene.id)
+
+        result = SoulRollApi.get_open_pending_rolls_for_reviewer(gm)
+        expect(result).to contain_exactly(one, two)
+      end
+
+      it "scopes a scene-reviewer (not manage_soul) to only scenes they participate in - a Roll ID " \
+        "picker must never leak the existence of rolls outside a reviewer's own authority" do
+        allow(Soul).to receive(:can_review_rolls?).with(gm).and_return(true)
+        own_scene = Fabricate(:scene, owner: gm)
+        other_scene = Fabricate(:scene, owner: character)
+        visible = pending_for(character, status: "awaiting_gm", gm_assisted: "true", scene_id: own_scene.id)
+        pending_for(other_character, status: "awaiting_gm", gm_assisted: "true", scene_id: other_scene.id)
+
+        expect(SoulRollApi.get_open_pending_rolls_for_reviewer(gm)).to eq([visible])
+      end
+
+      it "returns nothing for an actor with no review authority at all" do
+        scene = Fabricate(:scene, owner: gm)
+        pending_for(character, status: "awaiting_gm", gm_assisted: "true", scene_id: scene.id)
+
+        expect(SoulRollApi.get_open_pending_rolls_for_reviewer(gm)).to eq([])
+      end
+
+      it "returns nothing for a nil actor" do
+        expect(SoulRollApi.get_open_pending_rolls_for_reviewer(nil)).to eq([])
+      end
+    end
   end
 end

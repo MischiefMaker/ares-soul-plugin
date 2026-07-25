@@ -38,6 +38,34 @@
     {{/if}}
   </section>
 
+  {{#if this.model.resonanceConfig.resonance_enabled}}
+    <section class="card card-body mb-3">
+      <h4>Adjust Resonance</h4>
+      <div class="mb-2">
+        <label for="soul-admin-resonance-player" class="form-label">Player</label>
+        <PowerSelect
+          @selected={{this.resonancePlayer}}
+          @options={{this.model.characters}}
+          @searchField="name"
+          @searchEnabled=true
+          @placeholder="Select a player..."
+          @onChange={{action "selectResonancePlayer"}}
+          as |char|
+        >
+          {{char.name}}
+        </PowerSelect>
+      </div>
+      <PowerSelect @selected={{this.resonanceValue}} @options={{this.model.resonanceConfig.resonance_options}}
+        @placeholder="New Resonance..." @onChange={{action "selectResonanceValue"}} as |value|>
+        R{{value}}
+      </PowerSelect>
+      <Input @value={{this.resonanceReason}} class="form-control my-2" placeholder="Reason" />
+      <button class="btn btn-warning" type="button"
+        disabled={{or (not this.resonancePlayer) (not this.resonanceReason)}}
+        onclick={{action "correctResonance"}}>Correct Resonance</button>
+    </section>
+  {{/if}}
+
   <section class="card card-body mb-3">
     <h4>View Available Aspects and Skills</h4>
     <p class="text-muted">Read-only. To add, remove, or rename an Aspect or Skill, edit the Aspects/Skills

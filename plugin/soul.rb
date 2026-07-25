@@ -176,7 +176,7 @@ module AresMUSH
         SoulStaffWebHandler
       when "soulRoll", "soulRollStart", "soulRollGm", "soulRollSelect",
            "soulRollAbort", "soulRollForceAbort", "soulRollCancelGm", "soulRollPending",
-           "soulRollHistory", "soulRollReview", "soulRollMark",
+           "soulRollHistory", "soulRollReview", "soulRollOpenForReview", "soulRollMark",
            "soulRollCandidates", "soulRollDifficulties"
         SoulRollWebHandler
       when "soulChargenStatus", "soulChargenResonance", "soulChargenSkill", "soulChargenAspect",

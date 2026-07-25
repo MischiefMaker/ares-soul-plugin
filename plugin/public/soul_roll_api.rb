@@ -446,6 +446,30 @@ module AresMUSH
         .reverse
     end
 
+    # Every currently-open pending roll this actor is allowed to
+    # force-abort - for the "Force-Abort Any Open Roll" picker (mischief
+    # bug list, 2026-07-25: a typed Roll ID was the only way to reach a
+    # roll outside the reviewer's current scene, with no way to discover
+    # what IDs even exist). manage_soul staff see every open roll,
+    # system-wide; a scene-scoped reviewer only sees rolls in scenes they
+    # participate in - matches can_review_pending?'s own authorization
+    # exactly, so nothing appears in this list that force_abort_pending
+    # would reject anyway.
+    def self.get_open_pending_rolls_for_reviewer(actor)
+      return [] unless actor
+      expire_stale_pending_rolls
+      open_rolls = (PendingRoll.find(status: "awaiting_gm").to_a +
+        PendingRoll.find(status: "awaiting_selection").to_a).sort_by { |pending| pending.id.to_i }.reverse
+
+      return open_rolls if Soul.can_manage_soul?(actor)
+      return [] unless Soul.can_review_rolls?(actor)
+
+      open_rolls.select do |pending|
+        scene = load_scene(pending.scene_id)
+        scene && scene.is_participant?(actor)
+      end
+    end
+
     def self.normalize_context(context)
       (context || {}).each_with_object({}) do |(key, value), normalized|
         normalized[key.to_s] = value

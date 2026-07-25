@@ -11,7 +11,9 @@ module AresMUSH
           aspects: SoulFrameworkApi.get_aspects,
           skills: SoulFrameworkApi.get_skills,
           min_rating: SoulFrameworkApi.skill_min_rating,
-          max_rating: SoulFrameworkApi.skill_max_rating
+          max_rating: SoulFrameworkApi.skill_max_rating,
+          resonance_enabled: SoulResonanceApi.enabled?,
+          resonance_options: (SoulResonanceApi.min..SoulResonanceApi.max).to_a
         }
       when "soulFrameworkCorrect"
         character = Character.find_one_by_name(request.args['character'])

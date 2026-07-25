@@ -23,16 +23,28 @@ export default Component.extend({
   },
 
   actions: {
-    openTools() {
+    async openTools() {
       this.set('toolsOpen', true);
+      if (!this.catalogueEntries) {
+        let result = await this.api.requestOne('soulBnbCatalogue', { per_page: 1000 }, null);
+        if (!result.error) {
+          this.set('catalogueEntries', result.entries);
+        }
+      }
     },
     closeTools() {
       this.set('toolsOpen', false);
     },
+    selectBnbReference(entry) {
+      this.set('bnbReference', entry);
+    },
     async lookupBnb() {
+      if (!this.bnbReference) {
+        return;
+      }
       let result = await this.api.requestOne('soulBnbHere', {
         scene_id: this.get('scene.id'),
-        reference: this.bnbReference
+        reference: this.bnbReference.tag
       }, null);
       if (!result.error) {
         this.set('bnbMatches', result.matches || []);
