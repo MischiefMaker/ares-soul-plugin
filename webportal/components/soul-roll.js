@@ -82,7 +82,8 @@ export default Component.extend({
           pendingRoll: null,
           candidates: [],
           rollResult: null,
-          additionalTags: null
+          manualOptions: [],
+          selectedManualEntries: []
         });
       }
     } finally {
@@ -127,8 +128,7 @@ export default Component.extend({
   async showPendingRoll(pending) {
     this.setProperties({
       pendingRoll: pending,
-      rollResult: null,
-      additionalTags: null
+      rollResult: null
     });
 
     if (pending.status === 'awaiting_selection') {
@@ -156,6 +156,8 @@ export default Component.extend({
     });
     this.setProperties({
       candidates,
+      manualOptions: response.manual_options || [],
+      selectedManualEntries: [],
       rollStage: 'selection'
     });
   },
@@ -189,10 +191,7 @@ export default Component.extend({
     let selectedTags = (this.candidates || [])
       .filter((candidate) => !candidate.mandatory && candidate.selected)
       .map((candidate) => candidate.tag);
-    let manualTags = (this.additionalTags || '')
-      .split(/\s+/)
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0);
+    let manualTags = (this.selectedManualEntries || []).map((entry) => entry.tag);
     let tags = selectedTags.concat(manualTags);
     let args = {
       pending_roll_id: this.pendingRoll.id
@@ -323,6 +322,10 @@ export default Component.extend({
       }
     },
 
+    selectManualEntries(entries) {
+      this.set('selectedManualEntries', entries);
+    },
+
     selectAllCandidates() {
       (this.candidates || []).forEach((candidate) => {
         if (!candidate.mandatory) {
@@ -346,6 +349,21 @@ export default Component.extend({
     async refreshPendingRoll() {
       await this.loadRollData();
       await this.loadPendingAndHistory();
+    },
+
+    async cancelGmRequest() {
+      this.set('isLoading', true);
+      try {
+        let response = await this.api.requestOne(
+          'soulRollCancelGm', { pending_roll_id: this.pendingRoll.id }, null
+        );
+        if (!response.error) {
+          this.flashMessages.success('Proceeding without a GM.');
+          await this.showPendingRoll(response.pending_roll);
+        }
+      } finally {
+        this.set('isLoading', false);
+      }
     },
 
     showPendingRoll(pending) {
@@ -373,7 +391,8 @@ export default Component.extend({
         rollStage: 'setup',
         rollResult: null,
         candidates: [],
-        additionalTags: null
+        manualOptions: [],
+        selectedManualEntries: []
       });
     },
 

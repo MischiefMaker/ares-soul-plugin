@@ -275,6 +275,18 @@ module AresMUSH
         expect(ids_and_flags.keys).not_to include(excluded.id)
       end
 
+      it "offers owned unresolved entries not already shown as manual_options" do
+        shown = owned_entry("lucky")
+        not_shown = owned_entry("unlucky")
+        resolved = owned_entry("gone")
+        resolved.update(resolved: "true")
+        pending = pending_for(character, system_suggested_entries: [shown.id.to_s])
+
+        result = SoulRollApi.get_player_candidate_view(pending.id, character)
+        ids = result[:manual_options].map { |entry| entry[:id] }
+        expect(ids).to contain_exactly(not_shown.id)
+      end
+
       it "rejects a roll that does not belong to the requester" do
         pending = pending_for(character)
         expect(SoulRollApi.get_player_candidate_view(pending.id, other_character)[:error]).to be_present
@@ -591,6 +603,41 @@ module AresMUSH
         pending = pending_for(character, status: "awaiting_selection", gm_assisted: "false")
         result = SoulRollApi.abort_pending(pending.id, character, reason: "Changed approach")
         expect(result[:success]).to be true
+      end
+    end
+
+    describe ".cancel_gm_request" do
+      it "moves an awaiting-GM roll to awaiting_selection and downgrades it to a standard roll" do
+        pending = pending_for(character, status: "awaiting_gm", gm_assisted: "true")
+        result = SoulRollApi.cancel_gm_request(pending.id, character)
+
+        expect(result[:success]).to be true
+        expect(pending.reload.status).to eq("awaiting_selection")
+        expect(pending.reload.gm_assisted).to eq("false")
+      end
+
+      it "falls back to the roll's system-suggested candidates once cancelled" do
+        entry = owned_entry("lucky")
+        pending = pending_for(
+          character, status: "awaiting_gm", gm_assisted: "true",
+          system_suggested_entries: [entry.id.to_s]
+        )
+        SoulRollApi.cancel_gm_request(pending.id, character)
+
+        candidates = SoulRollApi.get_player_candidate_view(pending.id, character)[:candidates]
+        expect(candidates.map { |c| c[:id] }).to eq([entry.id])
+      end
+
+      it "rejects a roll not currently awaiting GM review" do
+        pending = pending_for(character, status: "awaiting_selection", gm_assisted: "false")
+        result = SoulRollApi.cancel_gm_request(pending.id, character)
+        expect(result[:error]).to be_present
+      end
+
+      it "rejects a roll that does not belong to the requester" do
+        pending = pending_for(character, status: "awaiting_gm", gm_assisted: "true")
+        result = SoulRollApi.cancel_gm_request(pending.id, other_character)
+        expect(result[:error]).to be_present
       end
     end
 

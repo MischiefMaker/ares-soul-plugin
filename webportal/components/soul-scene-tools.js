@@ -5,6 +5,7 @@ export default Component.extend({
   tagName: '',
   api: service('game-api'),
   session: service(),
+  toolsOpen: false,
 
   didReceiveAttrs() {
     this._super(...arguments);
@@ -22,6 +23,12 @@ export default Component.extend({
   },
 
   actions: {
+    openTools() {
+      this.set('toolsOpen', true);
+    },
+    closeTools() {
+      this.set('toolsOpen', false);
+    },
     async lookupBnb() {
       let result = await this.api.requestOne('soulBnbHere', {
         scene_id: this.get('scene.id'),

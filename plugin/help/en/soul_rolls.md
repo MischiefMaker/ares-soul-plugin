@@ -28,6 +28,10 @@ When your roll is awaiting your selection:
 
 `+roll/abort <roll id>=<reason>` — Abort your eligible pending roll.
 
+`+roll/cancelgm <roll id>` — Give up waiting for a scene GM and proceed with
+the roll's system-suggested Boons/Banes instead, as if it had been a
+standard roll all along.
+
 Scene GMs and SOUL staff:
 
 `+roll/review` — List rolls awaiting review in the current scene.

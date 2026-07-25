@@ -63,6 +63,7 @@ Name collisions return matching names, IDs, and tags for disambiguation (GL-10).
 | `+roll <tag> [<tag> ...]` | Canonical (REQ-026) | Select owned B&Bs for this roll | Full names accepted; collisions disambiguate; on a GM-assisted roll, a candidate the GM reviewed and did not approve is rejected, not silently reclassified |
 | `+roll none` | Canonical (REQ-026) | Decline optional entries | Applies to your own open pending roll awaiting selection; SHALL NOT remove GM-mandatory entries |
 | `+roll/abort <roll id>=<reason>` | Proposed (REQ-026 — exact syntax open) | Abort your own eligible pending roll | Only before GM submission (GM-assisted); reason required |
+| `+roll/cancelgm <roll id>` | Proposed (implemented 2026-07-25) | Give up waiting for a scene GM and proceed with the roll's system-suggested B&Bs, as a standard roll | Only while awaiting GM review |
 | `+roll/forceabort <roll id>=<reason>` | Proposed (REQ-026 — exact syntax open) | Staff/scene-GM clears an erroneous pending roll at any open status | Reason and audit required |
 | `+roll/pending` | Proposed | List your open pending rolls | Standard limit 1 open, GM-assisted limit 2 open (CI-04) — two independent caps |
 | `+roll/history` | Proposed | View your own completed roll history | play |

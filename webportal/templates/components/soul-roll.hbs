@@ -26,30 +26,32 @@
   {{else if (eq this.rollStage "setup")}}
     <p>Select the ability and difficulty for this roll.</p>
 
-    <div class="mb-3">
-      <label class="form-label">Skill</label>
-      <PowerSelect
-        @selected={{this.selectedSkill}}
-        @options={{this.skills}}
-        @searchField="name"
-        @onChange={{action "selectSkill"}}
-        as |skill|
-      >
-        {{skill.name}} — rating {{skill.rating}}
-      </PowerSelect>
-    </div>
+    <div class="row g-2 mb-3">
+      <div class="col-6">
+        <label class="form-label">Skill</label>
+        <PowerSelect
+          @selected={{this.selectedSkill}}
+          @options={{this.skills}}
+          @searchField="name"
+          @onChange={{action "selectSkill"}}
+          as |skill|
+        >
+          {{skill.name}} ({{skill.rating}})
+        </PowerSelect>
+      </div>
 
-    <div class="mb-3">
-      <label class="form-label">Difficulty</label>
-      <PowerSelect
-        @selected={{this.selectedDifficulty}}
-        @options={{this.difficulties}}
-        @searchField="name"
-        @onChange={{action "selectDifficulty"}}
-        as |difficulty|
-      >
-        {{difficulty.name}} — target {{difficulty.target}}
-      </PowerSelect>
+      <div class="col-6">
+        <label class="form-label">Difficulty</label>
+        <PowerSelect
+          @selected={{this.selectedDifficulty}}
+          @options={{this.difficulties}}
+          @searchField="name"
+          @onChange={{action "selectDifficulty"}}
+          as |difficulty|
+        >
+          {{difficulty.name}}
+        </PowerSelect>
+      </div>
     </div>
 
     <div class="d-flex gap-2 flex-wrap">
@@ -80,6 +82,13 @@
       onclick={{action "refreshPendingRoll"}}
     >
       Refresh
+    </button>
+    <button
+      type="button"
+      class="btn btn-secondary"
+      onclick={{action "cancelGmRequest"}}
+    >
+      No GM Available - Proceed Without One
     </button>
     <div class="mt-3">
       <Input @value={{this.abortReason}} class="form-control mb-2" placeholder="Reason for aborting" />
@@ -135,18 +144,22 @@
       <p>No matching Boons or Banes were suggested.</p>
     {{/if}}
 
-    <div class="mb-3">
-      <label for="soul-roll-extra-tags" class="form-label">
-        Other applicable owned tags
-      </label>
-      <Input
-        @id="soul-roll-extra-tags"
-        @type="text"
-        @value={{this.additionalTags}}
-        class="form-control"
-        placeholder="Optional, separated by spaces"
-      />
-    </div>
+    {{#if this.manualOptions.length}}
+      <div class="mb-3">
+        <label class="form-label">Other applicable Boons/Banes</label>
+        <PowerSelectMultiple
+          @selected={{this.selectedManualEntries}}
+          @options={{this.manualOptions}}
+          @searchField="name"
+          @searchEnabled=true
+          @placeholder="Not suggested, but applies..."
+          @onChange={{action "selectManualEntries"}}
+          as |entry|
+        >
+          {{entry.name}} [{{entry.tag}}]
+        </PowerSelectMultiple>
+      </div>
+    {{/if}}
 
     <button
       type="button"
@@ -193,20 +206,23 @@
     </button>
   {{/if}}
 
-  <hr>
-  <h4>Open Pending Rolls</h4>
-  {{#each this.pendingRolls as |pending|}}
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <button type="button" class="btn btn-link" onclick={{action "showPendingRoll" pending}}>
-        #{{pending.id}} {{pending.skill_key}} — {{pending.status}}
-      </button>
-      <button type="button" class="btn btn-sm btn-outline-danger"
-        onclick={{action "abortRoll" pending}}>Abort</button>
-    </div>
-  {{/each}}
-  <Input @value={{this.abortReason}} class="form-control mb-3" placeholder="Required abort reason" />
+  {{#if this.pendingRolls.length}}
+    <hr>
+    <h4>Open Pending Rolls</h4>
+    {{#each this.pendingRolls as |pending|}}
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <button type="button" class="btn btn-link" onclick={{action "showPendingRoll" pending}}>
+          #{{pending.id}} {{pending.skill_key}} — {{pending.status}}
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger"
+          onclick={{action "abortRoll" pending}}>Abort</button>
+      </div>
+    {{/each}}
+    <Input @value={{this.abortReason}} class="form-control mb-3" placeholder="Required abort reason" />
+  {{/if}}
 
-  <h4>Roll History</h4>
+  <hr>
+  <h4>Recent Rolls</h4>
   <ul class="list-group">
     {{#each this.rollHistory as |roll|}}
       <li class="list-group-item">#{{roll.id}} {{roll.skill_key}}:

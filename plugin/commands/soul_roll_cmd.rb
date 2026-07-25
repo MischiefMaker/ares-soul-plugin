@@ -15,6 +15,8 @@ module AresMUSH
         when "abort", "forceabort"
           id, self.reason = self.raw.split("=", 2)
           self.roll_id = integer_arg(id)
+        when "cancelgm"
+          self.roll_id = integer_arg(self.raw)
         when "review"
           self.roll_id = integer_arg(self.raw) unless self.raw.blank?
         when "mark"
@@ -27,7 +29,7 @@ module AresMUSH
       end
 
       def check_permission
-        player_switches = [nil, "gm", "abort", "pending", "history"]
+        player_switches = [nil, "gm", "abort", "cancelgm", "pending", "history"]
         return t('soul.permission_denied') if player_switches.include?(cmd.switch) && !Soul.can_play?(enactor)
         nil
       end
@@ -38,6 +40,8 @@ module AresMUSH
           [ self.skill ]
         when "abort", "forceabort"
           [ self.roll_id, self.reason ]
+        when "cancelgm"
+          [ self.roll_id ]
         when "mark"
           [ self.roll_id, self.mark_payload ]
         else
@@ -51,6 +55,7 @@ module AresMUSH
         when "gm" then start_roll(true)
         when "abort" then emit_simple_result(SoulRollApi.abort_pending(self.roll_id, enactor, reason: self.reason))
         when "forceabort" then emit_simple_result(SoulRollApi.force_abort_pending(self.roll_id, enactor, reason: self.reason))
+        when "cancelgm" then emit_simple_result(SoulRollApi.cancel_gm_request(self.roll_id, enactor))
         when "pending" then show_pending
         when "history" then show_history
         when "review" then review_rolls

@@ -175,7 +175,7 @@ module AresMUSH
       when "soulFramework", "soulFrameworkCorrect", "soulResonance", "soulReload", "soulAudit"
         SoulStaffWebHandler
       when "soulRoll", "soulRollStart", "soulRollGm", "soulRollSelect",
-           "soulRollAbort", "soulRollForceAbort", "soulRollPending",
+           "soulRollAbort", "soulRollForceAbort", "soulRollCancelGm", "soulRollPending",
            "soulRollHistory", "soulRollReview", "soulRollMark",
            "soulRollCandidates", "soulRollDifficulties"
         SoulRollWebHandler

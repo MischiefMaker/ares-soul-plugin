@@ -87,6 +87,7 @@ module AresMUSH
         "soulRoll" => SoulRollWebHandler, "soulRollStart" => SoulRollWebHandler,
         "soulRollGm" => SoulRollWebHandler, "soulRollSelect" => SoulRollWebHandler,
         "soulRollAbort" => SoulRollWebHandler, "soulRollForceAbort" => SoulRollWebHandler,
+        "soulRollCancelGm" => SoulRollWebHandler,
         "soulRollPending" => SoulRollWebHandler, "soulRollHistory" => SoulRollWebHandler,
         "soulRollReview" => SoulRollWebHandler, "soulRollMark" => SoulRollWebHandler,
         "soulRollCandidates" => SoulRollWebHandler, "soulRollDifficulties" => SoulRollWebHandler,

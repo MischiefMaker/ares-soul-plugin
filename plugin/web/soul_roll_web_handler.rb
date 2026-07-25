@@ -6,7 +6,7 @@ module AresMUSH
 
       enactor = request.enactor
       player_commands = %w[
-        soulRoll soulRollStart soulRollGm soulRollSelect soulRollAbort
+        soulRoll soulRollStart soulRollGm soulRollSelect soulRollAbort soulRollCancelGm
         soulRollPending soulRollHistory soulRollCandidates soulRollDifficulties
       ]
       if player_commands.include?(request.cmd) && !Soul.can_play?(enactor)
@@ -25,13 +25,16 @@ module AresMUSH
       when "soulRollAbort"
         SoulRollApi.abort_pending(request.args['pending_roll_id'], enactor,
           reason: request.args['reason'])
+      when "soulRollCancelGm"
+        result = SoulRollApi.cancel_gm_request(request.args['pending_roll_id'], enactor)
+        result[:error] ? result : { success: true, pending_roll: pending_hash(result[:pending_roll]) }
       when "soulRollForceAbort"
         SoulRollApi.force_abort_pending(request.args['pending_roll_id'], enactor,
           reason: request.args['reason'])
       when "soulRollPending"
         { pending_rolls: SoulRollApi.get_open_pending_rolls(enactor).map { |pending| pending_hash(pending) } }
       when "soulRollHistory"
-        { rolls: SoulRollApi.get_roll_history(enactor).map { |roll| roll_hash(roll) } }
+        { rolls: SoulRollApi.get_roll_history(enactor, limit: 5).map { |roll| roll_hash(roll) } }
       when "soulRollReview"
         review(request)
       when "soulRollMark"

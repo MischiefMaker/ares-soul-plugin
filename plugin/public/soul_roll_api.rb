@@ -97,6 +97,27 @@ module AresMUSH
       { success: true, candidates: candidates }
     end
 
+    # Lets a player abandon a stuck "awaiting_gm" roll (no scene-GM
+    # available/paying attention - a real live-testing complaint,
+    # 2026-07-25) without losing it entirely to /abort. Falls back to the
+    # roll's own system_suggested_entries (already computed by start_roll
+    # for every roll, GM-assisted or not) via get_player_candidate_view's
+    # existing gm_assisted branching - flips gm_assisted to "false" so
+    # that branch is actually reached, and so the roll that eventually
+    # resolves is honestly recorded as a standard roll no GM ever
+    # touched, not as a GM-assisted one.
+    def self.cancel_gm_request(pending_roll_id, character)
+      pending = PendingRoll[pending_roll_id]
+      # status "awaiting_gm" is only ever set by a gm_requested start_roll,
+      # so allowed_statuses alone is sufficient - no separate gm_assisted
+      # check needed.
+      pending_error = validate_owned_open_pending(pending, character, allowed_statuses: ["awaiting_gm"])
+      return { error: pending_error } if pending_error
+
+      pending.update(status: "awaiting_selection", gm_assisted: "false")
+      { success: true, pending_roll: pending }
+    end
+
     # Player-facing candidate view (REQ-028 step 4: "Present concise
     # suggestions or state that none matched"). Unlike get_gm_candidate_view,
     # there is no privacy-category filtering - these are the roller's own
@@ -119,13 +140,22 @@ module AresMUSH
         suggested_ids = pending.system_suggested_entries.map(&:to_s)
       end
 
-      candidates = (mandatory_ids + suggested_ids).uniq.map do |id|
+      shown_ids = (mandatory_ids + suggested_ids).uniq
+      candidates = shown_ids.map do |id|
         data = SoulBnbApi.get_character_entry_public(character, id)
         next if data.nil?
         data.merge(mandatory: mandatory_ids.include?(id))
       end.compact
 
-      { success: true, candidates: candidates }
+      # Owned, unresolved entries not already offered above - for the
+      # "identify a relevant owned B&B not suggested by the system"
+      # picker (FINAL REQ-028's manual-identification allowance), a
+      # dropdown of the player's own entries rather than free-text tags.
+      manual_options = SoulBnbApi.get_character_entries(character)
+        .reject { |entry| entry.resolved == "true" || shown_ids.include?(entry.id.to_s) }
+        .map { |entry| SoulBnbApi.get_character_entry_public(character, entry.id) }
+
+      { success: true, candidates: candidates, manual_options: manual_options }
     end
 
     # Configured difficulty names (REQ-026's `+roll <skill>=<difficulty>`

@@ -8,6 +8,47 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-019: Roll UI cleanup batch — GM-less scenes, owned-B&B dropdown, display polish
+
+**Status:** ✅ Done (`plugin/public/soul_roll_api.rb`, `plugin/web/soul_roll_web_handler.rb`,
+`plugin/commands/soul_roll_cmd.rb`, `plugin/soul.rb`, `webportal/components/soul-roll.js`,
+`webportal/templates/components/soul-roll.hbs`, help/docs, specs)
+
+**Requested:** 2026-07-25, live testing, several related requests in quick succession:
+1. "We need to revisit the GM roll too, since if you use it in a scene with no GMs, it's just stuck."
+2. "And let's hide this if there are no pending rolls." (Open Pending Rolls section, always shown)
+3. "I don't think we display the whole roll history -- maybe just the last 5, or it will get overwhelming
+   fast."
+4. "the player-selected bnbs should come from a dropdown of ones they have. But needs multi-select."
+5. "Don't show the target for the difficulties, just the names." / "instead of 'rating', let's do the
+   skills like Strength (0), Speed (1)." / "This should make them small enough that skill and diff can fit
+   on the same line."
+
+**GM-less scene fix:** a GM-assisted roll's only way out used to be full `/abort` (losing the roll
+entirely) - there was no way to just proceed without a GM. Added `SoulRollApi.cancel_gm_request`: moves an
+`awaiting_gm` pending roll to `awaiting_selection` and flips `gm_assisted` to `false`, falling back to the
+roll's own `system_suggested_entries` (already computed by `start_roll` for every roll, GM-assisted or
+not) via `get_player_candidate_view`'s existing branching. The eventual `Roll` record honestly reflects
+that no GM ever touched it, rather than misreporting it as GM-assisted. New web op `soulRollCancelGm`
+(registered in `Soul.get_web_request_handler` - see BUG-016 for why that step matters) and MUSH
+`+roll/cancelgm <roll id>`, plus a "No GM Available - Proceed Without One" button on the web modal's
+"Waiting for GM Review" stage.
+
+**Owned-B&B dropdown:** `get_player_candidate_view` now also returns `manual_options` - the character's
+owned, unresolved entries not already offered as system/GM candidates - so the roll selection stage's
+"Other applicable owned tags" free-text field became a `PowerSelectMultiple` over real entries instead of
+typed tag guessing. `soulRollSelect`'s contract didn't change (still just `tags: [...]`); only how those
+tags get chosen did.
+
+**Display polish:** Skill picker shows `Name (rating)` instead of `Name — rating N`; Difficulty picker
+shows just the name, not `Name — target N`; the two now sit side-by-side (`col-6` each) now that neither
+label is long. "Open Pending Rolls" section hidden entirely when there are none. Roll history in the
+modal capped to the 5 most recent (`get_roll_history(enactor, limit: 5)` - the MUSH `+roll/history`
+command keeps the full default limit, since that's an explicit on-demand lookup, not an always-visible
+embedded list) and relabeled "Recent Rolls" to match.
+
+---
+
 ### FR-018: Characters starting chargen default to R0 instead of showing "Unset"
 
 **Status:** ✅ Done (`plugin/public/soul_resonance_api.rb`, `plugin/web/soul_chargen_web_handler.rb`, spec)
@@ -320,6 +361,25 @@ One inherent consequence, not a bug: `custom_scene_data.snippet.rb` no longer pa
 A bare `+bnb` previously required an argument and just returned an "invalid syntax" error — there was no command to list all of a player's own entries at once (only single-entry lookup by ID/tag, the scene-scoped `/here`, and the public `/catalogue`). Added `SoulBnbCmd#show_own_entries`, reached when `+bnb` is given with no reference: lists every entry `SoulBnbApi.get_character_entries(enactor)` returns, each showing catalogue ID, tag, name, kind, level, and the character's own private `character_explanation` (never shown to anyone else). Operates strictly on `enactor` — no new privacy exposure, matching the same self-only scope `+xp`/`+soul` already use for private data.
 
 **Web/staff follow-up:** flagged here as needing a real privacy decision rather than a reflexive copy-paste — done in FR-003 above.
+
+---
+
+## BUG-019: "SOUL Scene Tools" just dimmed the screen and got stuck
+
+**Status:** ✅ Fixed (`webportal/components/soul-scene-tools.js`, `webportal/templates/components/soul-scene-tools.hbs`)
+
+**Reported:** 2026-07-25, live testing: "SOUL Scene Tools just dims the screen and gets stuck there."
+
+**Root cause:** every other SOUL modal in this codebase uses ember-bootstrap's `<BsModalSimple @open={{...}}>`,
+correctly integrated with Ember's rendering lifecycle. `soul-scene-tools.hbs` was the one exception - it
+used raw Bootstrap 5 markup (`data-bs-toggle="modal" data-bs-target="#soul-scene-tools-modal"`), which
+depends on Bootstrap's own vanilla JS auto-scanning the DOM for these attributes. That coordination is
+unreliable in an Ember SPA where Ember, not Bootstrap, owns element insertion/removal - the classic
+failure mode is exactly what was reported: the backdrop (dim overlay) appears but the modal itself never
+properly shows or can't be dismissed.
+
+**Fix:** converted to `<BsModalSimple>` matching every other SOUL modal, with an explicit `toolsOpen: false`
+default (per BUG-012's lesson: an unset `@open` reads as open) and `openTools`/`closeTools` actions.
 
 ---
 
