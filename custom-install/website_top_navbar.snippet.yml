@@ -7,12 +7,12 @@
 #
 # 1. Open game/config/website.yml.
 # 2. Find the top_navbar entry with "title: Admin".
-# 3. Add this entry to its menu: list. Change manage_jobs below if
+# 3. Add this entry to its menu: list. Change manage_apps below if
 #    you've customized soul.yml's manage_permission to something else.
 
     - title: SOUL
       route: admin-soul
       roles:
-      - manage_jobs
+      - manage_apps
 
 # 4. Reload website config: load website

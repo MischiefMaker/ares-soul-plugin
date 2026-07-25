@@ -10,7 +10,7 @@ FINAL defines four tiers of capability. The final permission matrix — exact co
 |---|---|---|
 | **Player** | Own character only | Approved characters (`Character#is_approved?`) — not a Role permission |
 | **Scene-GM** | Active scene only, bounded by configured reveal policy | `manage_scenes` |
-| **Staff/Admin** | Global; requires explicit permission | `manage_soul` (→ `manage_jobs` by default) |
+| **Staff/Admin** | Global; requires explicit permission | `manage_soul` (→ `manage_apps` by default) |
 
 ### Player Operations (default: any approved character)
 
@@ -35,7 +35,7 @@ internal testing).
 on top of approval — e.g. to let staff or beta-testers use SOUL before their
 own character is approved:
 ```yaml
-play_permission: "manage_jobs"   # also lets staff use SOUL pre-approval
+play_permission: "manage_apps"   # also lets staff use SOUL pre-approval
 ```
 Leave it unset (the default) unless you need that.
 
@@ -47,7 +47,7 @@ Scene-GM authority is **limited to the active scene** and the configured reveal 
 - See only the fields the reveal policy permits (see Privacy below)
 - Force-abort an erroneous pending roll in their scene (requires reason + audit)
 
-### Staff/Admin Operations (default: `manage_soul` → `manage_jobs`)
+### Staff/Admin Operations (default: `manage_soul` → `manage_apps`)
 
 Staff administration SHALL require explicit permission — never inferred from scene-GM status:
 - Grant/correct XP (`+xp/award`, `+xp/award/catchup`, `+xp/scene`, `+xp/correct`)
@@ -102,9 +102,9 @@ privacy:
 Permission names are flat, top-level `soul.yml` keys — not a nested hash. This matches the one real precedent in the AresMUSH ecosystem for a configurable permission name: the Inklings plugin's own `manage_permission` setting (`plugin/inklings.rb`), not an invented `permissions:` block.
 
 ```yaml
-# play_permission: "manage_jobs"        # optional additional grant; unset = approved characters only
+# play_permission: "manage_apps"        # optional additional grant; unset = approved characters only
 gm_review_permission: "manage_scenes"   # Scene-GM authority for GM-assisted rolls
-manage_permission: "manage_jobs"        # Staff administration
+manage_permission: "manage_apps"        # Staff administration
 ```
 
 ### Typical Setups
@@ -112,7 +112,7 @@ manage_permission: "manage_jobs"        # Staff administration
 **Default (most permissive within safe bounds):**
 ```yaml
 gm_review_permission: "manage_scenes"
-manage_permission: "manage_jobs"
+manage_permission: "manage_apps"
 ```
 
 **Dedicated SOUL admin role** (separate from general wizard permissions):
@@ -165,10 +165,10 @@ The staff/admin help topic SHALL be named `manage soul` — not "managing soul" 
 |---|---|
 | `everyone` | No special permissions |
 | `approved` | `play` |
-| `wizard` | `manage_jobs`, `manage_ares`, etc. (admin) |
+| `wizard` | `manage_jobs`, `manage_apps`, `manage_ares`, etc. (admin) |
 | `admin` | All permissions |
 
-SOUL's defaults assume `play` and `manage_jobs` exist. Configure to match your game's actual role names.
+SOUL's defaults assume `play` and `manage_apps` exist. Configure to match your game's actual role names.
 
 ## Related Documents
 

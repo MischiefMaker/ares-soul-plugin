@@ -5,7 +5,7 @@ module AresMUSH
     let(:valid_config) do
       {
         "enabled" => true,
-        "manage_permission" => "manage_jobs",
+        "manage_permission" => "manage_apps",
         "play_permission" => "play",
         "gm_review_permission" => "gm",
         "framework" => {

@@ -15,9 +15,9 @@ module AresMUSH
 
     before do
       allow(Global).to receive(:read_config).and_call_original
-      allow(Global).to receive(:read_config).with("soul", "manage_permission").and_return("manage_jobs")
-      allow(staff).to receive(:has_permission?).with("manage_jobs").and_return(true)
-      allow(character).to receive(:has_permission?).with("manage_jobs").and_return(false)
+      allow(Global).to receive(:read_config).with("soul", "manage_permission").and_return("manage_apps")
+      allow(staff).to receive(:has_permission?).with("manage_apps").and_return(true)
+      allow(character).to receive(:has_permission?).with("manage_apps").and_return(false)
       allow(Global).to receive(:read_config).with("soul", "bnb", "level_definitions").and_return(level_definitions)
       allow(Global).to receive(:read_config).with("soul", "bnb", "chargen_ratio").and_return(2)
       allow(Global).to receive(:read_config).with("soul", "bnb", "ratio_rounding").and_return("floor")

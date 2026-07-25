@@ -3,7 +3,7 @@ title: Manage SOUL
 ---
 
 > Permission Required: These commands require the permission configured as
-> `manage_permission` in `game/config/soul.yml` (defaults to `manage_jobs`).
+> `manage_permission` in `game/config/soul.yml` (defaults to `manage_apps`).
 
 # Manage SOUL
 

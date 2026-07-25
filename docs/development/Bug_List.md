@@ -8,6 +8,23 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-016: `manage_permission`'s default changed from `manage_jobs` to `manage_apps`
+
+**Status:** ✅ Done (`game/config/soul.yml`, `plugin/soul.rb`, `plugin/help/en/manage_soul.md`,
+`docs/reference/Default_Config.md`, `docs/reference/Permissions.md`, `custom-install/website_top_navbar.snippet.yml`, specs)
+
+**Requested:** 2026-07-25, live testing: "Permissions for SOUL should be manage_apps not manage_jobs."
+
+Changed `Soul.can_manage_soul?`'s fallback and `game/config/soul.yml`'s shipped default from `"manage_jobs"`
+to `"manage_apps"`, and updated every doc/help/snippet example that illustrated the default value to match.
+`manage_apps` is also Inklings' own `manage_permission` default (already the real precedent this project's
+docs cite for the config key's own existence), so this makes SOUL's out-of-the-box staff permission match
+its sibling plugin rather than borrowing Jobs'. Existing installs that haven't set `manage_permission`
+explicitly in their own `game/config/soul.yml` need to either add `manage_permission: manage_jobs` to keep
+the old behavior, or grant `manage_apps` to their SOUL staff role, before reloading config.
+
+---
+
 ### FR-015: Profile tab rework — self-service B&B requests, "only what I've chosen," and a real admin page
 
 **Status:** ✅ Done (backend: `plugin/models/bnb_request.rb`, `plugin/public/soul_bnb_api.rb`,

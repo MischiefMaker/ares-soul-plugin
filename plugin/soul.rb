@@ -16,15 +16,15 @@ module AresMUSH
     # the Boon/Bane catalogue, correct Resonance, review the Character
     # Framework, and other staff-only operations (FINAL REQ-005). Permission
     # is configurable via game/config/soul.yml's manage_permission setting;
-    # defaults to "manage_jobs", the same broad staff-administration
-    # permission the Jobs plugin uses (see plugins/jobs/helpers.rb in the
-    # AresMUSH core). Override in config if your game's staff structure
-    # differs - see docs/reference/Permissions.md. Flat top-level config
-    # key, matching the convention used by Inklings' own manage_permission
-    # setting (plugin/inklings.rb) rather than a nested hash.
+    # defaults to "manage_apps", the same broad staff-administration
+    # permission Inklings uses (plugin/inklings.rb). Override in config if
+    # your game's staff structure differs - see docs/reference/
+    # Permissions.md. Flat top-level config key, matching the convention
+    # used by Inklings' own manage_permission setting rather than a
+    # nested hash.
     def self.can_manage_soul?(enactor)
       return false if !enactor
-      permission = Global.read_config("soul", "manage_permission") || "manage_jobs"
+      permission = Global.read_config("soul", "manage_permission") || "manage_apps"
       enactor.has_permission?(permission)
     end
 
@@ -34,7 +34,7 @@ module AresMUSH
     # same real approval gate used everywhere else in this project - see
     # plugins/chargen/public/chargen_char.rb) rather than a Role
     # permission string, since no bundled AresMUSH plugin registers one
-    # that means "is an ordinary approved player" (unlike manage_jobs for
+    # that means "is an ordinary approved player" (unlike manage_apps for
     # staff or manage_scenes for scene-GMs - both real, pre-existing
     # permissions). "play" was never a real permission and required
     # every game to invent and assign it by hand before SOUL worked for

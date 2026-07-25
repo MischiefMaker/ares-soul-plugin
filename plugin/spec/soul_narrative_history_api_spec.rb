@@ -8,10 +8,10 @@ module AresMUSH
 
     before do
       allow(Global).to receive(:read_config).and_call_original
-      allow(Global).to receive(:read_config).with("soul", "manage_permission").and_return("manage_jobs")
-      allow(staff).to receive(:has_permission?).with("manage_jobs").and_return(true)
-      allow(owner).to receive(:has_permission?).with("manage_jobs").and_return(false)
-      allow(other).to receive(:has_permission?).with("manage_jobs").and_return(false)
+      allow(Global).to receive(:read_config).with("soul", "manage_permission").and_return("manage_apps")
+      allow(staff).to receive(:has_permission?).with("manage_apps").and_return(true)
+      allow(owner).to receive(:has_permission?).with("manage_apps").and_return(false)
+      allow(other).to receive(:has_permission?).with("manage_apps").and_return(false)
     end
 
     describe ".create" do
@@ -46,9 +46,9 @@ module AresMUSH
 
     before do
       allow(Global).to receive(:read_config).and_call_original
-      allow(Global).to receive(:read_config).with("soul", "manage_permission").and_return("manage_jobs")
-      allow(staff).to receive(:has_permission?).with("manage_jobs").and_return(true)
-      allow(owner).to receive(:has_permission?).with("manage_jobs").and_return(false)
+      allow(Global).to receive(:read_config).with("soul", "manage_permission").and_return("manage_apps")
+      allow(staff).to receive(:has_permission?).with("manage_apps").and_return(true)
+      allow(owner).to receive(:has_permission?).with("manage_apps").and_return(false)
       SoulAuditApi.create(action: "test_action", character: owner, actor: staff, reason: "testing")
     end
 

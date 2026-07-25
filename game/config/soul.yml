@@ -12,11 +12,11 @@ soul:
 
   # Permission required for staff SOUL administration: award/correct XP,
   # manage the Boon/Bane catalogue, correct Resonance, review the
-  # Character Framework. Defaults to "manage_jobs", the same broad
-  # staff-administration permission the Jobs plugin uses. Change this if
-  # your game wants a narrower, dedicated SOUL-admin permission - see
+  # Character Framework. Defaults to "manage_apps", the same broad
+  # staff-administration permission Inklings uses. Change this if your
+  # game wants a narrower, dedicated SOUL-admin permission - see
   # docs/reference/Permissions.md.
-  manage_permission: manage_jobs
+  manage_permission: manage_apps
 
   # Permission required for ordinary player actions: view your own Sheet,
   # spend XP, make rolls, browse the B&B catalogue.

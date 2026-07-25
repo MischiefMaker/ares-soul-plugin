@@ -12,9 +12,9 @@ soul:
   enabled: true
 
   # Permission required for staff SOUL administration. Defaults to
-  # "manage_jobs", the same broad staff-administration permission the
-  # Jobs plugin uses.
-  manage_permission: manage_jobs
+  # "manage_apps", the same broad staff-administration permission
+  # Inklings uses.
+  manage_permission: manage_apps
 
   # Permission required for ordinary player actions: view your own Sheet,
   # spend XP, make rolls, browse the B&B catalogue.
@@ -342,7 +342,7 @@ soul:
 Require staff approval for XP spending:
 ```yaml
 soul:
-  play_permission: "manage_jobs"   # Not recommended; overrides baseline play permission broadly
+  play_permission: "manage_apps"   # Not recommended; overrides baseline play permission broadly
 ```
 
 Disable GM-assisted rolls entirely:
