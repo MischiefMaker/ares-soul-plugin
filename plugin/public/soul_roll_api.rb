@@ -341,10 +341,11 @@ module AresMUSH
     def self.build_scene_pose(character, roll)
       skill = SoulFrameworkApi.get_skill(roll.skill_key)
       skill_name = skill ? skill[:name] : roll.skill_key
+      color = degree_succeeded?(roll.degree_of_success) ? "%xg" : "%xr"
       narrative = degree_narrative(roll.degree_of_success)
       extraordinary = roll.extraordinary == "true" ? " (Extraordinary!)" : ""
       "#{character.name} rolls #{skill_name} (rolled #{roll.final_result} v. difficulty #{roll.difficulty}): " \
-        "#{narrative}#{extraordinary}"
+        "#{color}#{narrative}#{extraordinary}%xn"
     end
     private_class_method :build_scene_pose
 

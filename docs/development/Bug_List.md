@@ -53,10 +53,10 @@ once and reused everywhere instead of letting the wording drift per surface:
 - **Scene pose** (`build_scene_pose`): `"#{character.name} rolls #{skill_name} (rolled #{final_result} v. difficulty #{difficulty}): #{narrative}#{extraordinary}"`
   - matches the requested format (tweaked once more afterward to move the roll/difficulty parenthetical
   right after the Skill name instead of trailing the sentence, and reworded to "rolled X v. difficulty Y" -
-  `roll_result`'s MUSH locale string was updated to match the same ordering). Not colored - a scene pose is
-  plain text read via both MUSH `+scene` and the web scene viewer, and there's no confirmation the latter
-  renders MUSH color codes rather than showing them as literal text, so this was left as a Bug_List-noted
-  decision rather than risking visibly broken color codes in a shared, permanent scene transcript.
+  `roll_result`'s MUSH locale string was updated to match the same ordering). Initially left uncolored
+  pending confirmation the web scene viewer actually renders MUSH color codes rather than showing them as
+  literal text - user verified this manually (posing raw `%xctext%xn` rendered cyan on the web scene page),
+  so the narrative is now wrapped in `%xg`/`%xr` here too, same as the MUSH private result below.
 - **MUSH private roll result** (`+roll` and `+roll/history`, `roll_line`): now colored - `%xg`/`%xr` wrapped
   around the narrative text, matching the same `emit_success`/`emit_failure` green/red convention already
   used everywhere else in this plugin's MUSH output.
