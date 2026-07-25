@@ -1,9 +1,16 @@
 <section class="soul-culminations">
   <h3>
     Culminations
-    <span class="badge rounded-pill bg-secondary ms-1"
-      title="A permanent record of a significant story milestone or accomplishment - not an XP purchase or stat bonus. Staff propose a title and description; once approved it becomes a permanent part of your Narrative History.">?</span>
+    <button type="button" class="badge rounded-pill bg-secondary ms-1 border-0"
+      aria-label="What is a Culmination?" onclick={{action "toggleInfo"}}>?</button>
   </h3>
+  {{#if this.showInfo}}
+    <div class="alert alert-secondary py-2">
+      A permanent record of a significant story milestone or accomplishment - not an XP purchase or stat
+      bonus. Staff propose a title and description; once approved it becomes a permanent part of your
+      Narrative History.
+    </div>
+  {{/if}}
   {{#if this.isLoading}}
     <div class="text-muted">Loading Culminations…</div>
   {{else}}

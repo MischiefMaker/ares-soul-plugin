@@ -5,6 +5,7 @@ export default Component.extend({
   tagName: '',
   api: service('game-api'),
   isLoading: false,
+  showInfo: false,
 
   didReceiveAttrs() {
     this._super(...arguments);
@@ -18,6 +19,12 @@ export default Component.extend({
       this.set('entries', result.entries);
     } finally {
       this.set('isLoading', false);
+    }
+  },
+
+  actions: {
+    toggleInfo() {
+      this.toggleProperty('showInfo');
     }
   }
 });

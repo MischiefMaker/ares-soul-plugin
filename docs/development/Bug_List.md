@@ -8,6 +8,25 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-035: Culmination "?" wasn't actually clickable - a `title` attribute is hover-only
+
+**Status:** ✅ Done (`webportal/components/soul-culmination.js`, `webportal/templates/components/soul-culmination.hbs`)
+
+**Requested:** 2026-07-25, live testing: "Culminations ? has moved but still doesn't seem to be clickable.
+Does nothing."
+
+**Root cause:** A plain HTML `title` attribute only ever shows on mouse hover (after a browser-controlled
+delay), never on click, and doesn't work at all on touch devices - there was never any click behavior to
+find. Moving it out of the `<details>/<summary>` in FR-033 fixed the toggle bug but didn't add the click
+interaction the user actually expected from "a ? with a pop up."
+
+**Fix:** Replaced the `<span title="...">` with a real `<button>` wired to a new `toggleInfo` action
+(`showInfo` boolean, `soul-culmination.js`), showing/hiding an `alert` box with the same explanation directly
+below the heading on click. Plain Ember action + conditional rendering, not a Bootstrap
+tooltip/popover component - this plugin has no confirmed JS pipeline that auto-initializes those (they need
+explicit `new bootstrap.Popover(el)` calls), so a component-state toggle is the reliable, dependency-free way
+to get real click-to-open behavior.
+
 ### FR-034: Roll results use the Addendum §8.1 narrative wording, colored by success/failure, on MUSH and web
 
 **Status:** ✅ Done (`plugin/public/soul_roll_api.rb`, `plugin/web/soul_roll_web_handler.rb`,
