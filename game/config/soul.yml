@@ -163,12 +163,6 @@ soul:
   # ==========================================================================
 
   bnb:
-    # B&B category (independent of kind - a Boon and a Bane can share a
-    # category). Fully configurable; these are just the defaults.
-    categories:
-      - "Arcane"
-      - "Mundane"
-
     level_definitions:
       minor:
         modifier: 1

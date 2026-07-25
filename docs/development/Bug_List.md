@@ -8,6 +8,59 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-033: Profile page reorder (B&Bs above XP) and small polish (Preview button label, Culmination tooltip fix)
+
+**Status:** ✅ Done (`custom-install/profile-custom.snippet.hbs`, `webportal/templates/components/soul-xp.hbs`,
+`webportal/templates/components/soul-staff.hbs`)
+
+**Requested:** 2026-07-25, live testing: "On the profile page, move the BNBs right up under the
+Aspects/Skills (Above the Experience section)." Then: "And remove the +1 from the Preview button for the XP
+spending." Separately, after FR-028 added a Culminations tooltip: "Clicking the ? beside culminations just
+opens and closes the culminations box because it's part of the title."
+
+Reordered the profile tab's component list in `profile-custom.snippet.hbs` to Sheet → B&B → XP → Culmination
+→ History → Staff (was Sheet → XP → B&B → ...). **This is a manual-merge snippet, not an auto-installed
+file** - re-copy it into the game's `ares-webportal/app/components/profile-custom.hbs` and redeploy for the
+reorder to take effect live (same "Non-automatic" caveat as every other `custom-install/` file). Preview
+button now reads "Preview" instead of "Preview +1" - the amount is fixed at 1 already (FR-025), the label
+didn't need to restate it.
+
+**Culmination tooltip bug:** the `<span title="...">?</span>` badge sat inside `<summary>`, so any click on
+it - including one that only meant "read the tooltip" - bubbled up and triggered the `<details>` element's
+native open/close toggle. Fixed with `onclick="event.stopPropagation()"` on the badge (plain HTML attribute,
+no Ember action needed).
+
+---
+
+### FR-032: Dropped the B&B catalogue `category` field (Arcane/Mundane) - real but never actually reachable
+
+**Status:** ✅ Done (`plugin/models/bnb_catalogue_entry.rb`, `plugin/public/soul_bnb_api.rb`,
+`plugin/web/soul_bnb_web_handler.rb`, `plugin/soul_config_validator.rb`, `game/config/soul.yml`, specs, docs)
+
+**Requested:** 2026-07-25, live testing: "Now, for bnb, are we using the arcane/mundane categories anywhere?"
+then, after being shown the gap: "Let's drop it for now."
+
+**Findings that led to dropping it:** `category` was real, spec-driven scaffolding (CI-01 lists it as
+required catalogue data, with Arcane/Mundane as the documented defaults) - not accidental cruft. It had a
+model attribute + index, a `game/config/soul.yml` entry validated for non-emptiness, and
+`SoulBnbApi.create_catalogue_entry`/`.get_catalogue` both accepted/filtered on it. But nothing ever actually
+reached it: the web portal's create-catalogue form (`admin-soul.hbs`) never had a Category input despite
+`docs/reference/Default_BnBs.md` explicitly claiming it was "set via the web portal's staff `soulBnbCreate`
+operation"; MUSH `+bnb/create` never had a category segment either; no template anywhere displayed
+`entry.category`; and no catalogue browser (chargen, profile, MUSH) ever filtered by it. A real field with a
+real config default and zero actual reach.
+
+**Fix:** Removed the model attribute/index, the `game/config/soul.yml` `bnb.categories` block and its
+validator check, the `category:` parameter from `create_catalogue_entry`/`get_catalogue`, and `category`
+from the `soulBnbCreate` web command and `serialize_catalogue`'s output. Updated `Default_BnBs.md`,
+`Configuration.md`, `Default_Config.md`, `Data_Model.md`, and `API_and_Hooks.md` to match - `Data_Model.md`
+now carries an explicit note that this deliberately deviates from CI-01, in case per-game catalogue
+categorization is wanted again later. `docs/spec/*` (the original FINAL/Addendum spec text) was left
+untouched, same as every other spec deviation this project has made - those are the historical record of
+what was originally asked, not living documentation.
+
+---
+
 ### FR-030: Boon/Bane Progress/Regress buttons (kind-aware direction) and an Add/Remove reorganization, on both the profile staff panel and the admin page
 
 **Status:** ✅ Done (`plugin/public/soul_bnb_api.rb`, `plugin/web/soul_bnb_web_handler.rb`, `plugin/soul.rb`,
@@ -153,6 +206,15 @@ their own. Add a dropdown to the screen with suggestions, with all bnbs, for pla
 Skill name plus rating (e.g. "Persuasion (10)") could push the trigger wider than its column. Added
 `@triggerClass="text-truncate"` to both, and widened the breakpoint to `col-12 col-sm-6` so they stack
 instead of overflowing on a narrow viewport.
+
+**Follow-up (still too big):** `col-sm-6` still stretched each trigger to half the modal's width even
+though the actual text ("Strength (1)", "Standard") is short - ember-power-select's trigger is `width: 100%`
+of its immediate parent by default, so half a `@size="lg"` modal is still a very wide box for two or three
+words. No CSS pipeline exists in this plugin to add a real utility class (confirmed earlier this session),
+so switched the wrapping columns from `col-12 col-sm-6` to `col-auto` with an explicit inline
+`style="width: ...px; max-width: 100%;"` (200px Skill, 160px Difficulty) - a plain HTML attribute, not a new
+dependency - capping them to a size proportionate to their content instead of the modal's width, while
+`max-width: 100%` keeps them from overflowing a narrow viewport.
 
 **Manual B&B picker:** This already existed as of the BUG-018 fix (`manual_options` on
 `SoulRollApi.get_player_candidate_view` - every owned, unresolved B&B not already offered as a suggested

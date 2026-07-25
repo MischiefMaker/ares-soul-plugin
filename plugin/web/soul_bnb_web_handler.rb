@@ -65,7 +65,7 @@ module AresMUSH
         result = SoulBnbApi.create_catalogue_entry(
           name: request.args['name'], description: request.args['description'],
           kind: request.args['kind'], tag: request.args['tag'], enactor: enactor,
-          category: request.args['category'], epic_modifier: request.args['epic_modifier'],
+          epic_modifier: request.args['epic_modifier'],
           chargen_available: request.args['chargen_available'].nil? ||
             request.args['chargen_available'].to_s == "true",
           flag_for_review: request.args['flag_for_review'].to_s == "true",
@@ -134,7 +134,7 @@ module AresMUSH
     def serialize_catalogue(entry)
       {
         id: entry.id, tag: entry.tag, name: entry.name, description: entry.description,
-        kind: entry.kind, category: entry.category, epic_modifier: entry.epic_modifier,
+        kind: entry.kind, epic_modifier: entry.epic_modifier,
         chargen_available: entry.chargen_available == "true",
         active: entry.active == "true",
         has_fixed_skills: entry.skill_associations.present?

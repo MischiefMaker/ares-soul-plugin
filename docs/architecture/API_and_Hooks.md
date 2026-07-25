@@ -77,8 +77,8 @@ SoulXpApi.get_scene_participants(scene = nil)      # => [Character, ...] approve
 ### B&B Validation / Transitions
 
 ```ruby
-SoulBnbApi.create_catalogue_entry(name:, description:, kind:, tag:, enactor:, category: nil, epic_modifier: nil, ...)
-SoulBnbApi.get_catalogue(kind: nil, category: nil, active_only: true)
+SoulBnbApi.create_catalogue_entry(name:, description:, kind:, tag:, enactor:, epic_modifier: nil, ...)
+SoulBnbApi.get_catalogue(kind: nil, active_only: true)
 SoulBnbApi.get_catalogue_entry(id_or_tag)          # Numeric ID or tag, case-insensitive
 SoulBnbApi.search(query)                           # Tag/name substring match
 

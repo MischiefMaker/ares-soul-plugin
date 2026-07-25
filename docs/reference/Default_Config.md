@@ -145,10 +145,6 @@ soul:
   # ============================================================================
 
   bnb:
-    categories:
-      - "Arcane"
-      - "Mundane"
-
     level_definitions:
       minor:
         modifier: 1

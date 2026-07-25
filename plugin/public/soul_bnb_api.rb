@@ -5,7 +5,7 @@ module AresMUSH
   class SoulBnbApi
     # --- Catalogue ---
 
-    def self.create_catalogue_entry(name:, description:, kind:, tag:, enactor:, category: nil,
+    def self.create_catalogue_entry(name:, description:, kind:, tag:, enactor:,
                                      epic_modifier: nil, chargen_available: true,
                                      flag_for_review: false, modifier_eligible: false,
                                      skill_associations: [])
@@ -31,7 +31,6 @@ module AresMUSH
         name: name,
         description: description,
         kind: kind.to_s,
-        category: category,
         epic_modifier: epic_modifier,
         chargen_available: chargen_available ? "true" : "false",
         flag_for_review: flag_for_review ? "true" : "false",
@@ -73,11 +72,10 @@ module AresMUSH
       end
     end
 
-    def self.get_catalogue(kind: nil, category: nil, active_only: true, chargen_available: nil)
+    def self.get_catalogue(kind: nil, active_only: true, chargen_available: nil)
       entries = BnbCatalogueEntry.all.to_a
       entries = entries.select { |e| e.active == "true" } if active_only
       entries = entries.select { |e| e.kind == kind.to_s } if kind
-      entries = entries.select { |e| e.category == category } if category
       unless chargen_available.nil?
         expected = chargen_available ? "true" : "false"
         entries = entries.select { |e| e.chargen_available == expected }

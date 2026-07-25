@@ -27,7 +27,7 @@
     <p>Select the ability and difficulty for this roll.</p>
 
     <div class="row g-2 mb-3">
-      <div class="col-12 col-sm-6">
+      <div class="col-auto" style="width: 200px; max-width: 100%;">
         <label class="form-label">Skill</label>
         <PowerSelect
           @selected={{this.selectedSkill}}
@@ -41,7 +41,7 @@
         </PowerSelect>
       </div>
 
-      <div class="col-12 col-sm-6">
+      <div class="col-auto" style="width: 160px; max-width: 100%;">
         <label class="form-label">Difficulty</label>
         <PowerSelect
           @selected={{this.selectedDifficulty}}

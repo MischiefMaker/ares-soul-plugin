@@ -144,14 +144,19 @@ B&Bs use **two layers**: a site-wide catalogue and character-owned entries refer
 - `tag` / `tag_upcase` — Stable unique short key (GL-10); uniqueness enforced at `SoulBnbApi.create_catalogue_entry` (check-then-create), matching the real convention used for `AresMUSH::Role` names — Ohm has no native unique-constraint mechanism
 - `name`, `description` — Display name and public description
 - `kind` — `"boon"` or `"bane"` (GL-07/GL-08). Not explicitly itemized in REQ-017's field list, but required by every mechanic that depends on distinguishing the two: the 2:1 chargen ratio, the separate Boon/Bane chargen limit tables, and GL-07/GL-08's own definitions
-- `category` — Configurable grouping, independent of `kind`; defaults are **Arcane** and **Mundane** (CI-01, `game/config/soul.yml`'s `bnb.categories`). A Boon and a Bane can share a category
 - `chargen_available` / `flag_for_review` / `modifier_eligible` — Plain `"true"`/`"false"` string attributes, not `DataType::Boolean` (its cast `!!x` turns even the stored string `"false"` into `true` — the same footgun documented for Resonance, matching the verified convention from Inklings' own `Inkling#locked`)
 - `epic_modifier` — Only meaningful for the Epic level/state (see below); `nil` means "not configured"
 - `skill_associations` — Array of Skill keys
 
 **Level/state modifiers** come from global config (`game/config/soul.yml`'s `bnb.level_definitions`) and apply uniformly to every catalogue entry: Minor `+1`, Major `+2`, Legendary `+3`, Negated no active modifier. Epic is the one level FINAL requires an "explicitly configured" **per-entry** effect for (REQ-017: "the label alone SHALL NOT imply an uncapped modifier") — hence `epic_modifier` living on the catalogue entry itself rather than in global config. `SoulBnbApi.level_modifier(catalogue_entry, level_state)` resolves either source correctly.
 
-Example: `22. Cursed — Your character carries some sort of curse.` (catalogue entry, kind Bane, category Mundane).
+Example: `22. Cursed — Your character carries some sort of curse.` (catalogue entry, kind Bane).
+
+**Deviation from CI-01:** CI-01 lists `category` (default Arcane/Mundane) as required catalogue data. It
+was implemented (model attribute, config, validator) but never actually reachable through any real UI or
+command - the web portal's create form had no field for it, nothing displayed it, and no catalogue browser
+ever filtered by it. Dropped entirely 2026-07-25 at the project owner's direction rather than finishing the
+wiring - see `docs/development/Bug_List.md` FR-032. Revisit if per-game catalogue categorization is wanted later.
 
 ### CharacterBnbEntry (`AresMUSH::CharacterBnbEntry`, `plugin/models/character_bnb_entry.rb`)
 

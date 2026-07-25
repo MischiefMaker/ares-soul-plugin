@@ -24,16 +24,12 @@ module AresMUSH
     attribute :tag_upcase
     attribute :name
     attribute :description
-    # "boon" or "bane" (GL-07/GL-08) - distinct from category below. Not
-    # explicitly itemized in FINAL REQ-017's field list, but required by
-    # every mechanic that depends on it: the 2:1 chargen ratio (Addendum
-    # §5), the separate Boon/Bane chargen limit tables, and GL-07/GL-08's
-    # own definitions of the two as fundamentally different things.
+    # "boon" or "bane" (GL-07/GL-08). Not explicitly itemized in FINAL
+    # REQ-017's field list, but required by every mechanic that depends on
+    # it: the 2:1 chargen ratio (Addendum §5), the separate Boon/Bane
+    # chargen limit tables, and GL-07/GL-08's own definitions of the two as
+    # fundamentally different things.
     attribute :kind
-    # Configurable grouping, independent of kind - default options are
-    # Arcane and Mundane (CI-01, game/config/soul.yml's bnb.categories). A
-    # Boon and a Bane can share a category.
-    attribute :category
 
     # Plain "true"/"false" string attributes, not DataType::Boolean - its
     # cast (!!x) turns even the stored string "false" into true, since any
@@ -57,7 +53,6 @@ module AresMUSH
     collection :character_entries, "AresMUSH::CharacterBnbEntry"
 
     index :tag_upcase
-    index :category
     index :kind
 
     before_save :save_tag_upcase

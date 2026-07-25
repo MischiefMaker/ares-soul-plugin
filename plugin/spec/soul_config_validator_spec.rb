@@ -35,7 +35,6 @@ module AresMUSH
           "catchup" => { "multiplier" => 2.0, "grace_period_weeks" => 0 }
         },
         "bnb" => {
-          "categories" => ["Arcane", "Mundane"],
           "chargen_ratio" => 2,
           "ratio_rounding" => "floor",
           "resonance_levels" => { "r_0" => {} }

@@ -160,10 +160,6 @@ module AresMUSH
         bnb = @validator.config["bnb"]
         return unless bnb.kind_of?(Hash)
 
-        if !bnb["categories"].kind_of?(Array) || bnb["categories"].empty?
-          @validator.add_error("soul:bnb.categories must be a non-empty list (default Arcane, Mundane - CI-01).")
-        end
-
         if !bnb["chargen_ratio"].kind_of?(Integer) || bnb["chargen_ratio"] < 1
           @validator.add_error("soul:bnb.chargen_ratio must be a whole number >= 1 (Addendum §5).")
         end

@@ -4,7 +4,7 @@ Example Boon/Bane catalogue entries for new games, matching the two-layer model 
 
 ## How to Use This File
 
-1. Read through these examples to understand the catalogue model: numeric ID, stable tag, category, level definitions, and chargen flags.
+1. Read through these examples to understand the catalogue model: numeric ID, stable tag, level definitions, and chargen flags.
 2. Install SOUL (see README).
 3. Create catalogue entries in-game with `+bnb/create` (see `docs/reference/Commands.md`).
 4. Adapt the descriptions below, or write your own.
@@ -15,15 +15,14 @@ Every entry needs (REQ-017):
 - A unique numeric **ID** (assigned automatically on creation)
 - A unique short **tag** (chosen by the creator, used in commands like `+bnb/here <tag>`)
 - A **name** and **public description**
-- A **category** — default choices are **Arcane** and **Mundane** (CI-01)
 - **Level definitions** — by default: Minor (+1), Major (+2), Legendary (+3), Negated (no modifier), Epic (explicitly configured per entry, no implied value)
 - **Chargen flags**: `chargen.available` (default `true`), `chargen.flag_for_review` (default `false`), `chargen.modifier_eligible` (default `false` — whether this Bane can satisfy the positive-Resonance requirement)
 
-## Example Boons (Mundane)
+## Example Boons
 
 ### Keen Observer
 
-**Tag:** `observer` · **Category:** Mundane
+**Tag:** `observer`
 
 **Public description:** You notice details others miss.
 
@@ -35,7 +34,7 @@ Every entry needs (REQ-017):
 
 ### Resilient
 
-**Tag:** `resilient` · **Category:** Mundane
+**Tag:** `resilient`
 
 **Public description:** You bounce back from adversity faster than most.
 
@@ -45,7 +44,7 @@ Every entry needs (REQ-017):
 
 ### Connected
 
-**Tag:** `connected` · **Category:** Mundane
+**Tag:** `connected`
 
 **Public description:** You have reliable allies, contacts, or resources in useful places.
 
@@ -53,11 +52,11 @@ Every entry needs (REQ-017):
 
 **Associated Skills:** Empathy, Presence
 
-## Example Banes (Mundane)
+## Example Banes
 
 ### Cursed
 
-**Tag:** `cursed` · **Category:** Mundane
+**Tag:** `cursed`
 
 **Public description:** Your character carries some sort of curse.
 
@@ -71,7 +70,7 @@ Every entry needs (REQ-017):
 
 ### Distracted
 
-**Tag:** `distracted` · **Category:** Mundane
+**Tag:** `distracted`
 
 **Public description:** Your focus is shaky — internal doubts or emotional turmoil keep pulling your attention.
 
@@ -81,7 +80,7 @@ Every entry needs (REQ-017):
 
 ### Isolated
 
-**Tag:** `isolated` · **Category:** Mundane
+**Tag:** `isolated`
 
 **Public description:** You're cut off from your usual support systems.
 
@@ -89,11 +88,11 @@ Every entry needs (REQ-017):
 
 **Associated Skills:** Presence, Empathy
 
-## Example Arcane Category Entries
+## Example Ceremonial Magic Entries
 
 ### Ceremonial Attunement
 
-**Tag:** `attuned` · **Category:** Arcane
+**Tag:** `attuned`
 
 **Public description:** You have a deep, practiced connection to ceremonial magic.
 
@@ -105,7 +104,7 @@ Every entry needs (REQ-017):
 
 ### Warded
 
-**Tag:** `warded` · **Category:** Arcane
+**Tag:** `warded`
 
 **Public description:** Something binds or limits your arcane potential.
 
@@ -119,7 +118,7 @@ Every entry needs (REQ-017):
 
 ### Beyond Reckoning
 
-**Tag:** `beyond` · **Category:** Arcane
+**Tag:** `beyond`
 
 **Public description:** Your power has grown past what the ordinary catalogue scale measures.
 
@@ -133,7 +132,6 @@ When creating your own entries, consider:
 2. **Are level effects globally bounded?** Modifier effects SHALL be bounded so Skill investment remains meaningful (REQ-017).
 3. **Should this entry be chargen-available?** Most Minor/Major/Legendary entries default to available; Negated and Epic default to unavailable.
 4. **Is it `modifier_eligible`?** Only set this `true` on Banes intended to satisfy the positive-Resonance Bane requirement.
-5. **What category?** Arcane vs. Mundane by default, or your game's own configured categories.
 
 ## Setup Instructions
 
@@ -144,10 +142,10 @@ Once SOUL is installed, create these examples using:
 +bnb/create bane/cursed/Cursed=Your character carries some sort of curse.
 ```
 
-`kind` (`boon`/`bane`) is required. The trailing Skill segment is optional — only for entries with a fixed default (like Keen Observer above); "Configurable per instance" entries like Cursed take their Skill(s) at `+bnb/grant` time instead. Category, non-default chargen flags, and an Epic-level modifier are set via the web portal's staff `soulBnbCreate` operation, not `+bnb/create` (see `docs/reference/Commands.md` for the full command syntax).
+`kind` (`boon`/`bane`) is required. The trailing Skill segment is optional — only for entries with a fixed default (like Keen Observer above); "Configurable per instance" entries like Cursed take their Skill(s) at `+bnb/grant` time instead. Non-default chargen flags and an Epic-level modifier are set via the web portal's staff `soulBnbCreate` operation, not `+bnb/create` (see `docs/reference/Commands.md` for the full command syntax).
 
 ## See Also
 
 - `docs/architecture/Data_Model.md` — Full catalogue/instance data structure
 - `docs/reference/Commands.md` — `+bnb` command family
-- `docs/reference/Configuration.md` — B&B configuration (categories, level definitions, chargen ratio/limits)
+- `docs/reference/Configuration.md` — B&B configuration (level definitions, chargen ratio/limits)
