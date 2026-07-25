@@ -44,25 +44,14 @@
               {{/if}}
             </select>
           </div>
-          <div class="col-md-3">
-            <label for="soul-xp-amount" class="form-label">Increase by</label>
-            <Input
-              @type="number"
-              @value={{this.spendAmount}}
-              id="soul-xp-amount"
-              min="1"
-              step="1"
-              class="form-control"
-            />
-          </div>
           <div class="col-md-2">
             <button
               type="button"
               class="btn btn-primary w-100"
-              disabled={{or (not this.selectedTrait) (not this.spendAmount)}}
-              onclick={{action "previewSpend" this.selectedTraitType this.selectedTrait this.spendAmount}}
+              disabled={{not this.selectedTrait}}
+              onclick={{action "previewSpend" this.selectedTraitType this.selectedTrait}}
             >
-              Preview
+              Preview +1
             </button>
           </div>
         </div>

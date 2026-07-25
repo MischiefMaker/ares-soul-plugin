@@ -6,20 +6,18 @@
 
   <details class="mb-3"><summary>Adjust Skill or Aspect</summary>
     <p class="text-muted">Correct this character's rating. A reason is required and the change is recorded.</p>
-    <Input @value={{this.frameworkKey}} class="form-control my-2" placeholder="Skill or Aspect key" />
+    <PowerSelect @selected={{this.frameworkEntry}} @options={{this.frameworkOptions}}
+      @searchField="name" @searchEnabled=true @placeholder="Select a Skill or Aspect..."
+      @onChange={{action "selectFrameworkEntry"}} as |entry|>
+      {{entry.name}} <span class="text-muted">({{entry.kind}})</span>
+    </PowerSelect>
     <Input @type="number" @value={{this.frameworkRating}} class="form-control my-2" placeholder="New rating" />
     <Input @value={{this.frameworkReason}} class="form-control my-2" placeholder="Reason" />
-    <div class="d-flex gap-2 flex-wrap">
-      <button class="btn btn-warning" type="button" onclick={{action "correctFramework" "skill"}}>Correct Skill</button>
-      <button class="btn btn-warning" type="button" onclick={{action "correctFramework" "aspect"}}>Correct Aspect</button>
-    </div>
+    <button class="btn btn-warning" type="button" disabled={{not this.frameworkEntry}}
+      onclick={{action "correctFramework"}}>Correct</button>
   </details>
 
-  <details class="mb-3"><summary>Adjust Resonance</summary>
-    <Input @type="number" @value={{this.resonanceValue}} class="form-control my-2" placeholder="Resonance" />
-    <Input @value={{this.resonanceReason}} class="form-control my-2" placeholder="Reason" />
-    <button class="btn btn-primary" type="button" onclick={{action "correctResonance"}}>Correct Resonance</button>
-    <hr>
+  <details class="mb-3"><summary>Audit Log</summary>
     {{#if this.auditResult.entries}}<ul>{{#each this.auditResult.entries as |entry|}}
       <li>{{entry.created_at}} — {{entry.action}} — {{entry.reason}}</li>
     {{/each}}</ul>{{else}}<p class="text-muted">No audit entries.</p>{{/if}}

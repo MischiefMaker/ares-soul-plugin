@@ -2,6 +2,7 @@
   <h3>SOUL Character Framework</h3>
   {{#if this.isLoading}}<p class="text-muted">Saving…</p>{{/if}}
   {{#if this.error}}<div class="alert alert-danger">{{this.error}}</div>{{/if}}
+  {{#if this.warning}}<div class="alert alert-warning">{{this.warning}}</div>{{/if}}
 
   {{#if this.status}}
     <div class="alert alert-info">

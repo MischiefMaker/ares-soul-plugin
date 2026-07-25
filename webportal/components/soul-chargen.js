@@ -34,7 +34,8 @@ export default Component.extend({
         await this.refreshStatus();
       } else {
         this.setProperties({
-          status: result, error: null, selectedCatalogue: null, explanation: null, bnbSkills: []
+          status: result, error: null, warning: result.warning || null,
+          selectedCatalogue: null, explanation: null, bnbSkills: []
         });
       }
     } finally {
@@ -59,8 +60,13 @@ export default Component.extend({
       });
     },
     adjustSkill(skill, delta) {
+      // Only guard the true floor here - the starting cap is a soft,
+      // Resonance-derived budget the server now warns about rather than
+      // blocks, so a Skill left above a since-lowered cap can still be
+      // adjusted (including back down) instead of getting stuck (mischief
+      // bug list, 2026-07-25).
       let rating = Number(skill.rating || 0) + delta;
-      if (rating < 0 || rating > Number(this.get('status.starting_cap'))) {
+      if (rating < 0) {
         return;
       }
       return this.request('soulChargenSkill', {

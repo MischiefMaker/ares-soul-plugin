@@ -10,12 +10,22 @@ export default Component.extend({
     this._super(...arguments);
     this.loadAudit();
     this.loadCatalogue();
+    this.loadFramework();
   },
 
   async loadCatalogue() {
     let result = await this.api.requestOne('soulBnbCatalogue', { per_page: 1000 }, null);
     if (!result.error) {
       this.setProperties({ catalogueEntries: result.entries, availableSkills: result.available_skills });
+    }
+  },
+
+  async loadFramework() {
+    let result = await this.api.requestOne('soulFramework', {}, null);
+    if (!result.error) {
+      let aspects = (result.aspects || []).map((aspect) => ({ key: aspect.key, name: aspect.name, kind: 'aspect' }));
+      let skills = (result.skills || []).map((skill) => ({ key: skill.key, name: skill.name, kind: 'skill' }));
+      this.set('frameworkOptions', [...aspects, ...skills]);
     }
   },
 
@@ -56,19 +66,19 @@ export default Component.extend({
   },
 
   actions: {
-    correctFramework(kind) {
+    selectFrameworkEntry(entry) {
+      this.set('frameworkEntry', entry);
+    },
+    correctFramework() {
+      if (!this.frameworkEntry) {
+        return;
+      }
+      let kind = this.frameworkEntry.kind;
       return this.mutate('soulFrameworkCorrect', {
         character: this.character, kind: kind,
-        key: this.frameworkKey, rating: this.frameworkRating, reason: this.frameworkReason
+        key: this.frameworkEntry.key, rating: this.frameworkRating, reason: this.frameworkReason
       }, (result) =>
         `${kind} ${result.key} changed from ${result.old_rating} to ${result.new_rating}.`
-      );
-    },
-    correctResonance() {
-      return this.mutate('soulResonance', {
-        character: this.character, value: this.resonanceValue, reason: this.resonanceReason
-      }, (result) =>
-        `Resonance changed from ${result.old_value} to ${result.new_value}.`
       );
     },
     xpAward(catchup) {

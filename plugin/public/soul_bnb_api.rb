@@ -461,15 +461,20 @@ module AresMUSH
       entry = character.character_bnb_entries.to_a.find { |e| e.id.to_s == entry_id.to_s }
       return nil unless entry
 
+      skill_names = (entry.associated_skills || []).map do |key|
+        SoulFrameworkApi.get_skill(key)&.dig(:name) || key
+      end
+
       {
         id: entry.id,
         catalogue_id: entry.catalogue_entry.id,
         tag: entry.catalogue_entry.tag,
         name: entry.catalogue_entry.name,
-        kind: entry.catalogue_entry.kind,
-        level_state: entry.level_state,
+        kind: entry.catalogue_entry.kind.to_s.capitalize,
+        level_state: entry.level_state.to_s.capitalize,
         modifier: level_modifier(entry.catalogue_entry, entry.level_state),
-        resolved: entry.resolved == "true"
+        resolved: entry.resolved == "true",
+        skills: skill_names.join(", ")
       }
     end
 

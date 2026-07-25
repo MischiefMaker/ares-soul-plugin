@@ -49,6 +49,23 @@ module AresMUSH
       !get_skill(key).nil?
     end
 
+    # Resolves free-text MUSH input to a real Skill key, accepting the key
+    # itself or a case/whitespace-insensitive match against the Skill's
+    # display name (mischief bug list, 2026-07-25: a player typing
+    # "ceremonial magic" - the only form the catalogue ever shows them -
+    # got rejected because the underlying config key is "ceremonial_magic",
+    # which is never displayed anywhere). Returns the real key, or the
+    # original input unchanged if nothing matches, so callers' existing
+    # "Unknown Skill" validation still fires on a genuinely bad value.
+    def self.resolve_skill_key(input)
+      return input if input.to_s.blank? || valid_skill_key?(input)
+      normalized = input.to_s.strip.downcase
+      match = get_skills.find do |skill|
+        skill[:key].downcase == normalized.tr(" ", "_") || skill[:name].to_s.downcase == normalized
+      end
+      match ? match[:key] : input
+    end
+
     def self.skill_min_rating
       Global.read_config("soul", "framework", "skill_min_rating") || 0
     end

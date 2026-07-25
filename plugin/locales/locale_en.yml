@@ -19,7 +19,7 @@ en:
     character_not_found: "Character not found."
     skill_summary: "%{name} %{rating}"
     aspect_summary: "%{name} %{rating}: %{skills}"
-    bnb_summary: "%{name} (%{level})"
+    bnb_summary: "%{name} (%{level}) — Skills: %{skills}"
     history_line: "%{at}: %{narrative}"
     culmination_line: "#%{id} [%{status}] %{title}: %{description}"
     bnb_scene_line: "%{character}: %{name} (%{level})"

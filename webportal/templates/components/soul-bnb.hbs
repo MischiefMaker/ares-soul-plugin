@@ -14,14 +14,18 @@
       <div class="table-responsive">
         <table class="table table-sm mb-0">
           <thead>
-            <tr><th scope="col">Entry</th><th scope="col">Kind</th><th scope="col">Level</th><th scope="col">State</th></tr>
+            <tr>
+              <th scope="col">Entry</th><th scope="col">Kind</th><th scope="col">Level</th>
+              <th scope="col">Skills</th><th scope="col">State</th>
+            </tr>
           </thead>
           <tbody>
             {{#each this.entries as |entry|}}
               <tr class="soul-bnb-row" role="button" tabindex="0" onclick={{action "showDetail" entry}}>
-                <td>#{{entry.id}} {{entry.name}} <span class="text-muted">[{{entry.tag}}]</span></td>
+                <td>{{entry.name}} <span class="text-muted">[{{entry.tag}}]</span></td>
                 <td>{{entry.kind}}</td>
                 <td>{{entry.level_state}}</td>
+                <td>{{if entry.skills.length entry.skills "—"}}</td>
                 <td>{{if entry.resolved "Resolved" "Active"}}</td>
               </tr>
             {{/each}}
@@ -63,6 +67,7 @@
       <span class="ms-3"><strong>Level:</strong> {{this.detailEntry.level_state}}</span>
       <span class="ms-3"><strong>State:</strong> {{if this.detailEntry.resolved "Resolved" "Active"}}</span>
     </p>
+    <p><strong>Skills:</strong> {{if this.detailEntry.skills.length this.detailEntry.skills "None"}}</p>
     <hr>
     <p><strong>Explanation:</strong></p>
     <p>{{if this.detailEntry.explanation this.detailEntry.explanation "None recorded."}}</p>

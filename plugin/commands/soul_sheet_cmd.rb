@@ -39,7 +39,11 @@ module AresMUSH
           end
           bnb = SoulBnbApi.get_character_entries(character).map do |entry|
             next unless entry.catalogue_entry
-            t('soul.bnb_summary', name: entry.catalogue_entry.name, level: entry.level_state)
+            skill_names = (entry.associated_skills || []).map do |key|
+              SoulFrameworkApi.get_skill(key)&.dig(:name) || key
+            end
+            t('soul.bnb_summary', name: entry.catalogue_entry.name, level: entry.level_state,
+              skills: skill_names.empty? ? t('soul.none') : skill_names.join(", "))
           end.compact
           resonance = SoulResonanceApi.get_resonance(character)
           body = t('soul.sheet',

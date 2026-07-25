@@ -37,7 +37,12 @@ module AresMUSH
           left, self.explanation = cmd.args.to_s.split("=", 2)
           self.reference, self.level, skills_raw = left.to_s.split("/", 3)
           self.level ||= "minor"
+          # Accepts either the raw Skill key or its display name (e.g.
+          # "Ceremonial Magic") - the catalogue listing this command's own
+          # help points players to never shows the underscored key form
+          # (mischief bug list, 2026-07-25).
           self.skill_associations = skills_raw.to_s.split(",").map(&:strip).reject(&:blank?)
+            .map { |skill| SoulFrameworkApi.resolve_skill_key(skill) }
         when "drop"
           # Accepts either the entry ID shown in +soul/cg's status listing
           # or the catalogue entry's tag (SoulBnbApi.drop_chargen_selection
@@ -138,7 +143,14 @@ module AresMUSH
       end
 
       def emit_result(result)
-        result[:error] ? client.emit_failure(result[:error]) : client.emit_success(t('soul.chargen_updated'))
+        if result[:error]
+          client.emit_failure(result[:error])
+        else
+          client.emit_success(t('soul.chargen_updated'))
+          # Over-cap/over-budget is a warning, not a block (mischief bug
+          # list, 2026-07-25) - the change above still went through.
+          client.emit_ooc(result[:warning]) if result[:warning]
+        end
       end
 
       # Informational readiness indicators only - approval is never blocked

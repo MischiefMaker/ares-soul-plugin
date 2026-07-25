@@ -74,11 +74,11 @@ export default Component.extend({
       this.set('selectedTrait', traitKey || null);
     },
 
-    async previewSpend(traitType, traitKey, amount) {
+    async previewSpend(traitType, traitKey) {
       let preview = await this.api.requestOne('soulXpSpend', {
         trait_type: traitType,
         trait_key: traitKey,
-        amount
+        amount: 1
       }, null);
       if (preview.error) {
         this.setProperties({ spendError: preview.error, spendPreview: null });
@@ -86,7 +86,7 @@ export default Component.extend({
         this.setProperties({
           spendError: null,
           spendPreview: preview,
-          spendPreviewAmount: amount
+          spendPreviewAmount: 1
         });
       }
     },

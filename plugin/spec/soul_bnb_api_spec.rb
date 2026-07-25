@@ -127,7 +127,16 @@ module AresMUSH
         boon = create_boon("lucky")
         entry = SoulBnbApi.grant(character, boon, level_state: "minor", source: "admin")[:entry]
         result = SoulBnbApi.get_character_entry_public(character, entry.id)
-        expect(result[:kind]).to eq("boon")
+        expect(result[:kind]).to eq("Boon")
+      end
+
+      it "includes the associated Skill names and capitalizes kind/level for display" do
+        boon = create_boon("lucky")
+        entry = SoulBnbApi.grant(character, boon, level_state: "minor", source: "admin",
+          associated_skills: ["blade"])[:entry]
+        result = SoulBnbApi.get_character_entry_public(character, entry.id)
+        expect(result[:level_state]).to eq("Minor")
+        expect(result[:skills]).to eq("Blade")
       end
     end
 

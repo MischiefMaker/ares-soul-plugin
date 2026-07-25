@@ -13,10 +13,10 @@ module AresMUSH
         result[:error] ? result : self.class.status(character)
       when "soulChargenSkill"
         result = self.class.set_skill(character, request.args['skill_key'], request.args['rating'].to_i)
-        result[:error] ? result : self.class.status(character)
+        result[:error] ? result : self.class.status(character).merge(warning: result[:warning])
       when "soulChargenAspect"
         result = self.class.set_aspect(character, request.args['aspect_key'], request.args['rating'].to_i)
-        result[:error] ? result : self.class.status(character)
+        result[:error] ? result : self.class.status(character).merge(warning: result[:warning])
       when "soulChargenBnb"
         result = SoulBnbApi.grant(character, request.args['reference'],
           level_state: request.args['level_state'] || "minor", source: "chargen",
@@ -53,14 +53,17 @@ module AresMUSH
         aspect_min_rating: SoulFrameworkApi.aspect_min_rating, aspect_max_rating: SoulFrameworkApi.aspect_max_rating,
         aspect_points_spent: aspect_spent, aspect_points_remaining: allowance[:aspect_points] - aspect_spent,
         # Readiness indicators (mischief bug list item 12, 2026-07-25) -
-        # informational only, not enforced at approval: SoulCharacterApi/
-        # SoulBnbApi.grant already prevent ever *exceeding* a budget or the
-        # 2:1 ratio, but nothing stops a player leaving points unspent or
+        # informational only, not enforced at approval: SoulBnbApi.grant
+        # prevents ever exceeding the 2:1 ratio, but nothing stops a player
+        # leaving points unspent, going over budget (set_skill/set_aspect
+        # only warn on this - see the comment above those methods), or
         # approving with an unsatisfied ratio. Surfaced here so players and
         # staff can see it before approval; whether to also block approval
-        # on it is an open product decision - see Bug_List.md.
-        skill_points_fully_spent: spent >= allowance[:skill_points],
-        aspect_points_fully_spent: aspect_spent >= allowance[:aspect_points],
+        # on it is an open product decision - see Bug_List.md. Exact
+        # equality, not >=, so an over-budget character reads as "not
+        # fully spent" rather than falsely reading "OK".
+        skill_points_fully_spent: spent == allowance[:skill_points],
+        aspect_points_fully_spent: aspect_spent == allowance[:aspect_points],
         bnb_ratio_satisfied: SoulBnbApi.ratio_currently_satisfied?(character),
         aspects: aspects, skills: skills,
         catalogue: SoulBnbApi.get_catalogue(chargen_available: true).map { |entry| catalogue_hash(entry) },
@@ -69,21 +72,34 @@ module AresMUSH
       }
     end
 
+    # Starting-cap/budget overruns are only ever soft warnings here, not
+    # blocking errors - most commonly hit when a player lowers Resonance
+    # after already spending points against a higher allowance, which
+    # would otherwise trap them unable to even lower a Skill back down
+    # (mischief bug list, 2026-07-25). Staff catch and resolve any
+    # still-over-budget character at approval via Soul.app_review /
+    # SoulChargenWebHandler.status's readiness indicators - this method
+    # only guards the true hard bounds (unknown Skill, rating outside
+    # SoulFrameworkApi's configured min/max).
     def self.set_skill(character, skill_key, rating)
       resonance = SoulResonanceApi.get_resonance(character) || 0
       allowance = SoulResonanceApi.chargen_allowance(resonance)
-      return { error: "Rating exceeds the chargen starting cap of #{allowance[:starting_cap]}." } if
-        rating.to_i > allowance[:starting_cap]
 
       current = SoulFrameworkApi.get_skills.sum do |skill|
         SoulCharacterApi.get_skill_rating(character, skill[:key])
       end
       old_rating = SoulCharacterApi.get_skill_rating(character, skill_key)
       proposed = current - old_rating + rating.to_i
-      return { error: "That allocation would spend #{proposed} of #{allowance[:skill_points]} Skill points." } if
+
+      warnings = []
+      warnings << "exceeds the chargen starting cap of #{allowance[:starting_cap]}" if
+        rating.to_i > allowance[:starting_cap]
+      warnings << "spends #{proposed} of #{allowance[:skill_points]} Skill points" if
         proposed > allowance[:skill_points]
 
-      SoulCharacterApi.set_skill_rating(character, skill_key, rating.to_i, character)
+      result = SoulCharacterApi.set_skill_rating(character, skill_key, rating.to_i, character)
+      return result if result[:error]
+      warnings.any? ? result.merge(warning: "This rating #{warnings.join(' and ')}.") : result
     end
 
     def self.set_aspect(character, aspect_key, rating)
@@ -98,10 +114,12 @@ module AresMUSH
       end
       old_rating = SoulCharacterApi.get_aspect_rating(character, aspect_key)
       proposed = current - old_rating + rating.to_i
-      return { error: "That allocation would spend #{proposed} of #{allowance[:aspect_points]} Aspect points." } if
-        proposed > allowance[:aspect_points]
 
-      SoulCharacterApi.set_aspect_rating(character, aspect_key, rating.to_i, character)
+      result = SoulCharacterApi.set_aspect_rating(character, aspect_key, rating.to_i, character)
+      return result if result[:error]
+      proposed > allowance[:aspect_points] ?
+        result.merge(warning: "This rating spends #{proposed} of #{allowance[:aspect_points]} Aspect points.") :
+        result
     end
 
     def self.catalogue_hash(entry)

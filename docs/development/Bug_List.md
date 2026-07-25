@@ -8,6 +8,86 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-026: Roll modal dropdown overflow, and the manual B&B picker made always-visible
+
+**Status:** ✅ Done (`webportal/templates/components/soul-roll.hbs`)
+
+**Requested:** 2026-07-25, live testing (with screenshot): "Roll is looking better, but the dropdowns need to
+be narrower to fit into the modal... The suggest bnb is coming up, but there's nowhere for players to add
+their own. Add a dropdown to the screen with suggestions, with all bnbs, for players to choose from."
+
+**Dropdown width:** The Skill/Difficulty `PowerSelect`s sat in `col-6` columns with no truncation, so a long
+Skill name plus rating (e.g. "Persuasion (10)") could push the trigger wider than its column. Added
+`@triggerClass="text-truncate"` to both, and widened the breakpoint to `col-12 col-sm-6` so they stack
+instead of overflowing on a narrow viewport.
+
+**Manual B&B picker:** This already existed as of the BUG-018 fix (`manual_options` on
+`SoulRollApi.get_player_candidate_view` - every owned, unresolved B&B not already offered as a suggested
+candidate, regardless of which Skill it's tied to) but the `PowerSelectMultiple` was wrapped in
+`{{#if this.manualOptions.length}}`, so it disappeared entirely whenever a character had nothing left to
+manually add - which looks identical to "this feature doesn't exist" rather than "you have nothing else to
+add." Removed that conditional; the picker now always renders, disabled with a "No other Boons/Banes
+available" placeholder when `manualOptions` is empty instead of vanishing.
+
+---
+
+### FR-025: XP spend on the profile is always by 1, not an arbitrary amount
+
+**Status:** ✅ Done (`webportal/components/soul-xp.js`, `webportal/templates/components/soul-xp.hbs`)
+
+**Requested:** 2026-07-25, live testing: "In the profile for the player, let's take out the 'adjust by' #
+selector and just make it always by 1. They can use it multiple times to go up more than one."
+
+Removed the "Increase by" number input and `spendAmount` state; `previewSpend`/`confirmSpend` now always
+send `amount: 1` to `soulXpSpend`. The Preview button reads "Preview +1" so its effect is unambiguous
+without the removed field.
+
+---
+
+### FR-024: B&B display shows associated Skills, drops the ID, and capitalizes Kind/Level
+
+**Status:** ✅ Done (`plugin/public/soul_bnb_api.rb`, `plugin/commands/soul_sheet_cmd.rb`,
+`plugin/locales/locale_en.yml`, `webportal/templates/components/soul-bnb.hbs`)
+
+**Requested:** 2026-07-25, live testing: "The bnb display should show the impacted skills, also in the MUSH
+'soul' command. Let's remove the #, since they will mostly use the key for it. And put the key beside it
+like 'Artifact [artifact]' instead. Under Kind and Level, capitalize Boon/Bane and Major/Minor, etc."
+
+`SoulBnbApi.get_character_entry_public` - the shared serializer behind the profile's B&B table/detail modal,
+the roll modal's candidate list, and `+bnb`'s own lookups - now includes `skills` (associated Skill display
+names, joined) and capitalizes `kind`/`level_state` for display (`.to_s.capitalize`; the raw lowercase model
+values are still used internally for level-modifier lookups and `level_definitions` config keys, only the
+returned hash changed). The MUSH `soul` command (`SoulSheetCmd`) gained the same Skill-name list in its
+`soul.bnb_summary` line, computed the same way (catalogue tag/name-map already established for the chargen
+web handler's own catalogue listing). `soul-bnb.hbs`'s table dropped the leading `#{{entry.id}}` and now
+reads `{{entry.name}} [{{entry.tag}}]`, added a Skills column, and the detail modal shows the same list.
+
+---
+
+### FR-023: Profile staff panel - single "Correct" button with a Skill/Aspect dropdown, Resonance correction removed
+
+**Status:** ✅ Done (`webportal/components/soul-staff.js`, `webportal/templates/components/soul-staff.hbs`)
+
+**Requested:** 2026-07-25, live testing: "Let's remove adjusting resonance, since that's not supposed to be
+something getting done very often. They can do it on the admin page if it really needs doing. Under Adjust
+Skill or Aspect -- make a dropdown of skills and aspects. Can we just have one 'Correct' button that fixes
+whichever one it is, rather than 'Correct Skill' 'Correct Aspect'?"
+
+Replaced the free-text "Skill or Aspect key" `<Input>` and the two separate buttons with a single `PowerSelect`
+(`frameworkOptions`, loaded from the existing `soulFramework` command - Aspects and Skills tagged with
+`kind: 'aspect'`/`'skill'`) and one "Correct" button that reads `kind`/`key` off the selected option before
+calling `soulFrameworkCorrect` - no change to that command's contract, which already took `kind` as an
+argument. Removed the "Adjust Resonance" `<details>` section (`correctResonance` action, `soulResonance`
+call) entirely; `SoulResonanceApi.correct`/the `soulResonance` web command are untouched and still reachable
+via the MUSH staff command `+soul/resonance` (`soul_staff_cmd.rb`) - **note: there is currently no
+web-portal path to it at all, on the profile or the `/admin-soul` page** (the admin page comment describing
+the split assumed the profile panel would keep it). If Resonance correction needs a web UI, it should be
+added to `/admin-soul` rather than restored here - flagging as open, not building it speculatively. The
+audit log display (previously nested under "Adjust Resonance", unrelated to Resonance specifically) moved to
+its own "Audit Log" `<details>` section so it isn't lost.
+
+---
+
 ### FR-022: Removed the profile Sheet's "Effective" Skill column
 
 **Status:** ✅ Done (`plugin/web/soul_sheet_web_handler.rb`, `webportal/templates/components/soul-sheet.hbs`)
@@ -457,6 +537,71 @@ One inherent consequence, not a bug: `custom_scene_data.snippet.rb` no longer pa
 A bare `+bnb` previously required an argument and just returned an "invalid syntax" error — there was no command to list all of a player's own entries at once (only single-entry lookup by ID/tag, the scene-scoped `/here`, and the public `/catalogue`). Added `SoulBnbCmd#show_own_entries`, reached when `+bnb` is given with no reference: lists every entry `SoulBnbApi.get_character_entries(enactor)` returns, each showing catalogue ID, tag, name, kind, level, and the character's own private `character_explanation` (never shown to anyone else). Operates strictly on `enactor` — no new privacy exposure, matching the same self-only scope `+xp`/`+soul` already use for private data.
 
 **Web/staff follow-up:** flagged here as needing a real privacy decision rather than a reflexive copy-paste — done in FR-003 above.
+
+---
+
+## BUG-021: Chargen's `+soul/cg/bnb` rejected any multi-word Skill, and the underscored key it required was never shown to players
+
+**Status:** ✅ Fixed (`plugin/public/soul_framework_api.rb`, `plugin/commands/soul_chargen_cmd.rb`)
+
+**Reported:** 2026-07-25, live testing: "Trying to add a two-word skill in chargen to a bnb isn't working --
+ceremonial doesn't work, ceremonial magic doesn't work. Only ceremonial_magic works, but we never show that
+to the player. Let's do a drop down multi-select of skills instead."
+
+**Root cause:** `+soul/cg/bnb <ref>/<level>/<skill1,skill2>=<explanation>` split its Skill argument on commas
+and passed each token straight through as a raw config key (`soul_chargen_cmd.rb`'s `parse_args`, `"bnb"`
+branch) - no resolution against display names at all. Every catalogue listing the player can actually see
+(`+soul/cg/catalogue`, the profile B&B table) shows the Skill's display name ("Ceremonial Magic"), never its
+underscored config key ("ceremonial_magic"), so a player typing exactly what they were shown got rejected,
+and the only way to succeed required knowing an implementation detail never displayed anywhere.
+
+**Fix:** Added `SoulFrameworkApi.resolve_skill_key(input)` - passes an already-valid key through unchanged,
+otherwise matches case/whitespace-insensitively against every configured Skill's key or display name
+(spaces-for-underscores), falling back to the original input untouched if nothing matches (so a genuinely
+unknown Skill still surfaces `SoulBnbApi.grant`'s real "Unknown Skill(s)" error instead of being silently
+swallowed). Wired into `+soul/cg/bnb`'s skill-association parsing only - the specific path reported.
+
+**Not done:** the web chargen's own B&B picker already uses a real `PowerSelectMultiple` Skill dropdown (no
+free text, added earlier in this same testing round), so "let's do a drop down multi-select" is already true
+there - this fix covers the MUSH command, which can't have an actual dropdown widget. The same key-vs-name
+mismatch risk exists in `+soul/cg/skill`, `+soul/cg/aspect`, `+xp/spend`, and the staff Skill/Aspect
+correction command, none of which were reported broken and none of which were touched here - flagging as a
+known, not-yet-hit follow-up rather than fixing speculatively.
+
+---
+
+## BUG-020: Lowering Resonance after spending chargen points left the player unable to change any Skill or Aspect at all
+
+**Status:** ✅ Fixed (`plugin/web/soul_chargen_web_handler.rb`, `webportal/components/soul-chargen.js`,
+`webportal/templates/components/soul-chargen.hbs`, `plugin/commands/soul_chargen_cmd.rb`)
+
+**Reported:** 2026-07-25, live testing: "In chargen, if someone spends their points and then lowers their
+resonance, they are now in the negative -- but they can't even lower skills because they get the error
+message. Let's make that message a warning but still allow the skill changes to go through. We'll catch it
+at approval/submit time."
+
+**Root cause:** `SoulChargenWebHandler.set_skill`/`.set_aspect` hard-rejected any allocation whose *total*
+would exceed the current Resonance-derived budget, or any single rating above the current starting cap.
+Both budgets are computed fresh from whatever Resonance is selected *right now* - so lowering Resonance
+after already spending points could put the character over a budget that used to be valid, and every
+subsequent edit (including a *decrease*, since the proposed total was still computed as "spend N of a now-
+smaller M" and N only shrinks by 1 per click) kept re-triggering the same hard block. There was no way to
+ever get back under budget one step at a time. The web component's own client-side guard on the +/- Skill
+buttons (`rating > this.status.starting_cap`) made this worse by silently no-opping without even reaching
+the server, so the buttons looked simply broken rather than erroring.
+
+**Fix:** `set_skill`/`set_aspect` now always apply the rating change (still enforcing the true hard bounds -
+unknown Skill/Aspect, rating outside `SoulFrameworkApi`'s configured min/max) and return a non-blocking
+`warning` instead of an `error` when the change is over the starting cap or the total budget. The web
+handler merges `warning` into the refreshed `soulChargenStatus` response; `soul-chargen.hbs` shows it as a
+dismissable-on-next-action `alert-warning` instead of blocking the change. Removed the client-side cap guard
+in `adjustSkill` (kept only the `rating < 0` floor) so the +/- buttons always reach the server. The MUSH
+`+soul/cg/skill`/`+soul/cg/aspect` commands show the same warning via `client.emit_ooc` after their normal
+success message. Also fixed `status[:skill_points_fully_spent]`/`aspect_points_fully_spent` from `spent >=
+allowance` to `spent == allowance`, so an over-budget character now correctly reads "not fully spent"
+instead of falsely reading "OK" in the readiness indicators, `+soul/cg`'s status display, and
+`Soul.app_review`'s staff checklist - the actual mechanism the player's own "we'll catch it at
+approval/submit time" plan depends on to still work.
 
 ---
 

@@ -27,12 +27,13 @@
     <p>Select the ability and difficulty for this roll.</p>
 
     <div class="row g-2 mb-3">
-      <div class="col-6">
+      <div class="col-12 col-sm-6">
         <label class="form-label">Skill</label>
         <PowerSelect
           @selected={{this.selectedSkill}}
           @options={{this.skills}}
           @searchField="name"
+          @triggerClass="text-truncate"
           @onChange={{action "selectSkill"}}
           as |skill|
         >
@@ -40,12 +41,13 @@
         </PowerSelect>
       </div>
 
-      <div class="col-6">
+      <div class="col-12 col-sm-6">
         <label class="form-label">Difficulty</label>
         <PowerSelect
           @selected={{this.selectedDifficulty}}
           @options={{this.difficulties}}
           @searchField="name"
+          @triggerClass="text-truncate"
           @onChange={{action "selectDifficulty"}}
           as |difficulty|
         >
@@ -144,22 +146,21 @@
       <p>No matching Boons or Banes were suggested.</p>
     {{/if}}
 
-    {{#if this.manualOptions.length}}
-      <div class="mb-3">
-        <label class="form-label">Other applicable Boons/Banes</label>
-        <PowerSelectMultiple
-          @selected={{this.selectedManualEntries}}
-          @options={{this.manualOptions}}
-          @searchField="name"
-          @searchEnabled=true
-          @placeholder="Not suggested, but applies..."
-          @onChange={{action "selectManualEntries"}}
-          as |entry|
-        >
-          {{entry.name}} [{{entry.tag}}]
-        </PowerSelectMultiple>
-      </div>
-    {{/if}}
+    <div class="mb-3">
+      <label class="form-label">Add one of your own Boons/Banes not suggested above</label>
+      <PowerSelectMultiple
+        @selected={{this.selectedManualEntries}}
+        @options={{this.manualOptions}}
+        @searchField="name"
+        @searchEnabled=true
+        @disabled={{not this.manualOptions.length}}
+        @placeholder={{if this.manualOptions.length "Not suggested, but applies..." "No other Boons/Banes available"}}
+        @onChange={{action "selectManualEntries"}}
+        as |entry|
+      >
+        {{entry.name}} [{{entry.tag}}]
+      </PowerSelectMultiple>
+    </div>
 
     <button
       type="button"

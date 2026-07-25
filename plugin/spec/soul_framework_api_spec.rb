@@ -36,5 +36,31 @@ module AresMUSH
         expect(SoulFrameworkApi.get_skill_for_grimoire_branch("evocation")).to be_nil
       end
     end
+
+    describe ".resolve_skill_key" do
+      before do
+        allow(Global).to receive(:read_config).and_call_original
+        allow(Global).to receive(:read_config).with("soul", "framework", "skills").and_return(
+          "ceremonial_magic" => { "name" => "Ceremonial Magic", "aspect" => "spirit" }
+        )
+      end
+
+      it "passes through an already-valid key unchanged" do
+        expect(SoulFrameworkApi.resolve_skill_key("ceremonial_magic")).to eq("ceremonial_magic")
+      end
+
+      it "resolves the display name, spaces and all (mischief bug list, 2026-07-25)" do
+        expect(SoulFrameworkApi.resolve_skill_key("Ceremonial Magic")).to eq("ceremonial_magic")
+        expect(SoulFrameworkApi.resolve_skill_key("ceremonial magic")).to eq("ceremonial_magic")
+      end
+
+      it "resolves a space-for-underscore typo against the key itself" do
+        expect(SoulFrameworkApi.resolve_skill_key("ceremonial magic")).to eq("ceremonial_magic")
+      end
+
+      it "returns the original input unchanged when nothing matches" do
+        expect(SoulFrameworkApi.resolve_skill_key("nonexistent")).to eq("nonexistent")
+      end
+    end
   end
 end
