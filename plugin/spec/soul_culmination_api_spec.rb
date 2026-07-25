@@ -62,5 +62,31 @@ module AresMUSH
         expect(result[:error]).to match(/reason/i)
       end
     end
+
+    describe ".correct" do
+      it "updates the title and description when provided" do
+        culmination = SoulCulminationApi.propose(character, title: "X", description: "Y", source: "staff")[:culmination]
+        result = SoulCulminationApi.correct(culmination.id, staff, title: "New Title", description: "New Desc",
+          reason: "Typo fix")
+        expect(result[:success]).to be true
+        expect(Culmination[culmination.id].title).to eq("New Title")
+        expect(Culmination[culmination.id].description).to eq("New Desc")
+      end
+
+      it "leaves the title and description unchanged when blank - a blank field must not silently erase " \
+        "an existing value (the web form's Correct-only fields are optional)" do
+        culmination = SoulCulminationApi.propose(character, title: "X", description: "Y", source: "staff")[:culmination]
+        result = SoulCulminationApi.correct(culmination.id, staff, title: "", description: "", reason: "No change")
+        expect(result[:success]).to be true
+        expect(Culmination[culmination.id].title).to eq("X")
+        expect(Culmination[culmination.id].description).to eq("Y")
+      end
+
+      it "requires a reason" do
+        culmination = SoulCulminationApi.propose(character, title: "X", description: "Y", source: "staff")[:culmination]
+        result = SoulCulminationApi.correct(culmination.id, staff, title: "New", reason: "")
+        expect(result[:error]).to match(/reason/i)
+      end
+    end
   end
 end

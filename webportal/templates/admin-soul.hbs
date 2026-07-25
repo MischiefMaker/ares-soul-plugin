@@ -68,7 +68,12 @@
     <p class="text-muted">Create a new catalogue entry.</p>
     <Input @value={{this.bnbName}} class="form-control my-2" placeholder="Name" />
     <Input @value={{this.bnbTag}} class="form-control my-2" placeholder="Tag" />
-    <Input @value={{this.bnbKind}} class="form-control my-2" placeholder="boon or bane" />
+    <select class="form-select my-2" aria-label="Boon or Bane kind"
+      onchange={{action (mut this.bnbKind) value="target.value"}}>
+      <option value="">Kind…</option>
+      <option value="boon">Boon</option>
+      <option value="bane">Bane</option>
+    </select>
     <Textarea @value={{this.bnbDescription}} class="form-control my-2" placeholder="Description" />
     <label class="form-label mt-2 mb-0">Fixed associated Skill(s) <span class="text-muted">(optional - leave blank if configurable per instance)</span></label>
     <PowerSelectMultiple @selected={{this.bnbSkillAssociations}} @options={{this.model.catalogue.available_skills}}
@@ -93,11 +98,96 @@
   </section>
 
   <section class="card card-body mb-3">
+    <h4>Manage a Player's Boons and Banes</h4>
+    <div class="mb-2">
+      <label for="soul-admin-bnb-player" class="form-label">Player</label>
+      <PowerSelect
+        @selected={{this.bnbPlayer}}
+        @options={{this.model.characters}}
+        @searchField="name"
+        @searchEnabled=true
+        @placeholder="Select a player..."
+        @onChange={{action "selectBnbPlayer"}}
+        as |char|
+      >
+        {{char.name}}
+      </PowerSelect>
+    </div>
+
+    {{#if this.bnbPlayer}}
+      <PowerSelect @selected={{this.bnbEntry}} @options={{this.characterBnbEntries}}
+        @searchField="name" @searchEnabled=true @placeholder="Select an entry..."
+        @onChange={{action "selectBnbEntry"}} as |entry|>
+        {{entry.name}} [{{entry.tag}}] — {{entry.kind}}, {{entry.level_state}}
+        {{if entry.resolved " (resolved)"}}
+      </PowerSelect>
+      <Input @value={{this.bnbReason}} class="form-control my-2" placeholder="Explanation / reason" />
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
+          onclick={{action "bnbAdjustLevel" "progress"}}>Progress</button>
+        <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
+          onclick={{action "bnbAdjustLevel" "regress"}}>Regress</button>
+        <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
+          onclick={{action "bnbTransition" "soulBnbResolve"}}>Resolve</button>
+        <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
+          onclick={{action "bnbTransition" "soulBnbRestore"}}>Restore</button>
+      </div>
+      <div class="form-text mb-0">Progress/Regress move a Boon or Bane one step along Minor/Major/Legendary -
+        Progress is always the direction that's good for the character (a Boon strengthens, a Bane weakens).</div>
+      <div class="form-check mt-3">
+        <Input @type="checkbox" @checked={{this.deleteConfirmOne}} class="form-check-input"
+          id="soul-admin-bnb-delete-confirm-one" />
+        <label class="form-check-label" for="soul-admin-bnb-delete-confirm-one">
+          I understand this permanently deletes the record.
+        </label>
+      </div>
+      <div class="form-check">
+        <Input @type="checkbox" @checked={{this.deleteConfirmTwo}} class="form-check-input"
+          id="soul-admin-bnb-delete-confirm-two" />
+        <label class="form-check-label" for="soul-admin-bnb-delete-confirm-two">
+          I confirm again; resolving or negating is not appropriate.
+        </label>
+      </div>
+      <button class="btn btn-danger mt-2" type="button"
+        disabled={{not (and this.bnbEntry this.deleteConfirmOne this.deleteConfirmTwo)}}
+        onclick={{action "bnbTransition" "soulBnbDelete"}}>Permanently Delete</button>
+
+      <hr>
+      <p class="mb-1"><strong>Add/Remove</strong></p>
+      <p class="text-muted mb-1">Grant a new Boon or Bane</p>
+      <PowerSelect @selected={{this.bnbCatalogueEntry}} @options={{this.model.catalogue.entries}}
+        @searchField="name" @searchEnabled=true @placeholder="Select a Boon/Bane..."
+        @onChange={{action "selectBnbGrantCatalogue"}} as |entry|>
+        {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
+      </PowerSelect>
+      <select class="form-select my-2" aria-label="Boon or Bane level"
+        onchange={{action (mut this.bnbLevel) value="target.value"}}>
+        <option value="minor">Minor</option>
+        <option value="major">Major</option>
+        <option value="legendary">Legendary</option>
+      </select>
+      {{#unless this.bnbCatalogueEntry.has_fixed_skills}}
+        <PowerSelectMultiple @selected={{this.bnbSkills}} @options={{this.model.catalogue.available_skills}}
+          @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
+          @onChange={{action "selectBnbGrantSkills"}} as |skill|>
+          {{skill.name}}
+        </PowerSelectMultiple>
+      {{/unless}}
+      <Input @value={{this.bnbExplanation}} class="form-control my-2" placeholder="Explanation" />
+      <button class="btn btn-primary" type="button" onclick={{action "bnbGrant"}}>Grant</button>
+    {{/if}}
+  </section>
+
+  <section class="card card-body mb-3">
     <h4>Award XP to Scene</h4>
     <Input @type="number" @value={{this.xpAmount}} class="form-control my-2" placeholder="Amount" />
     <Input @value={{this.xpReason}} class="form-control my-2" placeholder="Reason" />
-    <Input @type="number" @value={{this.xpSceneId}} class="form-control my-2" placeholder="Scene ID" />
-    <div class="d-flex gap-2 flex-wrap">
+    <PowerSelect @selected={{this.xpScene}} @options={{this.model.scenes}}
+      @searchField="title" @searchEnabled=true @placeholder="Select a scene..."
+      @onChange={{action "selectXpScene"}} as |scene|>
+      {{scene.title}}
+    </PowerSelect>
+    <div class="d-flex gap-2 flex-wrap mt-2">
       <button class="btn btn-secondary" type="button" onclick={{action "xpScene" false}}>Preview/Confirm Scene</button>
       <button class="btn btn-secondary" type="button" onclick={{action "xpScene" true}}>Preview/Confirm Scene + Catch-up</button>
     </div>

@@ -26,7 +26,14 @@ export default Route.extend({
       // A large per_page effectively defeats pagination for this
       // dropdown-population use - same convention as soul-staff.js's own
       // catalogue picker.
-      catalogue: this.gameApi.requestOne('soulBnbCatalogue', { per_page: 1000 }, 'home')
+      catalogue: this.gameApi.requestOne('soulBnbCatalogue', { per_page: 1000 }, 'home'),
+      // Scenes plugin's own "scenes" command (plugins/scenes/web/
+      // get_scenes_handler.rb) - already a hard dependency (SOUL posts
+      // rolls into scenes via Scenes.add_to_scene). "Recent" is capped at
+      // ~20 server-side, plenty for a dropdown; a scene older than that
+      // isn't realistically the target of a fresh XP award anyway.
+      scenes: this.gameApi.requestOne('scenes', { filter: 'Recent' }, 'home')
+        .then((response) => response.scenes || [])
     });
   }
 });

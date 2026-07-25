@@ -2,10 +2,11 @@
 // ares-webportal/app/controllers/ via plugin/install. Pairs with
 // webportal/routes/admin-soul.js and webportal/templates/admin-soul.hbs.
 //
-// Everything here is global/catalogue-scoped, not tied to one already-open
-// profile - Resonance correction, B&B grant, Culminations, and audit stay
-// on the profile tab instead (soul-staff.js), scoped to whichever
-// character's profile is open. XP award/correction exists in both places:
+// Most of this is global/catalogue-scoped, not tied to one already-open
+// profile - Resonance correction, Culminations, and audit stay on the
+// profile tab instead (soul-staff.js), scoped to whichever character's
+// profile is open. XP award/correction and per-character B&B management
+// (grant/progress/regress/resolve/restore/delete) exist in both places:
 // here via a character-picker dropdown (model.characters, see the route)
 // for staff not currently on that player's profile; there implicitly
 // scoped to the open profile. model.requests is the pending Boon/Bane
@@ -41,6 +42,17 @@ export default Controller.extend({
     let result = await this.gameApi.requestOne('soulBnbRequestsList', { status: 'pending' }, null);
     if (!result.error) {
       this.set('model.requests', result.requests);
+    }
+  },
+
+  async loadBnbEntriesForPlayer() {
+    if (!this.bnbPlayer) {
+      this.set('characterBnbEntries', []);
+      return;
+    }
+    let result = await this.gameApi.requestOne('soulBnbList', { character: this.bnbPlayer.name }, null);
+    if (!result.error) {
+      this.set('characterBnbEntries', result.entries);
     }
   },
 
@@ -97,13 +109,84 @@ export default Controller.extend({
         id_or_tag: this.bnbSkillsEntry.id, skill_associations: skillAssociations
       }, null, (result) => `Associated Skills for ${result.entry.name} updated.`);
     },
+    selectBnbPlayer(player) {
+      this.setProperties({ bnbPlayer: player, bnbEntry: null, characterBnbEntries: [] });
+      return this.loadBnbEntriesForPlayer();
+    },
+    selectBnbEntry(entry) {
+      this.set('bnbEntry', entry);
+    },
+    selectBnbGrantCatalogue(entry) {
+      this.setProperties({ bnbCatalogueEntry: entry, bnbSkills: [] });
+    },
+    selectBnbGrantSkills(skills) {
+      this.set('bnbSkills', skills);
+    },
+    async bnbGrant() {
+      if (!this.bnbPlayer || !this.bnbCatalogueEntry) {
+        return;
+      }
+      let skills = (this.bnbSkills || []).map((skill) => skill.key);
+      let result = await this.call('soulBnbGrant', {
+        character: this.bnbPlayer.name, catalogue_ref: this.bnbCatalogueEntry.id,
+        level_state: this.bnbLevel || 'minor', explanation: this.bnbExplanation,
+        associated_skills: skills
+      }, null, (result) => `Granted ${result.entry.name} to ${this.bnbPlayer.name}.`);
+      if (!result.error) {
+        await this.loadBnbEntriesForPlayer();
+      }
+    },
+    async bnbAdjustLevel(direction) {
+      if (!this.bnbEntry) {
+        return;
+      }
+      let result = await this.call('soulBnbAdjustLevel', {
+        entry_id: this.bnbEntry.id, direction: direction, explanation: this.bnbReason
+      }, null, (adjusted) =>
+        `${adjusted.entry.name} ${direction === 'regress' ? 'regressed' : 'progressed'} ` +
+          `to ${adjusted.entry.level_state}.`
+      );
+      if (!result.error) {
+        // Clear rather than leave the stale pre-update object selected -
+        // the refreshed list has the new level_state.
+        this.set('bnbEntry', null);
+        await this.loadBnbEntriesForPlayer();
+      }
+    },
+    async bnbTransition(cmd) {
+      if (!this.bnbEntry) {
+        return;
+      }
+      let args = { entry_id: this.bnbEntry.id, reason: this.bnbReason };
+      if (cmd === 'soulBnbDelete') {
+        args.confirmations = (this.deleteConfirmOne ? 1 : 0) + (this.deleteConfirmTwo ? 1 : 0);
+      }
+      let labels = {
+        soulBnbResolve: 'resolved or negated',
+        soulBnbRestore: 'restored',
+        soulBnbDelete: 'permanently deleted'
+      };
+      let result = await this.call(
+        cmd, args, null, `Boon/Bane entry #${this.bnbEntry.id} ${labels[cmd]}.`
+      );
+      if (!result.error) {
+        this.set('bnbEntry', null);
+        await this.loadBnbEntriesForPlayer();
+      }
+    },
+    selectXpScene(scene) {
+      this.set('xpScene', scene);
+    },
     xpScene(catchup) {
+      if (!this.xpScene) {
+        return;
+      }
       return this.call('soulXpScene', {
-        scene_id: this.xpSceneId, amount: this.xpAmount, reason: this.xpReason,
+        scene_id: this.xpScene.id, amount: this.xpAmount, reason: this.xpReason,
         apply_catchup: catchup, confirmed: this.scenePreview ? 'true' : 'false'
       }, null, (result) => result.preview
         ? `Scene XP preview loaded for ${(result.recipients || []).length} recipients.`
-        : `Scene XP award completed for scene #${this.xpSceneId}.`
+        : `Scene XP award completed for scene #${this.xpScene.id}.`
       ).then((result) => {
         if (!result.error) {
           this.set('scenePreview', result.preview ? result : null);

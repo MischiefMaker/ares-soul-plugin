@@ -8,6 +8,103 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-030: Boon/Bane Progress/Regress buttons (kind-aware direction) and an Add/Remove reorganization, on both the profile staff panel and the admin page
+
+**Status:** ✅ Done (`plugin/public/soul_bnb_api.rb`, `plugin/web/soul_bnb_web_handler.rb`, `plugin/soul.rb`,
+`webportal/components/soul-staff.js`, `webportal/templates/components/soul-staff.hbs`,
+`webportal/controllers/admin-soul.js`, `webportal/routes/admin-soul.js`, `webportal/templates/admin-soul.hbs`, specs)
+
+**Requested:** 2026-07-25, live testing, across several follow-up messages: "On the admin page and profile
+admin section, let's add an 'increase/decrease BNB' option. If it's just moving up or down a level, we don't
+want to reset skills... have the BNB dropdown only of the player's BNBs, an explanation box right beneath
+it, and right after that, an 'Increase' and 'Decrease' button. We'll put the delete here as well - get rid
+of the 'Character Entry ID', and just reference the dropdown above... Then small hr break, 'Add/Remove'
+Header and then the other options - add a catalogue BNB, select a specific level, change the skills."
+Then, correcting the button naming: "Actually, let's keep the 'Progress' and 'Resolve' language - that's
+better than 'Increase'/'Decrease'. But we need to make sure Progress is increasing Boons and decreasing
+Banes. And we should add a 'Regress' to do the opposite."
+
+**Implementation:** `SoulBnbApi.progress_direction(entry_id, direction, ...)` is new - it steps a
+minor/major/legendary entry one rung along `LEVEL_LADDER`, delegating to the existing `.progress` for the
+actual update (so history/Narrative History/`SoulBnbTransitionedEvent` are identical to picking that level
+explicitly - nothing about `.progress` itself changed, and the MUSH `+bnb/progress` command, which still
+picks an explicit level, is untouched). "Progress" is never simply "up the ladder" - it's whichever direction
+is good for the character: a Boon strengthens (minor → major → legendary), a Bane weakens (legendary → major
+→ minor); "Regress" is the reverse. Neither touches `associated_skills` at all (same as the pre-existing
+`.progress`), so the stated "don't reset skills" concern was already satisfied by reusing that method rather
+than something new. Added the `soulBnbAdjustLevel` web command (registered in both `SoulBnbWebHandler`'s
+`staff_commands` and `Soul.get_web_request_handler`'s dispatch table - BUG-016's lesson applied again).
+
+Both the profile staff panel and the admin page's new "Manage a Player's Boons and Banes" section (which
+didn't exist before this - added a Player `PowerSelect` matching the "Award XP to Players" precedent) now
+show: a dropdown of the target character's own B&B entries (no more free-text "Character Entry ID"), an
+explanation/reason box, Progress/Regress/Resolve/Restore buttons, and the existing two-checkbox Permanently
+Delete - all acting on the dropdown selection. Below an `<hr>`, an "Add/Remove" header groups the existing
+"Grant a new Boon or Bane" form (catalogue picker, level select, Skill multi-select, explanation, Grant).
+After any successful action the selected entry is cleared (not left pointing at now-stale pre-update data)
+and the list is refreshed from the server.
+
+Also fixed in passing: `SoulCulminationApi.correct` used `title || culmination.title` to decide whether to
+overwrite - Ruby's `||` treats `""` as truthy, so an intentionally-blank "leave unchanged" field would have
+silently blanked the existing title/description. Changed to `.presence ||`. No test previously covered
+`.correct` at all; added coverage for the update/blank-preserves/reason-required cases.
+
+---
+
+### FR-029: XP history limited to the last 5 entries, with a "Recent XP History" header
+
+**Status:** ✅ Done (`plugin/web/soul_xp_web_handler.rb`, `webportal/templates/components/soul-xp.hbs`)
+
+**Requested:** 2026-07-25, live testing (with screenshot of an unbounded, unlabeled history list): "In the
+profile, this record will eventually get super long. I think let's just display the last 5 entries, and add
+a header like 'Recent XP History'."
+
+Same shape as the Roll history limit (FR-019) - `SoulXpApi.get_history` already accepted a `limit:` (default
+50, used nowhere), so `SoulXpWebHandler#summary` now passes `limit: 5`. Added the requested header above the
+list in `soul-xp.hbs`.
+
+---
+
+### FR-028: Culmination "?" tooltip, and a broad ID/tag-to-dropdown pass across chargen, profile, and the admin page
+
+**Status:** ✅ Done (`webportal/templates/components/soul-staff.hbs`, `webportal/templates/admin-soul.hbs`,
+`webportal/controllers/admin-soul.js`, `webportal/routes/admin-soul.js`)
+
+**Requested:** 2026-07-25, live testing, after asking what a Culmination is and getting an explanation:
+"Yes, let's add a ? with a pop up explaining what it is. On the admin side, they shouldn't need to enter an
+ID unless editing an existing one - and that can be solved with a dropdown. When adding a new one, we'll
+auto-assign the ID with a unique number. In fact, review chargen, profile and admin page and try to avoid
+places where we ask for id or tag, where we could provide a dropdown instead." Then, clarifying scope: "I
+mean any ID or tag, not just Culminations, to clarify. Let's make this user-friendly."
+
+**Tooltip:** a plain HTML `title` attribute on a small badge next to the "Culminations" heading (matching the
+only existing precedent for this in the sibling Inklings plugin - a native `title=`, not a Bootstrap JS
+tooltip/popover, which would need explicit init this codebase never sets up) - `title`/`description` were
+already free-text creation fields on Propose, so no ID was ever needed there; the only place an ID was ever
+typed was Approve/Deny/Revoke/Correct, now a `PowerSelect` over `soulCulminations` (title + status) instead.
+Correct got its own separate Title/Description fields distinct from Propose's - sharing one set across both
+would have let leftover Propose text silently overwrite an unrelated Culmination's title on Correct, a real
+trap caught before shipping it.
+
+**Full audit result** (chargen already clean from this session's earlier dropdown work; player-facing
+`soul-bnb.hbs` has no reference-lookup fields, its search box is a live filter, not an ID lookup, so it stays):
+- `soul-staff.hbs`'s "Character entry ID" (Manage an existing B&B entry) → `PowerSelect` over the character's
+  own entries (`soulBnbList`) - folded into FR-030's larger reorganization of that section.
+- `admin-soul.hbs`'s "Scene ID" (Award XP to Scene) → `PowerSelect` over `scenes` (Scenes plugin's own web
+  command, `filter: 'Recent'` - already a hard dependency via `Scenes.add_to_scene`, same cross-plugin reuse
+  precedent as the `characters` command already used for the player pickers).
+- `admin-soul.hbs`'s free-text "boon or bane" Kind field (create catalogue entry) → a native `<select>` -
+  not an ID/tag, but the same class of "typo silently fails validation" problem the user asked to eliminate.
+
+**Deliberately left alone:** the GM Review modal's "Force-Abort Any Open Roll" Roll ID field
+(`soul-roll.hbs`) - it's an escape hatch for a roll that may not be in the current scene's own pending list at
+all (the only other force-abort path is scoped to `scene_id`), so a dropdown there would need a new
+system-wide "all open rolls" fetch; flagging as a known follow-up rather than building it speculatively.
+Catalogue Tag fields (chargen B&B, admin catalogue create) also stay free text deliberately - a Tag is new
+data staff are choosing for a record that doesn't exist yet, not a reference to something already there.
+
+---
+
 ### FR-026: Roll modal dropdown overflow, and the manual B&B picker made always-visible
 
 **Status:** ✅ Done (`webportal/templates/components/soul-roll.hbs`)

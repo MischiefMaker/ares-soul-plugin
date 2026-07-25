@@ -11,12 +11,28 @@ export default Component.extend({
     this.loadAudit();
     this.loadCatalogue();
     this.loadFramework();
+    this.loadBnbEntries();
+    this.loadCulminations();
   },
 
   async loadCatalogue() {
     let result = await this.api.requestOne('soulBnbCatalogue', { per_page: 1000 }, null);
     if (!result.error) {
       this.setProperties({ catalogueEntries: result.entries, availableSkills: result.available_skills });
+    }
+  },
+
+  async loadBnbEntries() {
+    let result = await this.api.requestOne('soulBnbList', { character: this.character }, null);
+    if (!result.error) {
+      this.set('characterBnbEntries', result.entries);
+    }
+  },
+
+  async loadCulminations() {
+    let result = await this.api.requestOne('soulCulminations', { character: this.character }, null);
+    if (!result.error) {
+      this.set('culminations', result.entries);
     }
   },
 
@@ -105,48 +121,93 @@ export default Component.extend({
     selectBnbSkills(skills) {
       this.set('bnbSkills', skills);
     },
-    bnbGrant() {
+    async bnbGrant() {
       if (!this.bnbCatalogueEntry) {
         return;
       }
       let skills = (this.bnbSkills || []).map((skill) => skill.key);
-      return this.mutate('soulBnbGrant', {
+      let result = await this.mutate('soulBnbGrant', {
         character: this.character, catalogue_ref: this.bnbCatalogueEntry.id,
         level_state: this.bnbLevel || 'minor', explanation: this.bnbExplanation,
         associated_skills: skills
-      }, (result) => `Granted ${result.entry.name}.`);
+      }, (granted) => `Granted ${granted.entry.name}.`);
+      if (!result.error) {
+        await this.loadBnbEntries();
+      }
     },
-    bnbTransition(cmd) {
-      let args = { entry_id: this.bnbEntryId, level_state: this.bnbLevel, reason: this.bnbReason };
+    selectBnbEntry(entry) {
+      this.set('bnbEntry', entry);
+    },
+    async bnbAdjustLevel(direction) {
+      if (!this.bnbEntry) {
+        return;
+      }
+      let result = await this.mutate('soulBnbAdjustLevel', {
+        entry_id: this.bnbEntry.id, direction: direction, explanation: this.bnbReason
+      }, (adjusted) =>
+        `${adjusted.entry.name} ${direction === 'regress' ? 'regressed' : 'progressed'} ` +
+          `to ${adjusted.entry.level_state}.`
+      );
+      if (!result.error) {
+        // Clear rather than leave the stale pre-update object selected -
+        // the refreshed list has the new level_state, but this.bnbEntry
+        // would otherwise keep pointing at the old one.
+        this.set('bnbEntry', null);
+        await this.loadBnbEntries();
+      }
+    },
+    async bnbTransition(cmd) {
+      if (!this.bnbEntry) {
+        return;
+      }
+      let args = { entry_id: this.bnbEntry.id, reason: this.bnbReason };
       if (cmd === 'soulBnbDelete') {
         args.confirmations =
           (this.deleteConfirmOne ? 1 : 0) + (this.deleteConfirmTwo ? 1 : 0);
       }
       let labels = {
-        soulBnbProgress: 'progressed',
         soulBnbResolve: 'resolved or negated',
         soulBnbRestore: 'restored',
         soulBnbDelete: 'permanently deleted'
       };
-      return this.mutate(
+      let result = await this.mutate(
         cmd,
         args,
-        `Boon/Bane entry #${this.bnbEntryId} ${labels[cmd]}.`
+        `Boon/Bane entry #${this.bnbEntry.id} ${labels[cmd]}.`
       );
+      if (!result.error) {
+        this.set('bnbEntry', null);
+        await this.loadBnbEntries();
+      }
     },
-    culmination(cmd) {
+    async culminationPropose() {
+      let result = await this.mutate('soulCulminationPropose', {
+        character: this.character, title: this.culminationTitle, description: this.culminationDescription
+      }, (proposed) => `Culmination "${proposed.culmination.title}" proposed.`);
+      if (!result.error) {
+        await this.loadCulminations();
+      }
+    },
+    selectCulminationEntry(entry) {
+      this.set('culminationEntry', entry);
+    },
+    async culminationManage(cmd) {
+      if (!this.culminationEntry) {
+        return;
+      }
       let labels = {
-        soulCulminationPropose: 'proposed',
         soulCulminationApprove: 'approved',
         soulCulminationDeny: 'denied',
         soulCulminationRevoke: 'revoked',
         soulCulminationCorrect: 'corrected'
       };
-      return this.mutate(cmd, {
-        id: this.culminationId, character: this.character,
-        title: this.culminationTitle, description: this.culminationDescription,
-        reason: this.culminationReason
+      let result = await this.mutate(cmd, {
+        id: this.culminationEntry.id, title: this.culminationCorrectTitle,
+        description: this.culminationCorrectDescription, reason: this.culminationReason
       }, `Culmination ${labels[cmd]}.`);
+      if (!result.error) {
+        await this.loadCulminations();
+      }
     }
   }
 });

@@ -48,7 +48,7 @@ module AresMUSH
         earned: SoulXpApi.get_lifetime_earned_xp(character),
         spent: SoulXpApi.get_lifetime_spent_xp(character),
         catchup: SoulXpApi.get_catchup_xp_earned(character),
-        history: SoulXpApi.get_history(character).map do |entry|
+        history: SoulXpApi.get_history(character, limit: 5).map do |entry|
           {
             id: entry.id, direction: entry.direction, source: entry.source,
             base_amount: entry.base_amount, catchup_amount: entry.catchup_amount,

@@ -377,6 +377,39 @@ module AresMUSH
       { success: true, entry: entry }
     end
 
+    # Standard minor/major/legendary ladder for the direction-based
+    # Progress/Regress adjustment below - distinct from level_definitions'
+    # full config (which also includes "negated"/"epic", handled by
+    # Resolve/Restore and per-entry configuration instead of this stepped
+    # adjustment).
+    LEVEL_LADDER = %w[minor major legendary].freeze
+
+    # "Progress" always means the direction that's good for the character,
+    # not "up the ladder" literally: a Boon strengthens (minor -> major ->
+    # legendary) while a Bane weakens (legendary -> major -> minor) -
+    # "Regress" is whichever direction is the reverse of that (staff
+    # request, 2026-07-25: "Progress is increasing Boons and decreasing
+    # Banes... add a 'Regress' to do the opposite"). Delegates to
+    # .progress for the actual update once the target level is resolved,
+    # so history/Narrative History/the SoulBnbTransitionedEvent are all
+    # identical to picking that same level explicitly.
+    def self.progress_direction(entry_id, direction, explanation: nil, source: "staff", enactor: nil)
+      entry = CharacterBnbEntry[entry_id]
+      return { error: "B&B entry not found" } unless entry
+      return { error: "This entry is resolved/negated - restore it first." } if entry.resolved == "true"
+
+      index = LEVEL_LADDER.index(entry.level_state)
+      return { error: "Only minor/major/legendary levels can be adjusted with Progress/Regress." } unless index
+
+      toward_benefit = entry.catalogue_entry.boon? ? 1 : -1
+      step = direction.to_s == "regress" ? -toward_benefit : toward_benefit
+      new_index = index + step
+      return { error: "This entry is already at the limit of that direction." } if
+        new_index.negative? || new_index >= LEVEL_LADDER.length
+
+      progress(entry_id, LEVEL_LADDER[new_index], source: source, explanation: explanation, enactor: enactor)
+    end
+
     # Non-destructive (FINAL REQ-020): preserves the prior level and full
     # history. "Negated" for Boons, "Resolved" for Banes - same mechanic,
     # different label by convention only.

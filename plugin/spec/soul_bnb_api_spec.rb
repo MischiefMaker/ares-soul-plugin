@@ -122,6 +122,55 @@ module AresMUSH
       end
     end
 
+    describe ".progress_direction" do
+      it "progresses a Boon up the ladder (minor -> major)" do
+        boon = create_boon("lucky")
+        entry = SoulBnbApi.grant(character, boon, level_state: "minor", source: "admin")[:entry]
+        result = SoulBnbApi.progress_direction(entry.id, "progress", enactor: staff)
+        expect(result[:success]).to be true
+        expect(CharacterBnbEntry[entry.id].level_state).to eq("major")
+      end
+
+      it "regresses a Boon down the ladder (major -> minor)" do
+        boon = create_boon("lucky")
+        entry = SoulBnbApi.grant(character, boon, level_state: "major", source: "admin")[:entry]
+        result = SoulBnbApi.progress_direction(entry.id, "regress", enactor: staff)
+        expect(result[:success]).to be true
+        expect(CharacterBnbEntry[entry.id].level_state).to eq("minor")
+      end
+
+      it "progresses a Bane down the ladder - Progress is always the direction good for the character" do
+        bane = create_bane("cursed")
+        entry = SoulBnbApi.grant(character, bane, level_state: "major", source: "admin")[:entry]
+        result = SoulBnbApi.progress_direction(entry.id, "progress", enactor: staff)
+        expect(result[:success]).to be true
+        expect(CharacterBnbEntry[entry.id].level_state).to eq("minor")
+      end
+
+      it "regresses a Bane up the ladder (worse for the character)" do
+        bane = create_bane("cursed")
+        entry = SoulBnbApi.grant(character, bane, level_state: "minor", source: "admin")[:entry]
+        result = SoulBnbApi.progress_direction(entry.id, "regress", enactor: staff)
+        expect(result[:success]).to be true
+        expect(CharacterBnbEntry[entry.id].level_state).to eq("major")
+      end
+
+      it "refuses to progress a Boon already at legendary" do
+        boon = create_boon("lucky")
+        entry = SoulBnbApi.grant(character, boon, level_state: "legendary", source: "admin")[:entry]
+        result = SoulBnbApi.progress_direction(entry.id, "progress", enactor: staff)
+        expect(result[:error]).to match(/limit/i)
+      end
+
+      it "refuses to adjust a resolved entry" do
+        boon = create_boon("lucky")
+        entry = SoulBnbApi.grant(character, boon, level_state: "minor", source: "admin")[:entry]
+        SoulBnbApi.resolve(entry.id, reason: "done", enactor: staff)
+        result = SoulBnbApi.progress_direction(entry.id, "progress", enactor: staff)
+        expect(result[:error]).to match(/resolved/i)
+      end
+    end
+
     describe ".get_character_entry_public" do
       it "includes kind - the web/MUSH B&B list displays render blank without it" do
         boon = create_boon("lucky")

@@ -5,8 +5,9 @@ module AresMUSH
       return error if error
       enactor = request.enactor
 
-      staff_commands = %w[soulBnbCreate soulBnbSetSkills soulBnbGrant soulBnbProgress soulBnbDelete soulBnbResolve
-                          soulBnbRestore soulBnbRequestApprove soulBnbRequestDeny soulBnbRequestsList]
+      staff_commands = %w[soulBnbCreate soulBnbSetSkills soulBnbGrant soulBnbProgress soulBnbAdjustLevel
+                          soulBnbDelete soulBnbResolve soulBnbRestore soulBnbRequestApprove soulBnbRequestDeny
+                          soulBnbRequestsList]
       if staff_commands.include?(request.cmd)
         return { error: t('soul.permission_denied') } unless Soul.can_manage_soul?(enactor)
       elsif !Soul.can_play?(enactor)
@@ -86,6 +87,10 @@ module AresMUSH
         result[:error] ? result : { success: true, entry: serialize_character_entry(result[:entry], true) }
       when "soulBnbProgress"
         result = SoulBnbApi.progress(request.args['entry_id'], request.args['level_state'],
+          source: "admin", explanation: request.args['explanation'], enactor: enactor)
+        result[:error] ? result : { success: true, entry: serialize_character_entry(result[:entry], true) }
+      when "soulBnbAdjustLevel"
+        result = SoulBnbApi.progress_direction(request.args['entry_id'], request.args['direction'],
           source: "admin", explanation: request.args['explanation'], enactor: enactor)
         result[:error] ? result : { success: true, entry: serialize_character_entry(result[:entry], true) }
       when "soulBnbDelete"

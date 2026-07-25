@@ -96,8 +96,8 @@ module AresMUSH
         "old_title" => culmination.title, "old_description" => culmination.description
       }
       culmination.update(
-        title: title || culmination.title,
-        description: description || culmination.description,
+        title: title.presence || culmination.title,
+        description: description.presence || culmination.description,
         correction_log: log
       )
       SoulAuditApi.create(action: "culmination_correct", character: culmination.character, actor: enactor, reason: reason)

@@ -35,6 +35,45 @@
   </details>
 
   <details class="mb-3"><summary>Adjust Boons and Banes</summary>
+    <PowerSelect @selected={{this.bnbEntry}} @options={{this.characterBnbEntries}}
+      @searchField="name" @searchEnabled=true @placeholder="Select an entry..."
+      @onChange={{action "selectBnbEntry"}} as |entry|>
+      {{entry.name}} [{{entry.tag}}] — {{entry.kind}}, {{entry.level_state}}
+      {{if entry.resolved " (resolved)"}}
+    </PowerSelect>
+    <Input @value={{this.bnbReason}} class="form-control my-2" placeholder="Explanation / reason" />
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
+        onclick={{action "bnbAdjustLevel" "progress"}}>Progress</button>
+      <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
+        onclick={{action "bnbAdjustLevel" "regress"}}>Regress</button>
+      <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
+        onclick={{action "bnbTransition" "soulBnbResolve"}}>Resolve</button>
+      <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
+        onclick={{action "bnbTransition" "soulBnbRestore"}}>Restore</button>
+    </div>
+    <div class="form-text mb-0">Progress/Regress move a Boon or Bane one step along Minor/Major/Legendary -
+      Progress is always the direction that's good for the character (a Boon strengthens, a Bane weakens).</div>
+    <div class="form-check mt-3">
+      <Input @type="checkbox" @checked={{this.deleteConfirmOne}} class="form-check-input"
+        id="soul-delete-confirm-one" />
+      <label class="form-check-label" for="soul-delete-confirm-one">
+        I understand this permanently deletes the record.
+      </label>
+    </div>
+    <div class="form-check">
+      <Input @type="checkbox" @checked={{this.deleteConfirmTwo}} class="form-check-input"
+        id="soul-delete-confirm-two" />
+      <label class="form-check-label" for="soul-delete-confirm-two">
+        I confirm again; resolving or negating is not appropriate.
+      </label>
+    </div>
+    <button class="btn btn-danger mt-2" type="button"
+      disabled={{not (and this.bnbEntry this.deleteConfirmOne this.deleteConfirmTwo)}}
+      onclick={{action "bnbTransition" "soulBnbDelete"}}>Permanently Delete</button>
+
+    <hr>
+    <p class="mb-1"><strong>Add/Remove</strong></p>
     <p class="text-muted mb-1">Grant a new Boon or Bane</p>
     <PowerSelect @selected={{this.bnbCatalogueEntry}} @options={{this.catalogueEntries}}
       @searchField="name" @searchEnabled=true @placeholder="Select a Boon/Bane..."
@@ -56,45 +95,39 @@
     {{/unless}}
     <Input @value={{this.bnbExplanation}} class="form-control my-2" placeholder="Explanation" />
     <button class="btn btn-primary" type="button" onclick={{action "bnbGrant"}}>Grant</button>
-
-    <p class="text-muted mb-1 mt-3">Manage an existing entry</p>
-    <Input @value={{this.bnbEntryId}} class="form-control my-2" placeholder="Character entry ID" />
-    <Input @value={{this.bnbReason}} class="form-control my-2" placeholder="Reason" />
-    <div class="d-flex gap-2 flex-wrap">
-      <button class="btn btn-secondary" type="button" onclick={{action "bnbTransition" "soulBnbProgress"}}>Progress</button>
-      <button class="btn btn-secondary" type="button" onclick={{action "bnbTransition" "soulBnbResolve"}}>Resolve</button>
-      <button class="btn btn-secondary" type="button" onclick={{action "bnbTransition" "soulBnbRestore"}}>Restore</button>
-    </div>
-    <div class="form-check mt-3">
-      <Input @type="checkbox" @checked={{this.deleteConfirmOne}} class="form-check-input"
-        id="soul-delete-confirm-one" />
-      <label class="form-check-label" for="soul-delete-confirm-one">
-        I understand this permanently deletes the record.
-      </label>
-    </div>
-    <div class="form-check">
-      <Input @type="checkbox" @checked={{this.deleteConfirmTwo}} class="form-check-input"
-        id="soul-delete-confirm-two" />
-      <label class="form-check-label" for="soul-delete-confirm-two">
-        I confirm again; resolving or negating is not appropriate.
-      </label>
-    </div>
-    <button class="btn btn-danger mt-2" type="button"
-      disabled={{not (and this.deleteConfirmOne this.deleteConfirmTwo)}}
-      onclick={{action "bnbTransition" "soulBnbDelete"}}>Permanently Delete</button>
   </details>
 
-  <details><summary>Culminations</summary>
-    <Input @value={{this.culminationId}} class="form-control my-2" placeholder="Culmination ID" />
+  <details>
+    <summary>
+      Culminations
+      <span class="badge rounded-pill bg-secondary ms-1"
+        title="A permanent record of a significant story milestone or accomplishment - not an XP purchase or stat bonus. Propose a title and description; once approved it becomes a permanent part of the character's Narrative History.">?</span>
+    </summary>
+
+    <p class="text-muted mb-1">Propose a new Culmination</p>
     <Input @value={{this.culminationTitle}} class="form-control my-2" placeholder="Title" />
     <Textarea @value={{this.culminationDescription}} class="form-control my-2" placeholder="Description" />
-    <Input @value={{this.culminationReason}} class="form-control my-2" placeholder="Reason" />
+    <button class="btn btn-primary" type="button" onclick={{action "culminationPropose"}}>Propose</button>
+
+    <p class="text-muted mb-1 mt-3">Manage an existing Culmination</p>
+    <PowerSelect @selected={{this.culminationEntry}} @options={{this.culminations}}
+      @searchField="title" @searchEnabled=true @placeholder="Select a Culmination..."
+      @onChange={{action "selectCulminationEntry"}} as |culmination|>
+      {{culmination.title}} — {{culmination.status}}
+    </PowerSelect>
+    <Input @value={{this.culminationReason}} class="form-control my-2" placeholder="Reason (required to deny/revoke/correct)" />
+    <div class="form-text mb-0">Only needed for Correct - leave blank to keep the existing title/description.</div>
+    <Input @value={{this.culminationCorrectTitle}} class="form-control my-2" placeholder="New title (Correct only)" />
+    <Textarea @value={{this.culminationCorrectDescription}} class="form-control my-2" placeholder="New description (Correct only)" />
     <div class="d-flex gap-2 flex-wrap">
-      <button class="btn btn-primary" type="button" onclick={{action "culmination" "soulCulminationPropose"}}>Propose</button>
-      <button class="btn btn-success" type="button" onclick={{action "culmination" "soulCulminationApprove"}}>Approve</button>
-      <button class="btn btn-secondary" type="button" onclick={{action "culmination" "soulCulminationDeny"}}>Deny</button>
-      <button class="btn btn-secondary" type="button" onclick={{action "culmination" "soulCulminationRevoke"}}>Revoke</button>
-      <button class="btn btn-warning" type="button" onclick={{action "culmination" "soulCulminationCorrect"}}>Correct</button>
+      <button class="btn btn-success" type="button" disabled={{not this.culminationEntry}}
+        onclick={{action "culminationManage" "soulCulminationApprove"}}>Approve</button>
+      <button class="btn btn-secondary" type="button" disabled={{not this.culminationEntry}}
+        onclick={{action "culminationManage" "soulCulminationDeny"}}>Deny</button>
+      <button class="btn btn-secondary" type="button" disabled={{not this.culminationEntry}}
+        onclick={{action "culminationManage" "soulCulminationRevoke"}}>Revoke</button>
+      <button class="btn btn-warning" type="button" disabled={{not this.culminationEntry}}
+        onclick={{action "culminationManage" "soulCulminationCorrect"}}>Correct</button>
     </div>
   </details>
 </section>
