@@ -20,7 +20,7 @@
 # ===========================================================================
 
 def self.custom_app_review(char)
-  AresMUSH::Soul.app_review(char)
+  Soul.app_review(char)
 end
 
 # ===========================================================================
@@ -36,7 +36,7 @@ end
 def self.custom_app_review(char)
   parts = []
   parts << AresMUSH::Inklings.app_review(char)   # keep whatever this game's Inklings snippet already calls
-  parts << AresMUSH::Soul.app_review(char)
+  parts << Soul.app_review(char)
   parts.compact.join("%r%r")
 end
 
@@ -44,7 +44,7 @@ end
 # NOTES
 # ===========================================================================
 #
-# - AresMUSH::Soul.app_review(char) returns nil (nothing shown) if SOUL is
+# - Soul.app_review(char) returns nil (nothing shown) if SOUL is
 #   disabled, or if the character hasn't touched chargen's SOUL steps yet
 #   (no Resonance set, no Skill/Aspect points spent, no B&B selected) - an
 #   application that hasn't reached +soul/cg yet won't show a wall of
