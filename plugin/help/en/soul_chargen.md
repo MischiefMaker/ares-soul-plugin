@@ -24,7 +24,9 @@ character generation, including the ID and tag used by `+soul/cg/bnb`.
 `+soul/cg/bnb <id or tag>[/<level>]=<explanation>` - Select a starting
 Boon or Bane. The level defaults to `minor`.
 
-`+soul/cg/drop <entry id>` - Remove one of your chargen selections.
+`+soul/cg/drop <entry id or tag>` - Remove one of your chargen selections.
+The entry ID is shown in `+soul/cg`'s own status listing, or use the
+catalogue tag directly (same as `+soul/cg/bnb`'s "id or tag" convention).
 
 These commands stop working after approval. Skill ratings cost one point per
 rating level and cannot exceed the starting cap shown by `+soul/cg`. Aspect

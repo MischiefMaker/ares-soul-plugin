@@ -23,6 +23,8 @@ Running log of issues found during internal testing (non-live game install, star
 - Along the way, found and removed a real but harmless dead-code duplicate in `plugin/soul.rb#get_cmd_handler`: two identical `when "cg", "cg/resonance", ...` branches for `SoulChargenCmd` (the second, missing `cg/catalogue`, was unreachable — Ruby's `case` takes the first match) — leftover from an earlier merge, cleaned up while already editing this file.
 - New `plugin/spec/soul_spec.rb` (this project's first direct coverage of the root `Soul` module) covers the disabled/no-data/nil-character/has-data/Resonance-enabled cases for `.app_review`.
 
+**Correction (same day):** the OPTION B example in the first version of the snippet called a fabricated method, `AresMUSH::Inklings.app_review(char)` — invented as a "hypothetical" placeholder rather than verified against Inklings' real source, exactly the mistake this project's own Plugin Development Guide warns against ("Don't wire a hard integration against another plugin's event/field names you haven't verified"). The user pasted it as-is and hit `undefined method 'app_review' for module AresMUSH::Inklings`. With the actual `ares-inklings-plugin` repo available this session, verified the real method is `Inklings.get_app_review_issues(char)` (`plugin/inklings.rb`), and that Inklings' own real `custom_app_review.rb` snippet uses a `messages = []` / `messages.join("\n")` structure, not the invented `parts.compact.join("%r%r")` pattern the first draft used. Rewrote the snippet's OPTION B to build on Inklings' actual, verified structure instead of inventing an incompatible second pattern, and changed `Soul.app_review`'s own line-join from `"%r"` (SOUL's usual MUSH markup) to `"\n"`, matching `Inklings.get_app_review_issues`' real convention for this specific hook.
+
 ### FR-012: Unique CSS classes for installer styling hooks
 
 **Status:** 🟡 Partially done — plain HTML wrappers fixed; `BsModalSimple` components not addressed
@@ -48,6 +50,8 @@ Running log of issues found during internal testing (non-live game install, star
 - **Chargen ("including in chargen"):** `+soul/cg/catalogue` (MUSH) and the chargen catalogue modal (web) now both display each entry's associated Skills, so players can see what a B&B affects before selecting it — `SoulChargenWebHandler.catalogue_hash` and `SoulChargenCmd#show_catalogue` both resolve Skill keys to display names via `SoulFrameworkApi.get_skill`.
 - Updated `docs/reference/Commands.md`, `plugin/help/en/soul_bnb.md`/`manage_soul.md`, `docs/reference/Default_BnBs.md`'s examples, `docs/development/Migration_From_FS3.md`'s B&B migration examples, and README's new starter-B&B install step (FR-010) — all previously showed the old 3-segment syntax.
 - `plugin/spec/soul_bnb_api_spec.rb`'s `create_boon`/`create_bane` test helpers (used by ~24 examples across the file for unrelated features) now pass a stubbed Skill key, since the new requirement would otherwise have broken every one of them. New spec coverage for the requirement itself, the syntax parsing, and the web form's argument-passing.
+
+**Follow-up gap closed (2026-07-25):** the requirement above only guarded *creation* — a catalogue entry made before this fix (or on a game with existing data) still has empty `skill_associations`, and nothing stopped it from being granted to a character, including during chargen's `+soul/cg/bnb`. Found via user report: *"chargen bnb not requiring the skill switch"*. Closed the loophole at the actual point it matters — `SoulBnbApi.grant` now refuses to grant any catalogue entry with empty `skill_associations`, chargen or otherwise, with an error naming the entry and pointing at the fix. Since catalogue entries had no edit mechanism at all (create-only by design), this would have been a dead end for legacy entries with no way to fix them — added `SoulBnbApi.set_skill_associations` (the one deliberately-editable field) and `+bnb/skills <id or tag>=<skill1,skill2,...>` so staff can repair an old entry in place rather than abandoning its tag/history for a replacement. Documented in `docs/reference/Commands.md`, `soul_bnb.md`, `manage_soul.md`; specs cover the new `.grant` check, `.set_skill_associations`, and the new command switch.
 
 ### FR-010: Default starter Boons & Banes added to install instructions
 
@@ -160,6 +164,18 @@ One inherent consequence, not a bug: `custom_scene_data.snippet.rb` no longer pa
 A bare `+bnb` previously required an argument and just returned an "invalid syntax" error — there was no command to list all of a player's own entries at once (only single-entry lookup by ID/tag, the scene-scoped `/here`, and the public `/catalogue`). Added `SoulBnbCmd#show_own_entries`, reached when `+bnb` is given with no reference: lists every entry `SoulBnbApi.get_character_entries(enactor)` returns, each showing catalogue ID, tag, name, kind, level, and the character's own private `character_explanation` (never shown to anyone else). Operates strictly on `enactor` — no new privacy exposure, matching the same self-only scope `+xp`/`+soul` already use for private data.
 
 **Web/staff follow-up:** flagged here as needing a real privacy decision rather than a reflexive copy-paste — done in FR-003 above.
+
+---
+
+## BUG-011: `+soul/cg/drop` only took a numeric entry ID, unlike every other B&B lookup
+
+**Status:** ✅ Fixed (`plugin/public/soul_bnb_api.rb`, `plugin/commands/soul_chargen_cmd.rb`, docs)
+
+**Reported:** 2026-07-25. User's exact report: *"soul/cg/drop is confusing for bnbs because it uses the # where everywhere else uses the tag."*
+
+**Root cause:** `+soul/cg/bnb <id or tag>` (add) already accepts either the catalogue entry's numeric ID or its tag, via the same `get_catalogue_entry` dual-mode lookup every other B&B command uses (`+bnb <id or tag>`, `+bnb/grant`, etc.). `+soul/cg/drop`, alone among them, only ever accepted a bare integer — and that integer isn't even the catalogue entry's ID, it's the *character's own selection* (`CharacterBnbEntry.id`, a different ID space entirely from the catalogue's own ID/tag), which the player has no way to know except by reading it off `+soul/cg`'s status listing first.
+
+**Fix:** `SoulBnbApi.drop_chargen_selection` now accepts either the entry ID (unchanged, backward compatible) or the catalogue entry's tag, resolved case-insensitively against the character's own still-selected chargen entries. `SoulChargenCmd`'s `entry_id` attribute renamed to `entry_ref` and its parsing no longer forces integer conversion. The web drop button is unaffected (it already sends the numeric entry ID from the rendered list, which still works). Updated `docs/reference/Commands.md` and `soul_chargen.md`; specs cover both lookup modes and case-insensitivity.
 
 ---
 

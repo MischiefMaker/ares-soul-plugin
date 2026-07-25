@@ -37,6 +37,27 @@ module AresMUSH
       { success: true, entry: entry }
     end
 
+    # The only editable field on an existing catalogue entry - added
+    # specifically so a legacy entry created before the associated-Skill
+    # requirement (2026-07-25) can be fixed in place rather than staff
+    # needing to abandon its tag/history and create a replacement. Every
+    # other catalogue field is create-time only by design (FINAL REQ-017's
+    # catalogue entries are meant to be stable once granted to characters);
+    # this is a narrow, deliberate exception because .grant now refuses any
+    # entry with an empty list, and there was previously no way at all to
+    # add one after the fact.
+    def self.set_skill_associations(id_or_tag, skill_associations, enactor:)
+      return { error: "You don't have permission to do that." } unless Soul.can_manage_soul?(enactor)
+      entry = get_catalogue_entry(id_or_tag)
+      return { error: "Unknown Boon/Bane: #{id_or_tag}" } unless entry
+      return { error: "At least one associated Skill is required." } if (skill_associations || []).empty?
+      unknown_skills = skill_associations.reject { |key| SoulFrameworkApi.valid_skill_key?(key) }
+      return { error: "Unknown Skill(s): #{unknown_skills.join(', ')}" } if unknown_skills.any?
+
+      entry.update(skill_associations: skill_associations)
+      { success: true, entry: entry }
+    end
+
     # Accepts either a numeric catalogue ID or a tag (case-insensitive) -
     # matches FINAL REQ-022's "+bnb <id>" (numeric) and tag-based lookup.
     def self.get_catalogue_entry(id_or_tag)
@@ -167,6 +188,17 @@ module AresMUSH
       return { error: "Character not found" } unless character
       catalogue_entry = catalogue_ref.kind_of?(BnbCatalogueEntry) ? catalogue_ref : get_catalogue_entry(catalogue_ref)
       return { error: "Unknown Boon/Bane: #{catalogue_ref}" } unless catalogue_entry
+      # create_catalogue_entry has required at least one associated Skill
+      # since 2026-07-25 (mischief bug list item 8), but that only guards
+      # entries created after the fix - this catches any legacy entry from
+      # before then that's still missing it, at the point it would actually
+      # reach a character (chargen selection or any other grant), rather
+      # than leaving it silently invisible to +roll's suggestions forever.
+      if (catalogue_entry.skill_associations || []).empty?
+        return { error: "#{catalogue_entry.name} has no associated Skills configured and " \
+          "cannot be granted until it does - ask staff to fix it with +bnb/create's " \
+          "<skill1,skill2,...> segment (a fresh entry, since catalogue entries can't be edited in place)." }
+      end
 
       definitions = Global.read_config("soul", "bnb", "level_definitions") || {}
       return { error: "Unknown level/state: #{level_state}" } unless definitions.key?(level_state.to_s)
@@ -226,8 +258,25 @@ module AresMUSH
     # has real history). A chargen selection has neither yet - .grant defers
     # its history until approval (above) - so a clean hard delete here is
     # safe: nothing is orphaned, and nothing is silently lost.
-    def self.drop_chargen_selection(entry_id, character)
-      entry = CharacterBnbEntry[entry_id]
+    # Accepts either the character's own entry ID (as originally shown in
+    # +soul/cg's status listing) or the catalogue entry's tag - added
+    # 2026-07-25 after a real UX complaint: +soul/cg/bnb (add) already
+    # accepts "id or tag" like every other B&B lookup in this project
+    # (get_catalogue_entry), but drop only ever took a numeric ID, which is
+    # the *character's own entry* ID (a different number space entirely
+    # from the catalogue's own ID/tag) - confusing since it's the only
+    # chargen command that doesn't take a tag. Tag lookup is scoped to this
+    # character's own still-selected chargen entries (a chargen pick is
+    # 1:1 with its catalogue entry, so the tag unambiguously identifies
+    # which one to drop).
+    def self.drop_chargen_selection(id_or_tag, character)
+      entry = if id_or_tag.to_s =~ /\A\d+\z/
+                CharacterBnbEntry[id_or_tag]
+              else
+                character.character_bnb_entries.to_a.find do |e|
+                  e.source == "chargen" && e.catalogue_entry&.tag&.downcase == id_or_tag.to_s.downcase
+                end
+              end
       return { error: "B&B entry not found" } unless entry
       return { error: "That entry does not belong to you." } unless entry.character == character
       return { error: "Only chargen-selected entries can be dropped this way." } unless entry.source == "chargen"

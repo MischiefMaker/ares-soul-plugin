@@ -53,6 +53,44 @@ module AresMUSH
         result = SoulBnbApi.create_catalogue_entry(name: "X", description: "x", kind: "neutral", tag: "x", enactor: staff)
         expect(result[:error]).to match(/boon.*bane/i)
       end
+
+      it "rejects an entry with no associated Skills" do
+        result = SoulBnbApi.create_catalogue_entry(name: "X", description: "x", kind: "boon", tag: "x",
+          enactor: staff, skill_associations: [])
+        expect(result[:error]).to match(/associated Skill/i)
+      end
+
+      it "rejects an unknown Skill key" do
+        result = SoulBnbApi.create_catalogue_entry(name: "X", description: "x", kind: "boon", tag: "x",
+          enactor: staff, skill_associations: ["nonexistent_skill"])
+        expect(result[:error]).to match(/unknown skill/i)
+      end
+    end
+
+    describe ".set_skill_associations" do
+      it "requires manage_soul permission" do
+        boon = create_boon("lucky")
+        result = SoulBnbApi.set_skill_associations(boon.tag, ["blade"], enactor: character)
+        expect(result[:error]).to match(/permission/i)
+      end
+
+      it "updates an existing entry's associated Skills" do
+        boon = create_boon("lucky")
+        result = SoulBnbApi.set_skill_associations(boon.tag, ["blade", "spirit"], enactor: staff)
+        expect(result[:success]).to be true
+        expect(boon.reload.skill_associations).to eq(["blade", "spirit"])
+      end
+
+      it "rejects an empty list" do
+        boon = create_boon("lucky")
+        result = SoulBnbApi.set_skill_associations(boon.tag, [], enactor: staff)
+        expect(result[:error]).to match(/associated Skill/i)
+      end
+
+      it "rejects an unknown catalogue entry" do
+        result = SoulBnbApi.set_skill_associations("nonexistent", ["blade"], enactor: staff)
+        expect(result[:error]).to match(/unknown/i)
+      end
     end
 
     describe "chargen B&B ratio (Addendum §5.1)" do
@@ -72,6 +110,15 @@ module AresMUSH
         SoulBnbApi.grant(character, bane, level_state: "minor", source: "chargen")
         result = SoulBnbApi.grant(character, boon2, level_state: "minor", source: "chargen")
         expect(result[:success]).to be true
+      end
+    end
+
+    describe ".grant" do
+      it "refuses to grant a legacy catalogue entry with no associated Skills" do
+        boon = create_boon("lucky")
+        boon.update(skill_associations: [])
+        result = SoulBnbApi.grant(character, boon, level_state: "minor", source: "chargen")
+        expect(result[:error]).to match(/associated Skill/i)
       end
     end
 
@@ -157,6 +204,20 @@ module AresMUSH
           entry = SoulBnbApi.grant(character, boon, level_state: "minor", source: "chargen")[:entry]
           other = Fabricate(:character)
           expect(SoulBnbApi.drop_chargen_selection(entry.id, other)[:error]).to be_present
+        end
+
+        it "also accepts the catalogue entry's tag, not just the numeric entry ID" do
+          boon = create_boon("lucky")
+          entry = SoulBnbApi.grant(character, boon, level_state: "minor", source: "chargen")[:entry]
+          result = SoulBnbApi.drop_chargen_selection("lucky", character)
+          expect(result[:success]).to be true
+          expect(CharacterBnbEntry[entry.id]).to be_nil
+        end
+
+        it "does the tag lookup case-insensitively" do
+          boon = create_boon("lucky")
+          SoulBnbApi.grant(character, boon, level_state: "minor", source: "chargen")
+          expect(SoulBnbApi.drop_chargen_selection("LUCKY", character)[:success]).to be true
         end
       end
 

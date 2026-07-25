@@ -18,6 +18,13 @@ module AresMUSH
           left, self.description = raw.split("=", 2)
           self.kind, self.tag, self.name, skills_raw = left.to_s.split("/", 4)
           self.skill_associations = skills_raw.to_s.split(",").map(&:strip).reject(&:blank?)
+        when "skills"
+          # +bnb/skills <id or tag>=<skill1,skill2,...> - the one editable
+          # field on an existing catalogue entry (SoulBnbApi.
+          # set_skill_associations), for fixing a legacy entry created
+          # before the associated-Skill requirement existed.
+          self.reference, skills_raw = raw.split("=", 2)
+          self.skill_associations = skills_raw.to_s.split(",").map(&:strip).reject(&:blank?)
         when "grant"
           left, self.explanation = raw.split("=", 2)
           self.name, self.reference, self.level = left.to_s.split("/", 3)
@@ -49,7 +56,7 @@ module AresMUSH
       end
 
       def check_permission
-        staff_switches = %w[search create grant progress delete resolve restore detail]
+        staff_switches = %w[search create skills grant progress delete resolve restore detail]
         return t('soul.permission_denied') if staff_switches.include?(cmd.switch) && !Soul.can_manage_soul?(enactor)
         return t('soul.permission_denied') if !staff_switches.include?(cmd.switch) && !Soul.can_play?(enactor)
         nil
@@ -59,6 +66,8 @@ module AresMUSH
         case cmd.switch
         when "create"
           [ self.kind, self.tag, self.name, self.description ]
+        when "skills"
+          [ self.reference, self.skill_associations.presence ]
         when "grant"
           [ self.name, self.reference, self.explanation ]
         when "progress"
@@ -90,6 +99,7 @@ module AresMUSH
         when "search" then show_search
         when "catalogue" then show_catalogue
         when "create" then create_entry
+        when "skills" then set_skills_entry
         when "grant" then with_character { |character| grant_entry(character) }
         when "progress" then with_character { |character| progress_entry(character) }
         when "delete" then delete_entry
@@ -194,6 +204,11 @@ module AresMUSH
         result = SoulBnbApi.create_catalogue_entry(name: self.name, description: self.description,
           kind: self.kind, tag: self.tag, enactor: enactor, skill_associations: self.skill_associations)
         emit_result result, 'soul.bnb_created'
+      end
+
+      def set_skills_entry
+        result = SoulBnbApi.set_skill_associations(self.reference, self.skill_associations, enactor: enactor)
+        emit_result result, 'soul.bnb_skills_set'
       end
 
       def grant_entry(character)

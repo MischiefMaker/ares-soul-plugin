@@ -20,6 +20,10 @@ your private explanation for each.
 `+bnb/create <kind>/<tag>/<name>/<skill1,skill2,...>=<description>` — Create a
 catalogue entry. At least one associated Skill key is required.
 
+`+bnb/skills <id or tag>=<skill1,skill2,...>` — Set an existing entry's
+associated Skills. The only field editable after creation; use it to fix an
+entry made before Skills were required.
+
 `+bnb/grant <character>/<id or tag>/<level>=<explanation>` — Grant an entry.
 The level defaults to `minor` when omitted.
 

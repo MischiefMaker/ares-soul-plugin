@@ -26,7 +26,8 @@ module AresMUSH
         name: tag.capitalize,
         description: "Test #{tag}",
         kind: kind,
-        active: "true"
+        active: "true",
+        skill_associations: ["blade"]
       )
     end
 

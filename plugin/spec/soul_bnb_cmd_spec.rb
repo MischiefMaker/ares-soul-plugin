@@ -136,5 +136,37 @@ module AresMUSH
         h.create_entry
       end
     end
+
+    describe "+bnb/skills" do
+      let(:enactor) { Fabricate(:character) }
+      let(:client) { double(emit_success: nil, emit_failure: nil) }
+
+      def handler(args)
+        cmd = double(switch: "skills", args: args)
+        h = Soul::SoulBnbCmd.new(client, cmd, enactor)
+        h.parse_args
+        h
+      end
+
+      it "parses <id or tag>=<skill1,skill2,...>" do
+        h = handler("lucky=blade,spirit")
+        expect(h.reference).to eq("lucky")
+        expect(h.skill_associations).to eq(["blade", "spirit"])
+      end
+
+      it "requires a non-empty Skill list" do
+        h = handler("lucky=")
+        expect(h.required_args).to include(nil)
+      end
+
+      it "passes through to SoulBnbApi.set_skill_associations" do
+        h = handler("lucky=blade")
+        expect(SoulBnbApi).to receive(:set_skill_associations).with(
+          "lucky", ["blade"], enactor: enactor
+        ).and_return(success: true)
+
+        h.set_skills_entry
+      end
+    end
   end
 end

@@ -98,7 +98,10 @@ module AresMUSH
         (status[:aspect_points_fully_spent] ? t('chargen.ok') : t('chargen.not_set')))
       lines << Chargen.format_review_status("Checking SOUL Boon/Bane ratio.",
         status[:bnb_ratio_satisfied] ? t('chargen.ok') : t('chargen.not_set'))
-      lines.join("%r")
+      # "\n", not "%r" - matches Inklings.get_app_review_issues' own join
+      # (plugin/inklings.rb in the Inklings repo), the verified real
+      # convention for this specific hook's return value.
+      lines.join("\n")
     end
 
     # Called once at plugin load and whenever staff reload game config

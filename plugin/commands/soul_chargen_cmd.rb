@@ -5,7 +5,7 @@ module AresMUSH
       include TemplateFormatters
 
       attr_accessor :value, :skill, :aspect, :rating, :reference, :level,
-                    :explanation, :entry_id
+                    :explanation, :entry_ref
 
       # Dispatched under the "soul" root as a compound switch ("cg",
       # "cg/resonance", "cg/skill", "cg/bnb", "cg/drop") - not its own
@@ -37,7 +37,11 @@ module AresMUSH
           self.reference, self.level = left.to_s.split("/", 2)
           self.level ||= "minor"
         when "drop"
-          self.entry_id = integer_arg(cmd.args)
+          # Accepts either the entry ID shown in +soul/cg's status listing
+          # or the catalogue entry's tag (SoulBnbApi.drop_chargen_selection
+          # handles both) - matches "id or tag" everywhere else in this
+          # project, unlike the numeric-only syntax this used to require.
+          self.entry_ref = cmd.args.to_s
         end
       end
 
@@ -58,7 +62,7 @@ module AresMUSH
         when "skill" then [ self.skill, self.rating ]
         when "aspect" then [ self.aspect, self.rating ]
         when "bnb" then [ self.reference, self.explanation ]
-        when "drop" then [ self.entry_id ]
+        when "drop" then [ self.entry_ref ]
         else []
         end
       end
@@ -73,7 +77,7 @@ module AresMUSH
           emit_result SoulBnbApi.grant(enactor, self.reference, level_state: self.level,
             source: "chargen", explanation: self.explanation)
         when "catalogue" then show_catalogue
-        when "drop" then emit_result SoulBnbApi.drop_chargen_selection(self.entry_id, enactor)
+        when "drop" then emit_result SoulBnbApi.drop_chargen_selection(self.entry_ref, enactor)
         end
       end
 

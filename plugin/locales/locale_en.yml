@@ -55,6 +55,7 @@ en:
     bnb_catalogue_title: "Boon & Bane Catalogue"
     bnb_catalogue: "%{entries}"
     bnb_created: "Catalogue entry created."
+    bnb_skills_set: "Associated Skills updated."
     bnb_granted: "Boon/Bane granted."
     bnb_progressed: "Boon/Bane progressed."
     bnb_deleted: "Boon/Bane deleted."

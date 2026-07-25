@@ -44,6 +44,11 @@ catalogue entry. At least one associated Skill key is required (comma-separated
 if more than one) — `+roll`'s suggested-candidates flow matches B&Bs to a Skill
 roll using this list, so an entry with none is invisible to it.
 
+`+bnb/skills <id or tag>=<skill1,skill2,...>` — Set an existing entry's
+associated Skills — the only field editable after creation. Use this to fix
+a legacy entry created before Skills were required; `.grant` refuses to
+grant any entry with an empty list.
+
 `+bnb/grant <character>/<id or tag>[/<level>]=<explanation>` — Grant an
 entry. `level` defaults to `minor`.
 
