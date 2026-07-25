@@ -8,6 +8,25 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-022: Removed the profile Sheet's "Effective" Skill column
+
+**Status:** ✅ Done (`plugin/web/soul_sheet_web_handler.rb`, `webportal/templates/components/soul-sheet.hbs`)
+
+**Requested:** 2026-07-25, live testing: "On the profile, what is the 'effective' column for the skills? None
+of them show anything?" then, after explanation: "No, remove it. Players don't need that level of detail."
+
+**Background:** The column showed `SoulCharacterApi.get_effective_base` - Skill rating plus the rounded
+Aspect contribution (`round(aspect_rating * 0.20)`, FINAL REQ-030) - the exact base modifier a roll builds
+on. It wasn't broken; it just equalled the Rating column for most characters, since an Aspect needs a
+rating of 3+ before its contribution rounds up to even +1 at the default 0.20 weight, which made it look
+inert during early testing. Decided this is more mechanical detail than players need on their own Sheet.
+
+**Fix:** Removed the "Effective" column from `soul-sheet.hbs` and stopped including `effective_base` in
+`SoulSheetWebHandler#handle`'s per-Skill hash. `SoulCharacterApi.get_effective_base` itself is untouched -
+`SoulRollApi` still calls it directly to compute the actual roll math; only the Sheet display changed.
+
+---
+
 ### FR-021: Boon/Bane level and Skill fields converted to dropdowns everywhere they're entered
 
 **Status:** ✅ Done (`webportal/components/soul-chargen.js`, `webportal/templates/components/soul-chargen.hbs`,

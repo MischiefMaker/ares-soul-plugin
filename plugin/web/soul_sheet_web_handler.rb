@@ -25,8 +25,7 @@ module AresMUSH
             skills: SoulFrameworkApi.get_skills(aspect_key: aspect[:key]).map do |skill|
               {
                 key: skill[:key], name: skill[:name],
-                rating: SoulCharacterApi.get_skill_rating(character, skill[:key]),
-                effective_base: SoulCharacterApi.get_effective_base(character, skill[:key])
+                rating: SoulCharacterApi.get_skill_rating(character, skill[:key])
               }
             end
           }
