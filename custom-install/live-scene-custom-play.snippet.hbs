@@ -21,7 +21,11 @@
 
   The component displays results privately. It never adds a roll result to
   the scene transcript.
+
+  Uses angle-bracket invocation (<Soul::Roll @scene={{...}} />), not
+  curly-brace ({{soul/roll scene=...}}) - see profile-custom.snippet.hbs
+  for why.
 -->
 
-{{soul/roll scene=this.scene custom=this.custom}}
-{{soul/scene-tools scene=this.scene custom=this.custom}}
+<Soul::Roll @scene={{this.scene}} @custom={{this.custom}} />
+<Soul::SceneTools @scene={{this.scene}} @custom={{this.custom}} />
