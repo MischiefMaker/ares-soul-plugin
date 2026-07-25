@@ -4,7 +4,7 @@
   {{#if this.error}}<div class="alert alert-danger">{{this.error}}</div>{{/if}}
   {{#if this.successMessage}}<div class="alert alert-success">{{this.successMessage}}</div>{{/if}}
 
-  <details class="mb-3"><summary>Framework correction</summary>
+  <details class="mb-3"><summary>Adjust Skill or Aspect</summary>
     <p class="text-muted">Correct this character's rating. A reason is required and the change is recorded.</p>
     <Input @value={{this.frameworkKey}} class="form-control my-2" placeholder="Skill or Aspect key" />
     <Input @type="number" @value={{this.frameworkRating}} class="form-control my-2" placeholder="New rating" />
@@ -15,7 +15,7 @@
     </div>
   </details>
 
-  <details class="mb-3"><summary>Resonance and audit</summary>
+  <details class="mb-3"><summary>Adjust Resonance</summary>
     <Input @type="number" @value={{this.resonanceValue}} class="form-control my-2" placeholder="Resonance" />
     <Input @value={{this.resonanceReason}} class="form-control my-2" placeholder="Reason" />
     <button class="btn btn-primary" type="button" onclick={{action "correctResonance"}}>Correct Resonance</button>
@@ -25,7 +25,7 @@
     {{/each}}</ul>{{else}}<p class="text-muted">No audit entries.</p>{{/if}}
   </details>
 
-  <details class="mb-3"><summary>Experience</summary>
+  <details class="mb-3"><summary>Award or Adjust XP</summary>
     <Input @type="number" @value={{this.xpAmount}} class="form-control my-2" placeholder="Amount" />
     <Input @value={{this.xpReason}} class="form-control my-2" placeholder="Reason" />
     <div class="d-flex gap-2 flex-wrap">
@@ -36,7 +36,7 @@
     </div>
   </details>
 
-  <details class="mb-3"><summary>Boon &amp; Bane management</summary>
+  <details class="mb-3"><summary>Adjust Boons and Banes</summary>
     <Input @value={{this.bnbReference}} class="form-control my-2" placeholder="Catalogue ID or tag" />
     <Input @value={{this.bnbEntryId}} class="form-control my-2" placeholder="Character entry ID" />
     <Input @value={{this.bnbLevel}} class="form-control my-2" placeholder="Level" />
