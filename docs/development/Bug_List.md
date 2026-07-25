@@ -8,6 +8,19 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-037: Culmination "?" explanation still said "Staff propose... once approved" after FR-036
+
+**Status:** ✅ Done (`webportal/templates/components/soul-culmination.hbs`)
+
+**Requested:** 2026-07-25, live testing (follow-up to FR-036): "Let's fix the language on the Culminations ?
+since staff no longer propose."
+
+**Fix:** The explanation popover still described the pre-FR-036 propose/approve flow verbatim. Reworded to
+"Staff record a title and description, and it becomes a permanent part of your Narrative History," with a
+parenthetical noting automated sources (Inklings) may still go through propose/approve review first, matching
+FR-036's actual behavior.
+
+
 ### FR-036: Staff-proposed Culminations auto-approve immediately; automated sources (Inklings) still gated
 
 **Status:** ✅ Done (`plugin/public/soul_culmination_api.rb`, spec)
