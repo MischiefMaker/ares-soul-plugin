@@ -76,14 +76,17 @@ module AresMUSH
     end
 
     describe ".get_candidate_bnbs" do
-      it "includes only unresolved, modifier-eligible, skill-associated entries" do
+      it "includes unresolved, skill-associated entries regardless of catalogue modifier_eligible" do
+        # modifier_eligible means something unrelated (whether a Bane
+        # satisfies the positive-Resonance chargen requirement) and does
+        # NOT gate roll candidacy - a real bug fixed 2026-07-25 (BUG-018).
         candidate = owned_entry("strong")
-        owned_entry("flavor", modifier: "false")
+        also_candidate = owned_entry("flavor", modifier: "false")
         owned_entry("mind", skills: ["academics"])
         resolved = owned_entry("resolved")
         resolved.update(resolved: "true")
 
-        expect(SoulRollApi.get_candidate_bnbs(character, "strength")).to eq([candidate])
+        expect(SoulRollApi.get_candidate_bnbs(character, "strength")).to contain_exactly(candidate, also_candidate)
       end
     end
 

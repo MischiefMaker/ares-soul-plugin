@@ -323,6 +323,27 @@ A bare `+bnb` previously required an argument and just returned an "invalid synt
 
 ---
 
+## BUG-018: Roll candidate B&Bs were never suggested — `get_candidate_bnbs` checked the wrong field
+
+**Status:** ✅ Fixed (`plugin/public/soul_roll_api.rb`, `docs/architecture/API_and_Hooks.md`, spec)
+
+**Reported:** 2026-07-25, live testing: "I don't think it's pulling in the BNBs properly either; my
+artifact should impact these skills, but it's telling me there's none."
+
+**Root cause:** `SoulRollApi.get_candidate_bnbs` required `catalogue.modifier_eligible == "true"` before
+suggesting a B&B for a roll. `modifier_eligible` means something entirely unrelated - "whether this Bane
+can satisfy the positive-Resonance chargen requirement" (`bnb_catalogue_entry.rb`'s own comment,
+`docs/reference/Configuration.md`, `docs/reference/Default_BnBs.md`) - not "can this affect a roll."
+FINAL REQ-028 step 2 ("identify candidate active B&Bs") never mentions this field at all. Compounding it:
+`modifier_eligible` defaults to `"false"`, and neither `+bnb/create` nor `SoulBnbApi.create_catalogue_entry`
+nor the admin page's catalogue form ever exposed a way to set it `true` - so this check silently excluded
+every single B&B in the game, on every roll, regardless of Skill association.
+
+**Fix:** removed the `modifier_eligible` check entirely. Candidacy is now exactly what REQ-028 specifies:
+unresolved and Skill-associated with the rolled Skill.
+
+---
+
 ## BUG-017: Profile B&B list showed a blank "Kind" column
 
 **Status:** ✅ Fixed (`plugin/public/soul_bnb_api.rb`, spec)

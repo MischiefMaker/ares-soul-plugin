@@ -127,12 +127,19 @@
         {{/if}}
         {{#if (and this.selectedCatalogue (not this.selectedCatalogue.has_fixed_skills))}}
           <div class="mt-2">
-            <Input @type="text" @value={{this.bnbSkills}} class="form-control"
-              placeholder="Associated Skill(s), comma-separated, e.g. blade,spirit" />
-            <div class="form-text">
-              This entry has no fixed Skill - choose which of your Skills it affects.
-              Available: {{#each this.status.skills as |skill|}}{{skill.name}} ({{skill.key}}){{#unless @last}}, {{/unless}}{{/each}}
-            </div>
+            <label class="form-label">Associated Skill(s)</label>
+            <PowerSelectMultiple
+              @selected={{this.bnbSkills}}
+              @options={{this.status.skills}}
+              @searchField="name"
+              @searchEnabled=true
+              @placeholder="Select Skill(s)..."
+              @onChange={{action "selectBnbSkills"}}
+              as |skill|
+            >
+              {{skill.name}}
+            </PowerSelectMultiple>
+            <div class="form-text">This entry has no fixed Skill - choose which of your Skills it affects.</div>
           </div>
         {{/if}}
         <div class="row g-2 mt-2">
@@ -151,7 +158,7 @@
           <div class="col-md-2">
             <button type="button" class="btn btn-primary w-100"
               disabled={{or (not this.selectedCatalogue) (not this.explanation)
-                (and (not this.selectedCatalogue.has_fixed_skills) (not this.bnbSkills))}}
+                (and (not this.selectedCatalogue.has_fixed_skills) (not this.bnbSkills.length))}}
               onclick={{action "addBnb"}}>Add</button>
           </div>
         </div>

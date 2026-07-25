@@ -127,7 +127,7 @@ SoulDiceEngine.success_probability(net_modifier, required_dice_total)
 
 ```ruby
 SoulRollApi.get_candidate_bnbs(character, skill_key)
-  # => [CharacterBnbEntry, ...] owned, unresolved, modifier_eligible, skill-associated
+  # => [CharacterBnbEntry, ...] owned, unresolved, skill-associated
 
 SoulRollApi.start_roll(character, skill_key, context: {}, gm_requested: false)
   # Creates a PendingRoll; system_suggested_entries may be empty (REQ-028's

@@ -34,7 +34,7 @@ export default Component.extend({
         await this.refreshStatus();
       } else {
         this.setProperties({
-          status: result, error: null, selectedCatalogue: null, explanation: null, bnbSkills: null
+          status: result, error: null, selectedCatalogue: null, explanation: null, bnbSkills: []
         });
       }
     } finally {
@@ -80,14 +80,16 @@ export default Component.extend({
       });
     },
     selectCatalogue(entry) {
-      this.setProperties({ selectedCatalogue: entry, bnbSkills: '' });
+      this.setProperties({ selectedCatalogue: entry, bnbSkills: [] });
+    },
+    selectBnbSkills(skills) {
+      this.set('bnbSkills', skills);
     },
     addBnb() {
       if (!this.selectedCatalogue || !this.explanation) {
         return;
       }
-      let skills = (this.bnbSkills || '')
-        .split(',').map((key) => key.trim()).filter((key) => key.length);
+      let skills = (this.bnbSkills || []).map((skill) => skill.key);
       return this.request('soulChargenBnb', {
         reference: this.selectedCatalogue.id,
         level_state: this.selectedLevel || 'minor',

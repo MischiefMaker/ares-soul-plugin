@@ -3,6 +3,15 @@ module AresMUSH
   # engine owns all probability and RNG mechanics; this service owns workflow,
   # authorization, B&B selection, persistence, expiry, and events.
   class SoulRollApi
+    # Candidate active B&Bs for a roll (FINAL REQ-028 step 2): unresolved,
+    # Skill-associated with this roll's Skill. Does NOT check
+    # catalogue.modifier_eligible - that field means something unrelated
+    # (whether a Bane satisfies the positive-Resonance chargen requirement,
+    # bnb_catalogue_entry.rb) and checking it here was a real bug (found
+    # 2026-07-25 via live testing: a B&B correctly associated with the
+    # rolled Skill was never suggested) - modifier_eligible defaults false
+    # and neither +bnb/create nor the admin page ever exposed a way to set
+    # it true, so this check silently excluded every B&B in the game.
     def self.get_candidate_bnbs(character, skill_key)
       return [] unless character
 
@@ -10,7 +19,6 @@ module AresMUSH
         catalogue = entry.catalogue_entry
         entry.resolved != "true" &&
           catalogue &&
-          catalogue.modifier_eligible == "true" &&
           (entry.associated_skills || []).include?(skill_key.to_s)
       end
     end
