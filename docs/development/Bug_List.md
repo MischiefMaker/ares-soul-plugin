@@ -148,6 +148,20 @@ A bare `+bnb` previously required an argument and just returned an "invalid synt
 
 ---
 
+## BUG-010: `+xp/spend` confirmation was unusable — ambiguous preview wording, and any wrong switch silently did nothing
+
+**Status:** ✅ Fixed (`plugin/commands/soul_xp_cmd.rb`, `plugin/locales/locale_en.yml`)
+
+**Reported:** 2026-07-25. User's exact report: *"Advance Mind to 3 for 20 XP. Repeat with /confirm to commit. -- xp/commit, xp/spend/commit and xp/spend/aspect/commit all just do nothing."*
+
+**Root cause, two compounding issues:** (1) The real confirmation syntax (already correct and documented in `docs/reference/Commands.md`) appends `/confirm` to the *arguments* of the exact same command — e.g. `+xp/spend/aspect mind=1/confirm` — not a separate switch. But the in-the-moment preview message players actually see (`xp_spend_preview`/`scene_xp_preview`) only said "Repeat with /confirm to commit," with no example and no indication `/confirm` belongs on the arguments, not the command. A player reasonably read that as "there's a `/confirm` (or `/commit`) switch" and tried `+xp/commit`, `+xp/spend/commit`, `+xp/spend/aspect/commit`. (2) None of those are real switches, and `SoulXpCmd#handle`'s `case cmd.switch` statement had no `else` branch — an unrecognized switch matched nothing and produced **zero output**, not even an error, which is what "just does nothing" was actually describing.
+
+**Fix:** Added a `confirm_syntax` helper that builds the exact, copy-pasteable command from what was actually typed (`"+#{cmd.root_plus_switch} #{cmd.args}/confirm"`) and threaded it into both preview messages, which now read e.g. "Advance Mind to 3 for 20 XP. To confirm, type exactly: +xp/spend/aspect mind=3/confirm" — unambiguous and always in sync with the real required syntax (built from the live command, not a hardcoded example). Added an `else` branch to `#handle` so any unrecognized `+xp` switch now reports `dispatcher.invalid_syntax` (the same core AresMUSH message other unmatched-command cases use) instead of silently no-op'ing. New specs cover the fallback, the helper, and the preview message content.
+
+**Not expanded to other SOUL commands:** the same `case cmd.switch` with no `else` pattern likely exists in other SOUL command files (not audited here, out of scope for this specific report) — worth a follow-up sweep if the same "wrong switch, zero feedback" complaint comes up elsewhere.
+
+---
+
 ## BUG-009: `Global.read_config` called three keys deep — `ArgumentError` crashed `+xp/spend`, catch-up eligibility, and Grimoire's branch lookup
 
 **Status:** ✅ Fixed (`plugin/public/soul_xp_api.rb`, `soul_framework_api.rb`, and their specs)

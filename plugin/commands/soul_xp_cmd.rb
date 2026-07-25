@@ -58,6 +58,13 @@ module AresMUSH
           with_character { |character| award_or_correct(character) }
         when "scene", "scene/catchup"
           scene_award
+        else
+          # An unrecognized switch (e.g. a typo'd or invented "/confirm" or
+          # "/commit" sub-switch - the real confirmation syntax appends
+          # "/confirm" to the *arguments*, not the switch, see spend_xp/
+          # scene_award below) previously fell through this case statement
+          # silently - no error, no output, nothing (2026-07-25 bug report).
+          client.emit_failure t('dispatcher.invalid_syntax', cmd: cmd.root_plus_switch)
         end
       end
 
@@ -105,7 +112,8 @@ module AresMUSH
         end
         cost = SoulXpApi.calculate_cost(enactor, self.skill, target, trait_type: trait_type)
         unless self.confirmed
-          body = t('soul.xp_spend_preview', trait: trait_data[:name], target: target, cost: cost)
+          body = t('soul.xp_spend_preview', trait: trait_data[:name], target: target, cost: cost,
+            confirm_syntax: confirm_syntax)
           client.emit BorderedDisplayTemplate.new(body, t('soul.xp_spend_title')).render
           return
         end
@@ -137,7 +145,8 @@ module AresMUSH
           return
         end
         unless self.confirmed
-          body = t('soul.scene_xp_preview', names: participants.map(&:name).join(', '))
+          body = t('soul.scene_xp_preview', names: participants.map(&:name).join(', '),
+            confirm_syntax: confirm_syntax)
           client.emit BorderedDisplayTemplate.new(body, t('soul.scene_xp_title')).render
           return
         end
@@ -152,6 +161,18 @@ module AresMUSH
 
       def with_character(&block)
         ClassTargetFinder.with_a_character(self.name, client, enactor, &block)
+      end
+
+      # The exact command text that repeats this request with confirmation -
+      # "/confirm" is appended to the *arguments*, not used as a switch
+      # (+xp/spend/confirm and the like don't exist and previously fell
+      # through #handle's case statement doing nothing - see #handle above).
+      # Built directly from what was actually typed (cmd.args, not yet
+      # containing "/confirm" here since self.confirmed is false whenever
+      # this is called) so it's always copy-pasteable and never drifts from
+      # the real required syntax.
+      def confirm_syntax
+        "+#{cmd.root_plus_switch} #{cmd.args}/confirm"
       end
 
       def emit_result(result, key)
