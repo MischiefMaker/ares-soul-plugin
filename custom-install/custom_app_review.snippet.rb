@@ -8,15 +8,6 @@
 # this same hook, you are MERGING into the existing method, not replacing it -
 # see OPTION B.
 #
-# ===========================================================================
-# WHY THIS IS NEEDED
-# ===========================================================================
-#
-# Adding "soul %{name}" to game/config/chargen.yml's app_review_commands
-# (see README Step 4) only affects +app/review <character> - it does NOT
-# make SOUL data appear in the plain +app <character> checklist or the web
-# portal's app-review view. Those two both render AppTemplate, which has
-# exactly one plugin extension point: the custom_app_review hook below.
 #
 # ===========================================================================
 # INSTALLATION
