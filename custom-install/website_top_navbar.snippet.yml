@@ -1,0 +1,18 @@
+# WEBSITE TOP_NAVBAR SNIPPET - ADMIN SOUL MENU ENTRY
+#
+# FILE: game/config/website.yml
+#       (in your game folder, NOT the plugin folder)
+#
+# INSTALLATION:
+#
+# 1. Open game/config/website.yml.
+# 2. Find the top_navbar entry with "title: Admin".
+# 3. Add this entry to its menu: list. Change manage_jobs below if
+#    you've customized soul.yml's manage_permission to something else.
+
+    - title: SOUL
+      route: admin-soul
+      roles:
+      - manage_jobs
+
+# 4. Reload website config: load website

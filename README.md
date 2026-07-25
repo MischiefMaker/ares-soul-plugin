@@ -206,10 +206,29 @@ In **ares-webportal**:
 3. Keep `href="#soul-tab-pane"` and `id="soul-tab-pane"` unchanged so the tab and
    pane remain connected.
 
-This mounts the character Sheet, XP spending, B&B catalogue and staff search,
-Culminations, Narrative History, and the staff administration panel.
+This mounts the character Sheet, XP spending, a player's own Boons & Banes
+(with a picker to request new ones), Culminations, Narrative History, and a
+staff panel scoped to the profile being viewed (Resonance/Skill/Aspect
+correction, XP award/correction, B&B grant/progress/resolve/restore/delete,
+Culmination management, and the audit log).
 
-### Step 7: Mount the Web Chargen Interface
+### Step 7: Mount the SOUL Admin Page
+
+In **ares-webportal**:
+
+1. Merge
+   [`custom-install/custom-routes.snippet.js`](custom-install/custom-routes.snippet.js)
+   into `app/custom-routes.js`.
+2. Merge
+   [`custom-install/website_top_navbar.snippet.yml`](custom-install/website_top_navbar.snippet.yml)
+   into `game/config/website.yml`, then `load website` from the game.
+
+This adds a `/admin-soul` page (linked from the Admin dropdown) for
+game-wide staff tasks that aren't scoped to one character: pending
+Boon/Bane request review, catalogue creation and Skill-association edits,
+configuration validation, and scene-wide XP awards.
+
+### Step 8: Mount the Web Chargen Interface
 
 In **ares-webportal**:
 
@@ -225,7 +244,7 @@ The new tab lets unapproved players select Resonance, allocate starting Skill
 ratings, and add or remove chargen-available Boons and Banes. Each choice is
 validated and saved immediately.
 
-### Step 8: Add Scene Permission Data
+### Step 9: Add Scene Permission Data
 
 GM-assisted roll review and scene-GM sheet viewing need two viewer permission flags.
 
@@ -240,7 +259,7 @@ GM-assisted roll review and scene-GM sheet viewing need two viewer permission fl
 These flags are for interface visibility only. Roll and Sheet handlers independently
 verify staff/GM authority and scene participation.
 
-### Step 9: Mount the Live-Scene Tools
+### Step 10: Mount the Live-Scene Tools
 
 In **ares-webportal**, merge
 [`custom-install/live-scene-custom-play.snippet.hbs`](custom-install/live-scene-custom-play.snippet.hbs)
@@ -257,7 +276,7 @@ This adds the following to a live scene's **Play** menu:
 Roll results remain private to the roller and are never automatically posted to the
 scene transcript.
 
-### Step 10: Build and Deploy the Portal
+### Step 11: Build and Deploy the Portal
 
 After merging all web snippets, rebuild and deploy from the game:
 
@@ -269,7 +288,7 @@ If your installation uses a separate web deployment process, run its normal buil
 and deployment commands instead. A server restart alone does not publish Ember
 template changes.
 
-### Step 11: Verify the Installation
+### Step 12: Verify the Installation
 
 Use an unapproved test character, an approved player, and a staff/GM character:
 
@@ -283,13 +302,22 @@ Use an unapproved test character, an approved player, and a staff/GM character:
 - Spend XP on both a Skill and an Aspect through `+xp/spend`,
   `+xp/spend/aspect`, and the web form. Confirm that the previewed Aspect
   price uses the configured multiplier (4× by default).
-- As staff, validate configuration, search and manage B&Bs, award/correct/reverse
-  XP, correct Skill and Aspect ratings, manage Culminations, correct Resonance,
-  and view the audit log. Test each staff workflow in-game and on the web.
+- As a player, request a post-chargen Boon/Bane through `+bnb/request` and
+  through the profile's picker modal. Confirm it does not appear as an
+  active entry until approved.
+- As staff, approve one pending request and deny another (with a reason)
+  through `+bnb/approve`/`+bnb/deny` and through the `/admin-soul` page.
+  Confirm an approved request becomes a live entry and a denied one does not.
+- As staff on a character's own profile, correct Skill/Aspect ratings and
+  Resonance, award/correct/reverse XP, grant/progress/resolve/restore/delete
+  a B&B, manage Culminations, and view the audit log. Confirm none of these
+  require typing the character's name.
+- On the `/admin-soul` page, validate configuration, create a catalogue
+  entry, edit an entry's associated Skills, and award scene-wide XP.
 - In a live scene, complete a standard roll and a GM-assisted roll; verify pending,
   history, abort, force-abort, scene lookup, and participant Sheet controls.
-- Confirm an ordinary player cannot see staff-only controls or inactive B&B search
-  results.
+- Confirm an ordinary player cannot see staff-only controls, another player's
+  profile-scoped staff panel, or reach `/admin-soul`.
 
 Do not open SOUL to players until these checks pass.
 

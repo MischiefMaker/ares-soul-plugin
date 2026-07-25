@@ -47,55 +47,5 @@
       {{/each}}
     </div>
 
-    <div class="card mb-3 soul-sheet-bnb">
-      <div class="card-header"><strong>Boons &amp; Banes</strong></div>
-      {{#if this.sheet.bnb}}
-        <div class="table-responsive">
-          <table class="table table-sm mb-0">
-            <thead>
-              <tr><th scope="col">Entry</th><th scope="col">Kind</th><th scope="col">Level</th><th scope="col">State</th></tr>
-            </thead>
-            <tbody>
-              {{#each this.sheet.bnb as |entry|}}
-                <tr class="soul-sheet-bnb-row" role="button" tabindex="0"
-                  onclick={{action "showBnbDetail" entry}}>
-                  <td>#{{entry.id}} {{entry.name}} <span class="text-muted">[{{entry.tag}}]</span></td>
-                  <td>{{entry.kind}}</td>
-                  <td>{{entry.level_state}}</td>
-                  <td>{{#if entry.resolved}}Resolved{{else}}Active{{/if}}</td>
-                </tr>
-              {{/each}}
-            </tbody>
-          </table>
-        </div>
-      {{else}}
-        <div class="card-body text-muted">No Boons or Banes recorded.</div>
-      {{/if}}
-    </div>
   </section>
-
-  <BsModalSimple
-    @title={{if this.selectedBnb.name this.selectedBnb.name "Boon/Bane Detail"}}
-    @closeTitle="Close"
-    @submitTitle={{null}}
-    @open={{this.bnbModalOpen}}
-    @onHide={{action "closeBnbDetail"}}
-  >
-    {{#if this.selectedBnb}}
-      <p>
-        <strong>Tag:</strong> {{this.selectedBnb.tag}}
-        <span class="ms-3"><strong>Kind:</strong> {{this.selectedBnb.kind}}</span>
-        <span class="ms-3"><strong>Level:</strong> {{this.selectedBnb.level_state}}</span>
-        <span class="ms-3"><strong>State:</strong> {{if this.selectedBnb.resolved "Resolved" "Active"}}</span>
-      </p>
-      {{#if this.selectedBnb.description}}<p>{{this.selectedBnb.description}}</p>{{/if}}
-      <hr>
-      {{#if this.selectedBnb.explanation_visible}}
-        <p><strong>Explanation:</strong></p>
-        <p>{{if this.selectedBnb.explanation this.selectedBnb.explanation "None recorded."}}</p>
-      {{else}}
-        <p class="text-muted">This entry's private explanation is only visible to its owner and staff.</p>
-      {{/if}}
-    {{/if}}
-  </BsModalSimple>
 {{/if}}

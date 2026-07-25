@@ -151,6 +151,88 @@ module AresMUSH
       end
     end
 
+    describe ".get_catalogue_page" do
+      it "paginates and reports total_count/total_pages" do
+        5.times { |i| create_boon("boon#{i}") }
+        result = SoulBnbApi.get_catalogue_page(page: 1, per_page: 2)
+        expect(result[:entries].count).to eq(2)
+        expect(result[:total_count]).to eq(5)
+        expect(result[:total_pages]).to eq(3)
+      end
+
+      it "clamps an out-of-range page to the last page" do
+        3.times { |i| create_boon("boon#{i}") }
+        result = SoulBnbApi.get_catalogue_page(page: 99, per_page: 2)
+        expect(result[:page]).to eq(2)
+      end
+    end
+
+    describe ".request / .approve_request / .deny_request" do
+      it "creates a pending request rather than a live entry" do
+        boon = create_boon("lucky")
+        result = SoulBnbApi.request(character, boon, explanation: "I want this.")
+        expect(result[:success]).to be true
+        expect(result[:request].status).to eq("pending")
+        expect(SoulBnbApi.get_character_entries(character)).to be_empty
+      end
+
+      it "rejects a request with no explanation" do
+        boon = create_boon("lucky")
+        result = SoulBnbApi.request(character, boon, explanation: "")
+        expect(result[:error]).to match(/explanation/i)
+      end
+
+      it "rejects a duplicate pending request for the same catalogue entry" do
+        boon = create_boon("lucky")
+        SoulBnbApi.request(character, boon, explanation: "First.")
+        result = SoulBnbApi.request(character, boon, explanation: "Second.")
+        expect(result[:error]).to match(/already have a pending request/i)
+      end
+
+      it "rejects a request for a B&B the character already owns" do
+        boon = create_boon("lucky")
+        SoulBnbApi.grant(character, boon, level_state: "minor", source: "admin")
+        result = SoulBnbApi.request(character, boon, explanation: "I want this too.")
+        expect(result[:error]).to match(/already have/i)
+      end
+
+      it "approve_request requires manage_soul permission" do
+        boon = create_boon("lucky")
+        request = SoulBnbApi.request(character, boon, explanation: "Please.")[:request]
+        result = SoulBnbApi.approve_request(request.id, character)
+        expect(result[:error]).to match(/permission/i)
+      end
+
+      it "approving creates a live CharacterBnbEntry and marks the request approved" do
+        boon = create_boon("lucky")
+        request = SoulBnbApi.request(character, boon, explanation: "Please.")[:request]
+        result = SoulBnbApi.approve_request(request.id, staff)
+        expect(result[:success]).to be true
+        expect(result[:entry].character).to eq(character)
+        expect(SoulBnbApi.get_character_entries(character).count).to eq(1)
+        expect(BnbRequest[request.id].status).to eq("approved")
+      end
+
+      it "denying requires a reason and never creates a live entry" do
+        boon = create_boon("lucky")
+        request = SoulBnbApi.request(character, boon, explanation: "Please.")[:request]
+        expect(SoulBnbApi.deny_request(request.id, staff, reason: "")[:error]).to match(/reason/i)
+
+        result = SoulBnbApi.deny_request(request.id, staff, reason: "Not appropriate.")
+        expect(result[:success]).to be true
+        expect(BnbRequest[request.id].status).to eq("denied")
+        expect(SoulBnbApi.get_character_entries(character)).to be_empty
+      end
+
+      it "refuses to resolve an already-resolved request" do
+        boon = create_boon("lucky")
+        request = SoulBnbApi.request(character, boon, explanation: "Please.")[:request]
+        SoulBnbApi.approve_request(request.id, staff)
+        result = SoulBnbApi.approve_request(request.id, staff)
+        expect(result[:error]).to match(/not pending/i)
+      end
+    end
+
     describe "chargen grant/drop lifecycle (FINAL REQ-011)" do
       before do
         allow(character).to receive(:is_approved?).and_return(false)

@@ -5,9 +5,9 @@ module AresMUSH
       return error if error
       enactor = request.enactor
 
-      staff_commands = %w[soulBnbCreate soulBnbGrant soulBnbProgress soulBnbDelete soulBnbResolve soulBnbRestore]
-      staff_search = request.cmd == "soulBnbCatalogue" && !request.args['query'].blank?
-      if staff_commands.include?(request.cmd) || staff_search
+      staff_commands = %w[soulBnbCreate soulBnbSetSkills soulBnbGrant soulBnbProgress soulBnbDelete soulBnbResolve
+                          soulBnbRestore soulBnbRequestApprove soulBnbRequestDeny soulBnbRequestsList]
+      if staff_commands.include?(request.cmd)
         return { error: t('soul.permission_denied') } unless Soul.can_manage_soul?(enactor)
       elsif !Soul.can_play?(enactor)
         return { error: t('soul.permission_denied') }
@@ -19,8 +19,47 @@ module AresMUSH
       when "soulBnbHere"
         here(request)
       when "soulBnbCatalogue"
-        entries = request.args['query'].blank? ? SoulBnbApi.get_catalogue : SoulBnbApi.search(request.args['query'])
-        { entries: entries.map { |entry| serialize_catalogue(entry) } }
+        result = SoulBnbApi.get_catalogue_page(
+          page: request.args['page'] || 1, per_page: request.args['per_page'] || 10,
+          query: request.args['query'], kind: request.args['kind']
+        )
+        result.merge(
+          entries: result[:entries].map { |entry| serialize_catalogue(entry) },
+          available_skills: SoulFrameworkApi.get_skills.map { |skill| { key: skill[:key], name: skill[:name] } }
+        )
+      when "soulBnbList"
+        # Profile widget (2026-07-25 rework, FR-015) - character defaults to
+        # the caller, but staff viewing another character's profile pass
+        # that character explicitly, mirroring SoulSheetWebHandler's own
+        # character arg. Private fields (explanation, pending/denied
+        # requests) only go to the character themself or manage_soul staff -
+        # same bar Sheet uses for its own bnb explanations.
+        character = Character.find_one_by_name(request.args['character'] || enactor.name)
+        return { error: t('soul.character_not_found') } unless character
+        private_view = character == enactor || Soul.can_manage_soul?(enactor)
+        return { error: t('soul.permission_denied') } unless private_view
+        {
+          entries: SoulBnbApi.get_character_entries(character).map { |entry| serialize_character_entry(entry, true) },
+          # Approved requests are already reflected in entries above - only
+          # surface ones still awaiting a decision or that were denied
+          # (so the player knows why), not a duplicate of the live entry.
+          requests: SoulBnbApi.get_requests(character: character).reject { |req| req.status == "approved" }
+            .map { |req| serialize_request(req) }
+        }
+      when "soulBnbRequest"
+        result = SoulBnbApi.request(enactor, request.args['catalogue_ref'],
+          explanation: request.args['explanation'], level_state: request.args['level_state'] || "minor",
+          associated_skills: request.args['associated_skills'].presence)
+        result[:error] ? result : { success: true, request: serialize_request(result[:request]) }
+      when "soulBnbRequestsList"
+        status = request.args['status'].presence || "pending"
+        { requests: SoulBnbApi.get_requests(status: status).map { |req| serialize_request(req) } }
+      when "soulBnbRequestApprove"
+        result = SoulBnbApi.approve_request(request.args['request_id'], enactor)
+        result[:error] ? result : { success: true, request: serialize_request(result[:request]) }
+      when "soulBnbRequestDeny"
+        result = SoulBnbApi.deny_request(request.args['request_id'], enactor, reason: request.args['reason'])
+        result[:error] ? result : { success: true, request: serialize_request(result[:request]) }
       when "soulBnbCreate"
         result = SoulBnbApi.create_catalogue_entry(
           name: request.args['name'], description: request.args['description'],
@@ -31,6 +70,11 @@ module AresMUSH
           flag_for_review: request.args['flag_for_review'].to_s == "true",
           modifier_eligible: request.args['modifier_eligible'].to_s == "true",
           skill_associations: request.args['skill_associations'] || [])
+        result[:error] ? result : { success: true, entry: serialize_catalogue(result[:entry]) }
+      when "soulBnbSetSkills"
+        result = SoulBnbApi.set_skill_associations(
+          request.args['id_or_tag'], request.args['skill_associations'] || [], enactor: enactor
+        )
         result[:error] ? result : { success: true, entry: serialize_catalogue(result[:entry]) }
       when "soulBnbGrant"
         character = Character.find_one_by_name(request.args['character'])
@@ -87,7 +131,8 @@ module AresMUSH
         id: entry.id, tag: entry.tag, name: entry.name, description: entry.description,
         kind: entry.kind, category: entry.category, epic_modifier: entry.epic_modifier,
         chargen_available: entry.chargen_available == "true",
-        active: entry.active == "true"
+        active: entry.active == "true",
+        has_fixed_skills: entry.skill_associations.present?
       }
     end
 
@@ -99,6 +144,22 @@ module AresMUSH
         data[:source] = entry.source
       end
       data
+    end
+
+    def serialize_request(request)
+      {
+        id: request.id,
+        character: request.character.name,
+        catalogue_id: request.catalogue_entry.id,
+        tag: request.catalogue_entry.tag,
+        name: request.catalogue_entry.name,
+        kind: request.catalogue_entry.kind,
+        level_state: request.level_state,
+        explanation: request.player_explanation,
+        status: request.status,
+        staff_reason: request.staff_reason,
+        created_at: request.created_at
+      }
     end
   end
 end

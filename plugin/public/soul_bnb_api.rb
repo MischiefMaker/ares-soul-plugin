@@ -92,6 +92,21 @@ module AresMUSH
       BnbCatalogueEntry.all.to_a.select { |e| e.tag.to_s.downcase.include?(q) || e.name.to_s.downcase.include?(q) }
     end
 
+    # Paginated catalogue browse (2026-07-25 profile rework, FR-015) - the
+    # web profile's "add a Boon/Bane" picker lists the whole active
+    # catalogue, which .get_catalogue never needed to page before. Mirrors
+    # Inklings' admin-page page/total_pages/total_count convention
+    # (admin-inklings.js) rather than inventing a new shape.
+    def self.get_catalogue_page(page: 1, per_page: 10, query: nil, kind: nil)
+      entries = query.to_s.blank? ? get_catalogue(kind: kind) : search(query).select { |e| e.active == "true" }
+      entries = entries.select { |e| e.kind == kind.to_s } if kind && !query.to_s.blank?
+      total_count = entries.count
+      total_pages = [(total_count.to_f / per_page).ceil, 1].max
+      page = page.to_i.clamp(1, total_pages)
+      paged = entries[(page - 1) * per_page, per_page] || []
+      { entries: paged, page: page, total_pages: total_pages, total_count: total_count }
+    end
+
     # Resolves a level/state's mechanical modifier: the global default from
     # game/config/soul.yml's bnb.level_definitions, except Epic, which SHALL
     # use an explicitly configured per-entry effect (FINAL REQ-017) - nil if
@@ -455,6 +470,80 @@ module AresMUSH
         modifier: level_modifier(entry.catalogue_entry, entry.level_state),
         resolved: entry.resolved == "true"
       }
+    end
+
+    # --- Player-initiated requests (post-chargen, FR-015 2026-07-25) ---
+    #
+    # A player picking a Boon/Bane from their profile (or +bnb/request)
+    # does NOT grant it directly - .grant stays staff-only everywhere else
+    # in this codebase, and this is the first player-initiated path outside
+    # chargen, so it gets the same staff oversight via a pending BnbRequest
+    # that .approve_request/.deny_request resolve. Mirrors
+    # SoulCulminationApi's propose/approve/deny shape.
+
+    def self.request(character, catalogue_ref, explanation:, level_state: "minor", associated_skills: nil)
+      return { error: "Character not found" } unless character
+      catalogue_entry = catalogue_ref.kind_of?(BnbCatalogueEntry) ? catalogue_ref : get_catalogue_entry(catalogue_ref)
+      return { error: "Unknown Boon/Bane: #{catalogue_ref}" } unless catalogue_entry
+      return { error: "An explanation is required." } if explanation.to_s.blank?
+
+      effective_skills = associated_skills.presence || catalogue_entry.skill_associations || []
+      if effective_skills.empty?
+        return { error: "#{catalogue_entry.name} has no fixed Skill configured - specify at least one " \
+          "associated Skill when requesting it." }
+      end
+      unknown_skills = effective_skills.reject { |key| SoulFrameworkApi.valid_skill_key?(key) }
+      return { error: "Unknown Skill(s): #{unknown_skills.join(', ')}" } if unknown_skills.any?
+
+      definitions = Global.read_config("soul", "bnb", "level_definitions") || {}
+      return { error: "Unknown level/state: #{level_state}" } unless definitions.key?(level_state.to_s)
+
+      already_owned = character.character_bnb_entries.to_a.any? { |e| e.catalogue_entry == catalogue_entry }
+      return { error: "You already have #{catalogue_entry.name}." } if already_owned
+      already_pending = character.bnb_requests.to_a.any? do |r|
+        r.catalogue_entry == catalogue_entry && r.status == "pending"
+      end
+      return { error: "You already have a pending request for #{catalogue_entry.name}." } if already_pending
+
+      request = BnbRequest.create(
+        character: character, catalogue_entry: catalogue_entry, level_state: level_state.to_s,
+        associated_skills: effective_skills, player_explanation: explanation, created_at: Time.now
+      )
+      { success: true, request: request }
+    end
+
+    def self.approve_request(request_id, enactor)
+      return { error: "You don't have permission to do that." } unless Soul.can_manage_soul?(enactor)
+      request = BnbRequest[request_id]
+      return { error: "Request not found" } unless request
+      return { error: "This request is not pending." } unless request.status == "pending"
+
+      result = grant(
+        request.character, request.catalogue_entry, level_state: request.level_state,
+        source: "[Player Request]", explanation: request.player_explanation, enactor: enactor,
+        associated_skills: request.associated_skills
+      )
+      return result if result[:error]
+
+      request.update(status: "approved", resolved_by: enactor, resolved_at: Time.now)
+      { success: true, request: request, entry: result[:entry] }
+    end
+
+    def self.deny_request(request_id, enactor, reason:)
+      return { error: "You don't have permission to do that." } unless Soul.can_manage_soul?(enactor)
+      return { error: "A reason is required to deny a request." } if reason.to_s.blank?
+      request = BnbRequest[request_id]
+      return { error: "Request not found" } unless request
+      return { error: "This request is not pending." } unless request.status == "pending"
+
+      request.update(status: "denied", resolved_by: enactor, resolved_at: Time.now, staff_reason: reason)
+      { success: true, request: request }
+    end
+
+    def self.get_requests(character: nil, status: nil)
+      requests = character ? character.bnb_requests.to_a : BnbRequest.all.to_a
+      requests = requests.select { |r| r.status == status.to_s } if status
+      requests.sort_by { |r| r.created_at || Time.at(0) }.reverse
     end
   end
 end

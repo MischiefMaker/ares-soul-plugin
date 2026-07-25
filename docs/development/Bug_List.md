@@ -8,6 +8,77 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-015: Profile tab rework — self-service B&B requests, "only what I've chosen," and a real admin page
+
+**Status:** ✅ Done (backend: `plugin/models/bnb_request.rb`, `plugin/public/soul_bnb_api.rb`,
+`plugin/web/soul_bnb_web_handler.rb`, `plugin/commands/soul_bnb_cmd.rb`, `plugin/locales/locale_en.yml`,
+specs; frontend: `webportal/components/soul-bnb.js`/`.hbs`, `soul-sheet.js`/`.hbs`, `soul-staff.js`/`.hbs`,
+new `webportal/routes/admin-soul.js`, `webportal/controllers/admin-soul.js`, `webportal/templates/admin-soul.hbs`;
+install: `custom-install/custom-routes.snippet.js`, `custom-install/website_top_navbar.snippet.yml`,
+updated `profile-custom.snippet.hbs`; docs: `README.md`, `docs/reference/Commands.md`, `plugin/help/en/soul_bnb.md`)
+
+**Requested:** 2026-07-25, live testing. User's three-part request, verbatim:
+1. "There is no way to add a new bnb from a profile."
+2. "The catalogue of b&bs should be listed on the profile, only those the player has chosen. We will have
+   a ? beside the spot for players to add new bnbs and that will open a modal that will show a paginated
+   list. If pagination is not possible in modals, we can build a new page."
+3. "We are going to need a staff page... for management tasks, such as adding new bnbs to the catalogue.
+   On the profile tab, the staff commands should be ONLY for the player currently in question. The whole
+   administration section can be moved to an admin-only page, that gets linked under admin, like Inklings.
+   On the profile, staff should be able to award that player more XP and other things like that."
+
+**Decisions confirmed with the user before implementing:**
+- A player picking a Boon/Bane from the profile creates a **staff-reviewed pending request**, not an
+  instant self-grant — `+bnb/grant` is staff-only everywhere else in this codebase, and this is the first
+  player-initiated grant path outside chargen, so it gets the same oversight rather than becoming a silent
+  exception.
+- Staff split: character-scoped actions (XP award/correct, Resonance correction, B&B
+  grant/progress/resolve/restore/delete, Culmination management, audit) stay on the profile, re-scoped to
+  the character being viewed with no free-text character field. Global/catalogue-wide actions (config
+  validation, catalogue creation and Skill-association edits, scene-wide XP award, and the pending-request
+  review queue) move to the new `/admin-soul` page.
+
+**Implementation:**
+- New `BnbRequest` model (mirrors `Culmination`'s propose/approve/deny shape, not `CharacterBnbEntry`'s —
+  nothing here is mechanically live until approved, so a pending request can never leak into roll
+  suggestions, ratio checks, or the sheet). `SoulBnbApi.request`/`.approve_request`/`.deny_request`/
+  `.get_requests` added; `.approve_request` converts to a real grant via the existing `.grant` path
+  (`source: "[Player Request]"`).
+- `SoulBnbApi.get_catalogue_page` added for the picker modal's pagination — reuses Inklings'
+  `page`/`total_pages`/`total_count` convention (`admin-inklings.js`) rather than inventing a new shape,
+  since research this session found no prior art for pagination inside `BsModalSimple` specifically and
+  recommended treating it as a novel combination to test carefully, not a proven-safe pattern.
+- `soul-bnb.js`/`.hbs` rewritten from a full-catalogue browser into a "my Boons & Banes" widget: lists
+  only entries the viewed character owns plus their own pending/denied requests, with a "+" button
+  (visible only when viewing your own profile, `isSelf`) opening a paginated catalogue picker → request
+  form (level, Skill picker shown only when the chosen entry has no fixed Skills, explanation). Takes a
+  `character` arg like every other profile widget (Sheet, Xp) so staff viewing another character's
+  profile see *that* character's B&Bs, not their own — the web op (`soulBnbList`) defaults to the caller
+  but accepts an explicit character, gated the same way Sheet gates private fields (self or manage_soul).
+- Removed the now-duplicate B&B table + detail modal from `soul-sheet.hbs`/`.js` (`soul-bnb` is the one
+  canonical home for B&B display now); this also retires BUG-012's `bnbModalOpen` fix along with the code
+  it was fixing.
+- `soul-staff.js`/`.hbs` trimmed to a `character`-scoped panel: every free-text "Character" input removed,
+  every action implicit on the profile being viewed. Framework/config validation, B&B catalogue creation,
+  and scene-wide XP award removed entirely (moved to admin).
+- New `/admin-soul` page (`webportal/routes|controllers/admin-soul.js`, `templates/admin-soul.hbs`) —
+  pending B&B request queue (approve/deny), framework view + config validation, catalogue creation +
+  Skill-association edits (`soulBnbSetSkills`, previously MUSH-only via `+bnb/skills`), scene-wide XP
+  award. Wired in via the same two-snippet pattern Inklings established (`custom-routes.snippet.js` for
+  the Ember route, `website_top_navbar.snippet.yml` for the Admin dropdown entry) — confirmed against
+  Inklings' real route/controller/template that the server-side permission check (`can_manage_soul?`,
+  already enforced by `SoulStaffWebHandler`/`SoulBnbWebHandler`) is the actual gate, not the route itself
+  or the nav link's visibility.
+- MUSH parity: `+bnb/request`, `+bnb/requests`, `+bnb/approve`, `+bnb/deny` added alongside the web ops,
+  matching this codebase's established every-API-method-has-both-surfaces convention.
+- A real Handlebars bug caught by a brace-balance self-check before commit: `soul-bnb.hbs`'s Skill list
+  used `{{unless @last}}...{{/unless}}` (missing the `#` block-helper prefix) — fixed to `{{#unless}}`.
+
+**Not yet confirmed against the live game** — this is a large rework touching every layer; needs a full
+pass through Step 12's updated verify checklist in `README.md` before it can be marked verified.
+
+---
+
 ### FR-014: Web chargen no longer blocks already-approved characters (MUSH `+soul/cg` still does)
 
 **Status:** ✅ Done (`plugin/web/soul_chargen_web_handler.rb`, spec)

@@ -1,31 +1,11 @@
 <section class="soul-staff card card-body mt-4">
-  <h3>SOUL Staff Administration</h3>
+  <h3>SOUL Staff Actions</h3>
   {{#if this.isLoading}}<p class="text-muted">Working…</p>{{/if}}
   {{#if this.error}}<div class="alert alert-danger">{{this.error}}</div>{{/if}}
   {{#if this.successMessage}}<div class="alert alert-success">{{this.successMessage}}</div>{{/if}}
 
-  <details class="mb-3"><summary>Framework and configuration</summary>
-    <button class="btn btn-secondary m-2" type="button" onclick={{action "loadFramework"}}>View Framework</button>
-    <button class="btn btn-secondary m-2" type="button" onclick={{action "reloadConfig"}}>Validate Configuration</button>
-    {{#if this.framework}}
-      <p>Valid Skill ratings: {{this.framework.min_rating}}–{{this.framework.max_rating}}</p>
-      {{#each this.framework.aspects as |aspect|}}
-        <div class="card card-body mb-2">
-          <h4>{{aspect.name}} [{{aspect.key}}]</h4>
-          {{#if aspect.description}}<p>{{aspect.description}}</p>{{/if}}
-          <ul>
-            {{#each this.framework.skills as |skill|}}
-              {{#if (eq skill.aspect_key aspect.key)}}
-                <li>{{skill.name}} [{{skill.key}}]</li>
-              {{/if}}
-            {{/each}}
-          </ul>
-        </div>
-      {{/each}}
-    {{/if}}
-    <hr>
-    <p class="text-muted">Correct a character rating. A reason is required and the change is recorded.</p>
-    <Input @value={{this.frameworkCharacter}} class="form-control my-2" placeholder="Character" />
+  <details class="mb-3"><summary>Framework correction</summary>
+    <p class="text-muted">Correct this character's rating. A reason is required and the change is recorded.</p>
     <Input @value={{this.frameworkKey}} class="form-control my-2" placeholder="Skill or Aspect key" />
     <Input @type="number" @value={{this.frameworkRating}} class="form-control my-2" placeholder="New rating" />
     <Input @value={{this.frameworkReason}} class="form-control my-2" placeholder="Reason" />
@@ -33,40 +13,30 @@
       <button class="btn btn-warning" type="button" onclick={{action "correctFramework" "skill"}}>Correct Skill</button>
       <button class="btn btn-warning" type="button" onclick={{action "correctFramework" "aspect"}}>Correct Aspect</button>
     </div>
-    {{#if this.reloadResult.errors}}<ul>{{#each this.reloadResult.errors as |validationError|}}<li>{{validationError}}</li>{{/each}}</ul>{{/if}}
   </details>
 
   <details class="mb-3"><summary>Resonance and audit</summary>
-    <Input @value={{this.resonanceCharacter}} class="form-control my-2" placeholder="Character" />
     <Input @type="number" @value={{this.resonanceValue}} class="form-control my-2" placeholder="Resonance" />
     <Input @value={{this.resonanceReason}} class="form-control my-2" placeholder="Reason" />
     <button class="btn btn-primary" type="button" onclick={{action "correctResonance"}}>Correct Resonance</button>
     <hr>
-    <Input @value={{this.auditCharacter}} class="form-control my-2" placeholder="Character for audit" />
-    <button class="btn btn-secondary" type="button" onclick={{action "loadAudit"}}>Load Audit</button>
     {{#if this.auditResult.entries}}<ul>{{#each this.auditResult.entries as |entry|}}
       <li>{{entry.created_at}} — {{entry.action}} — {{entry.reason}}</li>
-    {{/each}}</ul>{{/if}}
+    {{/each}}</ul>{{else}}<p class="text-muted">No audit entries.</p>{{/if}}
   </details>
 
   <details class="mb-3"><summary>Experience</summary>
-    <Input @value={{this.xpCharacter}} class="form-control my-2" placeholder="Character" />
     <Input @type="number" @value={{this.xpAmount}} class="form-control my-2" placeholder="Amount" />
     <Input @value={{this.xpReason}} class="form-control my-2" placeholder="Reason" />
-    <Input @type="number" @value={{this.xpSceneId}} class="form-control my-2" placeholder="Scene ID" />
     <div class="d-flex gap-2 flex-wrap">
       <button class="btn btn-primary" type="button" onclick={{action "xpAward" false}}>Award</button>
       <button class="btn btn-primary" type="button" onclick={{action "xpAward" true}}>Award + Catch-up</button>
-      <button class="btn btn-secondary" type="button" onclick={{action "xpScene" false}}>Preview/Confirm Scene</button>
-      <button class="btn btn-secondary" type="button" onclick={{action "xpScene" true}}>Preview/Confirm Scene + Catch-up</button>
       <button class="btn btn-warning" type="button" onclick={{action "xpCorrect" "correction"}}>Add Correction</button>
       <button class="btn btn-warning" type="button" onclick={{action "xpCorrect" "reversal"}}>Reverse XP</button>
     </div>
-    {{#if this.scenePreview.recipients}}<p>Recipients: {{this.scenePreview.recipients}}</p>{{/if}}
   </details>
 
   <details class="mb-3"><summary>Boon &amp; Bane management</summary>
-    <Input @value={{this.bnbCharacter}} class="form-control my-2" placeholder="Character" />
     <Input @value={{this.bnbReference}} class="form-control my-2" placeholder="Catalogue ID or tag" />
     <Input @value={{this.bnbEntryId}} class="form-control my-2" placeholder="Character entry ID" />
     <Input @value={{this.bnbLevel}} class="form-control my-2" placeholder="Level" />
@@ -95,18 +65,9 @@
     <button class="btn btn-danger mt-2" type="button"
       disabled={{not (and this.deleteConfirmOne this.deleteConfirmTwo)}}
       onclick={{action "bnbTransition" "soulBnbDelete"}}>Permanently Delete</button>
-    <hr>
-    <Input @value={{this.bnbName}} class="form-control my-2" placeholder="New catalogue name" />
-    <Input @value={{this.bnbTag}} class="form-control my-2" placeholder="Tag" />
-    <Input @value={{this.bnbKind}} class="form-control my-2" placeholder="boon or bane" />
-    <Textarea @value={{this.bnbDescription}} class="form-control my-2" placeholder="Description" />
-    <Input @value={{this.bnbSkillAssociations}} class="form-control my-2"
-      placeholder="Associated Skill keys, comma-separated (required, e.g. blade,spirit)" />
-    <button class="btn btn-primary" type="button" onclick={{action "bnbCreate"}}>Create Catalogue Entry</button>
   </details>
 
   <details><summary>Culminations</summary>
-    <Input @value={{this.culminationCharacter}} class="form-control my-2" placeholder="Character" />
     <Input @value={{this.culminationId}} class="form-control my-2" placeholder="Culmination ID" />
     <Input @value={{this.culminationTitle}} class="form-control my-2" placeholder="Title" />
     <Textarea @value={{this.culminationDescription}} class="form-control my-2" placeholder="Description" />

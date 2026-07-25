@@ -1,0 +1,20 @@
+// Admin "SOUL management" page route. Automatically installed to
+// ares-webportal/app/routes/ via plugin/install. Requires a matching
+// route registration in the game's app/custom-routes.js (see
+// custom-install/custom-routes.snippet.js) and, to appear in the Admin
+// dropdown, a top_navbar entry in game/config/website.yml (see
+// custom-install/website_top_navbar.snippet.yml).
+//
+// Server-side authorization (manage_soul, via SoulStaffWebHandler /
+// SoulBnbWebHandler's staff_commands gate) is the actual gate - this
+// route doesn't duplicate that check client-side.
+import Route from '@ember/routing/route';
+import { inject as service } from '@ember/service';
+
+export default Route.extend({
+  gameApi: service(),
+
+  model() {
+    return this.gameApi.requestOne('soulBnbRequestsList', { status: 'pending' }, 'home');
+  }
+});

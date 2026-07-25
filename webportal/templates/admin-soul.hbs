@@ -1,0 +1,92 @@
+{{! Admin "SOUL management" page. Automatically installed to }}
+{{! ares-webportal/app/templates/ via plugin/install. }}
+
+<div class="p-3 soul-admin">
+  <h2 class="mb-3">SOUL Administration</h2>
+  {{#if this.isLoading}}<p class="text-muted">Working…</p>{{/if}}
+  {{#if this.error}}<div class="alert alert-danger">{{this.error}}</div>{{/if}}
+  {{#if this.successMessage}}<div class="alert alert-success">{{this.successMessage}}</div>{{/if}}
+
+  <section class="card card-body mb-3">
+    <h4>Pending Boon/Bane Requests</h4>
+    {{#if this.model.requests.length}}
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th scope="col">Character</th><th scope="col">Entry</th><th scope="col">Level</th>
+            <th scope="col">Explanation</th><th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each this.model.requests as |req|}}
+            <tr>
+              <td>{{req.character}}</td>
+              <td>[{{req.tag}}] {{req.name}}</td>
+              <td>{{req.level_state}}</td>
+              <td>{{req.explanation}}</td>
+              <td>
+                <button type="button" class="btn btn-sm btn-success" onclick={{action "approveRequest" req.id}}>Approve</button>
+                <button type="button" class="btn btn-sm btn-danger" onclick={{action "denyRequest" req.id}}>Deny</button>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      <Input @value={{this.denyReason}} class="form-control" placeholder="Reason (required to deny)" />
+    {{else}}
+      <p class="text-muted mb-0">No pending requests.</p>
+    {{/if}}
+  </section>
+
+  <section class="card card-body mb-3">
+    <h4>Framework and configuration</h4>
+    <button class="btn btn-secondary m-2" type="button" onclick={{action "loadFramework"}}>View Framework</button>
+    <button class="btn btn-secondary m-2" type="button" onclick={{action "reloadConfig"}}>Validate Configuration</button>
+    {{#if this.framework}}
+      <p>Valid Skill ratings: {{this.framework.min_rating}}–{{this.framework.max_rating}}</p>
+      {{#each this.framework.aspects as |aspect|}}
+        <div class="card card-body mb-2">
+          <h5>{{aspect.name}} [{{aspect.key}}]</h5>
+          {{#if aspect.description}}<p>{{aspect.description}}</p>{{/if}}
+          <ul>
+            {{#each this.framework.skills as |skill|}}
+              {{#if (eq skill.aspect_key aspect.key)}}
+                <li>{{skill.name}} [{{skill.key}}]</li>
+              {{/if}}
+            {{/each}}
+          </ul>
+        </div>
+      {{/each}}
+    {{/if}}
+    {{#if this.reloadResult.errors}}<ul>{{#each this.reloadResult.errors as |validationError|}}<li>{{validationError}}</li>{{/each}}</ul>{{/if}}
+  </section>
+
+  <section class="card card-body mb-3">
+    <h4>Boon &amp; Bane catalogue</h4>
+    <p class="text-muted">Create a new catalogue entry.</p>
+    <Input @value={{this.bnbName}} class="form-control my-2" placeholder="Name" />
+    <Input @value={{this.bnbTag}} class="form-control my-2" placeholder="Tag" />
+    <Input @value={{this.bnbKind}} class="form-control my-2" placeholder="boon or bane" />
+    <Textarea @value={{this.bnbDescription}} class="form-control my-2" placeholder="Description" />
+    <Input @value={{this.bnbSkillAssociations}} class="form-control my-2"
+      placeholder="Fixed associated Skill keys, comma-separated (optional - leave blank if configurable per instance)" />
+    <button class="btn btn-primary" type="button" onclick={{action "bnbCreate"}}>Create Catalogue Entry</button>
+    <hr>
+    <p class="text-muted">Edit an existing entry's fixed associated Skill(s).</p>
+    <Input @value={{this.bnbSkillsReference}} class="form-control my-2" placeholder="Catalogue ID or tag" />
+    <Input @value={{this.bnbSkillsValue}} class="form-control my-2" placeholder="Skill keys, comma-separated" />
+    <button class="btn btn-warning" type="button" onclick={{action "bnbSetSkills"}}>Update Associated Skills</button>
+  </section>
+
+  <section class="card card-body">
+    <h4>Scene Experience Award</h4>
+    <Input @type="number" @value={{this.xpAmount}} class="form-control my-2" placeholder="Amount" />
+    <Input @value={{this.xpReason}} class="form-control my-2" placeholder="Reason" />
+    <Input @type="number" @value={{this.xpSceneId}} class="form-control my-2" placeholder="Scene ID" />
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-secondary" type="button" onclick={{action "xpScene" false}}>Preview/Confirm Scene</button>
+      <button class="btn btn-secondary" type="button" onclick={{action "xpScene" true}}>Preview/Confirm Scene + Catch-up</button>
+    </div>
+    {{#if this.scenePreview.recipients}}<p>Recipients: {{this.scenePreview.recipients}}</p>{{/if}}
+  </section>
+</div>

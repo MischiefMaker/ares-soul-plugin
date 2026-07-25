@@ -206,5 +206,77 @@ module AresMUSH
         h.grant_entry(target)
       end
     end
+
+    describe "+bnb/request" do
+      let(:enactor) { Fabricate(:character) }
+      let(:client) { double(emit_success: nil, emit_failure: nil) }
+
+      def handler(args)
+        cmd = double(switch: "request", args: args)
+        h = Soul::SoulBnbCmd.new(client, cmd, enactor)
+        h.parse_args
+        h
+      end
+
+      it "parses <id or tag>/<level>/<skills>=<explanation>" do
+        h = handler("cursed/major/blade=I want this.")
+        expect(h.reference).to eq("cursed")
+        expect(h.level).to eq("major")
+        expect(h.skill_associations).to eq(["blade"])
+        expect(h.explanation).to eq("I want this.")
+      end
+
+      it "defaults level to minor when omitted" do
+        h = handler("cursed=I want this.")
+        expect(h.level).to eq("minor")
+      end
+
+      it "requires play permission, not manage_soul" do
+        cmd = double(switch: "request", args: "cursed=x")
+        h = Soul::SoulBnbCmd.new(client, cmd, enactor)
+        allow(Soul).to receive(:can_play?).and_return(false)
+        expect(h.check_permission).to be_present
+      end
+
+      it "passes through to SoulBnbApi.request scoped to the enactor" do
+        h = handler("cursed=I want this.")
+        expect(SoulBnbApi).to receive(:request).with(
+          enactor, "cursed", explanation: "I want this.", level_state: "minor", associated_skills: nil
+        ).and_return(success: true)
+
+        h.request_entry
+      end
+    end
+
+    describe "+bnb/approve and +bnb/deny" do
+      let(:enactor) { Fabricate(:character) }
+      let(:client) { double(emit_success: nil, emit_failure: nil) }
+
+      it "requires manage_soul permission" do
+        cmd = double(switch: "approve", args: "5")
+        h = Soul::SoulBnbCmd.new(client, cmd, enactor)
+        allow(Soul).to receive(:can_manage_soul?).and_return(false)
+        expect(h.check_permission).to be_present
+      end
+
+      it "approve_request_entry passes through to SoulBnbApi.approve_request" do
+        cmd = double(switch: "approve", args: "5")
+        h = Soul::SoulBnbCmd.new(client, cmd, enactor)
+        h.parse_args
+        expect(SoulBnbApi).to receive(:approve_request).with(5, enactor).and_return(success: true)
+        h.approve_request_entry
+      end
+
+      it "deny_request_entry parses <id>=<reason> and passes through" do
+        cmd = double(switch: "deny", args: "5=Not appropriate.")
+        h = Soul::SoulBnbCmd.new(client, cmd, enactor)
+        h.parse_args
+        expect(h.request_id).to eq(5)
+        expect(h.reason).to eq("Not appropriate.")
+        expect(SoulBnbApi).to receive(:deny_request).with(5, enactor, reason: "Not appropriate.")
+          .and_return(success: true)
+        h.deny_request_entry
+      end
+    end
   end
 end

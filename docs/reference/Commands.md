@@ -44,6 +44,10 @@ game's chargen configuration.
 | `+bnb/resolve <character>/<entry id>=<reason>` | Proposed (implemented 2026-07-24) | Resolve/negate an entry, preserving its prior level for restoration (REQ-020) — the recommended non-destructive alternative to `+bnb/delete` | manage_soul |
 | `+bnb/restore <character>/<entry id>` | Proposed (implemented 2026-07-24) | Restore a resolved/negated entry to its preserved level (REQ-020) | manage_soul |
 | `+bnb/delete <entry id>/<reason>/confirm/confirm` | Proposed (implemented; syntax fixed 2026-07-24) | Two-confirmation destructive delete (REQ-021) — counts literal `confirm` tokens; `+bnb/resolve` is preferred for ordinary play | manage_soul |
+| `+bnb/request <id or tag>[/<level>[/<skill1,skill2,...>]]=<explanation>` | Proposed (implemented 2026-07-25) | Request a post-chargen Boon/Bane for yourself; creates a pending request for staff to `/approve` or `/deny` rather than granting directly | play |
+| `+bnb/requests` | Proposed (implemented 2026-07-25) | List all pending Boon/Bane requests awaiting a decision | manage_soul |
+| `+bnb/approve <request id>` | Proposed (implemented 2026-07-25) | Approve a pending request, granting it exactly as `+bnb/grant` would | manage_soul |
+| `+bnb/deny <request id>=<reason>` | Proposed (implemented 2026-07-25) | Deny a pending request | manage_soul |
 
 Name collisions return matching names, IDs, and tags for disambiguation (GL-10).
 

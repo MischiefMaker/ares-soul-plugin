@@ -5,34 +5,99 @@ export default Component.extend({
   tagName: '',
   api: service('game-api'),
   isLoading: false,
+  catalogueLoading: false,
+  isSubmitting: false,
+  pickerOpen: false,
+  detailOpen: false,
+  page: 1,
+  perPage: 10,
 
-  didInsertElement() {
+  didReceiveAttrs() {
     this._super(...arguments);
-    this.loadCatalogue();
+    this.loadList();
   },
 
-  async loadCatalogue(query) {
+  async loadList() {
     this.set('isLoading', true);
     try {
-      let result = await this.api.requestOne('soulBnbCatalogue', { query });
-      this.set('entries', result.entries);
+      let result = await this.api.requestOne('soulBnbList', { character: this.character });
+      this.setProperties({ entries: result.entries, requests: result.requests });
     } finally {
       this.set('isLoading', false);
     }
   },
 
+  async loadCatalogue(page) {
+    this.set('catalogueLoading', true);
+    try {
+      let result = await this.api.requestOne('soulBnbCatalogue', {
+        page: page || this.page, per_page: this.perPage, query: this.query
+      });
+      this.setProperties({
+        catalogueEntries: result.entries, page: result.page, totalPages: result.total_pages,
+        availableSkills: result.available_skills
+      });
+    } finally {
+      this.set('catalogueLoading', false);
+    }
+  },
+
   actions: {
-    search() {
-      return this.loadCatalogue(this.query);
+    openPicker() {
+      this.setProperties({ pickerOpen: true, selectedCatalogueEntry: null, requestError: null, query: '' });
+      this.loadCatalogue(1);
     },
-    async showDetail(entry) {
-      let result = await this.api.requestOne('soulBnb', { reference: entry.id });
-      if (!result.error) {
-        this.set('detail', result);
+    closePicker() {
+      this.set('pickerOpen', false);
+    },
+    search() {
+      return this.loadCatalogue(1);
+    },
+    previousPage() {
+      if (this.page > 1) {
+        this.loadCatalogue(this.page - 1);
       }
     },
+    nextPage() {
+      if (this.page < this.totalPages) {
+        this.loadCatalogue(this.page + 1);
+      }
+    },
+    pick(entry) {
+      this.setProperties({
+        selectedCatalogueEntry: entry, requestLevel: 'minor',
+        requestSkills: '', requestExplanation: '', requestError: null
+      });
+    },
+    backToList() {
+      this.set('selectedCatalogueEntry', null);
+    },
+    async submitRequest() {
+      this.set('isSubmitting', true);
+      try {
+        let skills = (this.requestSkills || '')
+          .split(',').map((key) => key.trim()).filter((key) => key.length);
+        let result = await this.api.requestOne('soulBnbRequest', {
+          catalogue_ref: this.selectedCatalogueEntry.id,
+          level_state: this.requestLevel || 'minor',
+          explanation: this.requestExplanation,
+          associated_skills: skills
+        });
+        if (result.error) {
+          this.set('requestError', result.error);
+          return;
+        }
+        this.setProperties({ pickerOpen: false, selectedCatalogueEntry: null });
+        await this.loadList();
+      } finally {
+        this.set('isSubmitting', false);
+      }
+    },
+    showDetail(entry) {
+      this.setProperties({ detailEntry: entry, detailOpen: true });
+    },
     closeDetail() {
-      this.set('detail', null);
+      this.set('detailOpen', false);
     }
   }
 });

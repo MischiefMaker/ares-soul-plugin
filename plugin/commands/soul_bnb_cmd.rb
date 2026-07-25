@@ -4,7 +4,7 @@ module AresMUSH
       include CommandHandler
 
       attr_accessor :reference, :name, :description, :kind, :tag, :entry_id,
-                    :level, :explanation, :reason, :confirmations, :skill_associations
+                    :level, :explanation, :reason, :confirmations, :skill_associations, :request_id
 
       def parse_args
         raw = cmd.args.to_s
@@ -51,13 +51,27 @@ module AresMUSH
           # bare "+bnb" does for yourself; with "=<id or tag>" shows one
           # entry in full, same as "+bnb <id or tag>" does for yourself.
           self.name, self.reference = raw.split("=", 2)
+        when "request"
+          # +bnb/request <id or tag>[/<level>][/<skill1,skill2,...>]=<explanation>
+          # Player self-service (FR-015, 2026-07-25): unlike /grant, this
+          # never creates a live entry directly - it creates a pending
+          # BnbRequest for staff to /approve or /deny.
+          left, self.explanation = raw.split("=", 2)
+          self.reference, self.level, skills_raw = left.to_s.split("/", 3)
+          self.level ||= "minor"
+          self.skill_associations = skills_raw.to_s.split(",").map(&:strip).reject(&:blank?)
+        when "approve"
+          self.request_id = integer_arg(raw)
+        when "deny"
+          left, self.reason = raw.split("=", 2)
+          self.request_id = integer_arg(left)
         else
           self.reference = raw
         end
       end
 
       def check_permission
-        staff_switches = %w[search create skills grant progress delete resolve restore detail]
+        staff_switches = %w[search create skills grant progress delete resolve restore detail requests approve deny]
         return t('soul.permission_denied') if staff_switches.include?(cmd.switch) && !Soul.can_manage_soul?(enactor)
         return t('soul.permission_denied') if !staff_switches.include?(cmd.switch) && !Soul.can_play?(enactor)
         nil
@@ -85,6 +99,12 @@ module AresMUSH
           # <id or tag> is optional here (see parse_args) - only the
           # character is required.
           [ self.name ]
+        when "request"
+          [ self.reference, self.explanation ]
+        when "approve"
+          [ self.request_id ]
+        when "deny"
+          [ self.request_id, self.reason ]
         else
           # A bare "+bnb" (nil switch, no reference) is valid - it lists
           # your own Boons and Banes (show_own_entries) rather than
@@ -107,6 +127,10 @@ module AresMUSH
         when "resolve" then with_character { |character| resolve_entry(character) }
         when "restore" then with_character { |character| restore_entry(character) }
         when "detail" then with_character { |character| show_detail_for(character) }
+        when "request" then request_entry
+        when "requests" then show_requests
+        when "approve" then approve_request_entry
+        when "deny" then deny_request_entry
         end
       end
 
@@ -253,6 +277,33 @@ module AresMUSH
         end
         result = SoulBnbApi.restore(entry.id, enactor: enactor)
         emit_result result, 'soul.bnb_restored'
+      end
+
+      def request_entry
+        result = SoulBnbApi.request(enactor, self.reference, explanation: self.explanation,
+          level_state: self.level, associated_skills: self.skill_associations.presence)
+        emit_result result, 'soul.bnb_requested'
+      end
+
+      def show_requests
+        requests = SoulBnbApi.get_requests(status: "pending")
+        lines = requests.map do |req|
+          t('soul.bnb_request_line', id: req.id, character: req.character.name,
+            name: req.catalogue_entry.name, tag: req.catalogue_entry.tag, level: req.level_state)
+        end
+        client.emit BorderedListTemplate.new(
+          lines.empty? ? [t('soul.none')] : lines, t('soul.bnb_requests_title')
+        ).render
+      end
+
+      def approve_request_entry
+        result = SoulBnbApi.approve_request(self.request_id, enactor)
+        emit_result result, 'soul.bnb_request_approved'
+      end
+
+      def deny_request_entry
+        result = SoulBnbApi.deny_request(self.request_id, enactor, reason: self.reason)
+        emit_result result, 'soul.bnb_request_denied'
       end
 
       def with_character(&block)

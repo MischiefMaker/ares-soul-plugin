@@ -41,3 +41,13 @@ entry. Both explicit confirmations and a reason are required.
 
 `+bnb/detail <character>[=<id or tag>]` — Staff: view a character's own
 entries, or one entry in full, including their private explanation.
+
+`+bnb/request <id or tag>[/<level>[/<skill1,skill2,...>]]=<explanation>` —
+Request a Boon/Bane for yourself post-chargen. This does not grant it
+directly; a staff member reviews and approves or denies it.
+
+`+bnb/requests` — Staff: list all pending requests.
+
+`+bnb/approve <request id>` — Staff: approve a pending request.
+
+`+bnb/deny <request id>=<reason>` — Staff: deny a pending request.
