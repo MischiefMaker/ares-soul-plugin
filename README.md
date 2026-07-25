@@ -161,13 +161,23 @@ introduces it at the correct point in the normal character-generation flow.
 The stage points players to `help soul_chargen`, which documents Resonance, Skill,
 and starting Boon/Bane selection.
 
-**Recommended: show the SOUL sheet during app review.** `game/config/chargen.yml`'s
-`app_review_commands` list controls what staff's `app <character>` review command
-runs automatically. Add `soul %{name}` to that list (alongside the stock `app`,
-`look`, `profile`, `bg`, `hooks`, and `sheet` entries) so a reviewer sees the
-applicant's Aspects/Skills/Resonance/B&Bs without a separate manual `+soul` lookup.
-If Inklings is also installed, its own instructions cover adding `inkling/list
-%{name}` to the same list — see the Inklings plugin's install documentation.
+**Recommended: show SOUL data during app review.** Two separate, easily-confused
+commands exist: bare `+app <character>` (shows the demographics/background/hooks
+completeness checklist only) and `+app/review <character>` (runs a *list* of other
+commands back-to-back so a reviewer sees everything at once). They need two
+separate changes to pick up SOUL:
+
+1. **For `+app/review`:** `game/config/chargen.yml`'s `app_review_commands` list
+   controls what it runs. Add `soul %{name}` to that list (alongside the stock
+   `app`, `look`, `profile`, `bg`, `hooks`, and `sheet` entries). If Inklings is
+   also installed, its own instructions cover adding `inkling/list %{name}` to the
+   same list — see the Inklings plugin's install documentation.
+2. **For bare `+app` and the web portal's app-review view:** these both render
+   `AppTemplate`, whose only plugin extension point is the `custom_app_review`
+   hook — `app_review_commands` has no effect on either. Install
+   [`custom-install/custom_app_review.snippet.rb`](custom-install/custom_app_review.snippet.rb)
+   into `plugins/chargen/custom_app_review.rb` to add SOUL's Resonance/Skill/
+   Aspect/B&B readiness status there too.
 
 ### Step 5: Add Profile Data for the Web Portal
 

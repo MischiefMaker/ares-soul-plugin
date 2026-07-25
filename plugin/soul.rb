@@ -64,6 +64,43 @@ module AresMUSH
       enactor.has_permission?(permission)
     end
 
+    # Chargen's own custom_app_review hook (plugins/chargen/custom_app_review.rb
+    # in the game folder, see custom-install/custom_app_review.snippet.rb) is
+    # the only extension point AresMUSH's core +app / +app/review checklist
+    # offers - it's called for both, so this single method covers the MUSH
+    # command and the web portal's app-review view alike. Distinct from
+    # get_cmd_handler/get_web_request_handler above (those register SOUL's
+    # own commands/operations); this is SOUL supplying content into a
+    # *different* plugin's hook, so it lives at the Soul module's own
+    # public-API level rather than a dedicated command/handler class.
+    #
+    # Returns nil (nothing shown) if SOUL is disabled or the character has
+    # no chargen data yet (SoulResonanceApi never set, no Skills/Aspects/B&Bs
+    # touched) - an application that hasn't reached SOUL's chargen steps
+    # yet shouldn't show a wall of "unspent points" warnings before the
+    # player has had a chance to visit +soul/cg at all.
+    def self.app_review(char)
+      return nil unless char && enabled?
+      status = SoulChargenWebHandler.status(char)
+      return nil if status[:resonance].nil? && status[:points_spent].zero? &&
+        status[:aspect_points_spent].zero? && !status[:has_selected_bnb]
+
+      lines = []
+      if status[:resonance_enabled]
+        lines << Chargen.format_review_status("Checking SOUL Resonance.",
+          status[:resonance].nil? ? t('chargen.not_set') : "R#{status[:resonance]}")
+      end
+      lines << Chargen.format_review_status("Checking SOUL Skill points.",
+        "#{status[:points_spent]}/#{status[:skill_points]} " +
+        (status[:skill_points_fully_spent] ? t('chargen.ok') : t('chargen.not_set')))
+      lines << Chargen.format_review_status("Checking SOUL Aspect points.",
+        "#{status[:aspect_points_spent]}/#{status[:aspect_points]} " +
+        (status[:aspect_points_fully_spent] ? t('chargen.ok') : t('chargen.not_set')))
+      lines << Chargen.format_review_status("Checking SOUL Boon/Bane ratio.",
+        status[:bnb_ratio_satisfied] ? t('chargen.ok') : t('chargen.not_set'))
+      lines.join("%r")
+    end
+
     # Called once at plugin load and whenever staff reload game config
     # (see plugins/manage/commands/game/load_config_cmd.rb in AresMUSH
     # core) - same convention every bundled plugin uses (e.g.
@@ -100,8 +137,6 @@ module AresMUSH
           SoulHistoryCmd
         when "framework", "framework/skill", "framework/aspect", "resonance", "reload", "audit"
           SoulStaffCmd
-        when "cg", "cg/resonance", "cg/skill", "cg/aspect", "cg/bnb", "cg/drop"
-          SoulChargenCmd
         when nil
           SoulSheetCmd
         end

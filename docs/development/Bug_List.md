@@ -8,6 +8,21 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-013: SOUL data doesn't appear in `+app`/`+app/review` — missing `custom_app_review` hook
+
+**Status:** ✅ Done (`plugin/soul.rb`, `custom-install/custom_app_review.snippet.rb`, `README.md`)
+
+**Requested:** 2026-07-25, live testing: user added `soul %{name}` to `app_review_commands` (per FR-008) and still didn't see SOUL data in review. Traced the actual cause together with the user rather than assuming the config change was wrong: **`+app <character>` and `+app/review <character>` are two separate core AresMUSH commands** (`AppCmd` vs. `AppReviewCmd`) — `app_review_commands` is only ever read by `+app/review`. The user had been running (and screenshotting) bare `+app`, whose output is the demographics/background/hooks completeness checklist, rendered by `AppTemplate`. `app_review_commands` has no effect on that view or on the web portal's own app-review page (both render the same `AppTemplate`), no matter what's in the list.
+
+**Root cause of the actual gap:** `AppTemplate` has exactly one plugin extension point for arbitrary extra content — `Chargen.custom_app_review(char)`, a hook method in a game-side file (`plugins/chargen/custom_app_review.rb`, stock body `return nil`) — the same hook Inklings already uses on this game (confirmed by the user: *"We added Inklings to it, so it is doable"*). SOUL never shipped an install snippet for it, so nothing was ever wired up for the plain `+app` checklist or the web app-review view, regardless of the `app_review_commands` change.
+
+**Done:**
+- Added `Soul.app_review(char)` (`plugin/soul.rb`) — the single public entry point a game's `custom_app_review.rb` calls into. Returns `nil` (shows nothing) if SOUL is disabled or the character hasn't touched any SOUL chargen step yet (no Resonance set, no Skill/Aspect points spent, no B&B selected) — an application that hasn't reached `+soul/cg` yet shouldn't show a wall of "unspent points" warnings before the player has had a chance to visit it. Otherwise shows Resonance (if enabled), Skill/Aspect points spent vs. allowed, and whether the Boon/Bane ratio is currently satisfied — reusing `SoulChargenWebHandler.status` (the same data FR-009's `+soul/cg` readiness indicators already show) as the single source of truth, formatted with `Chargen.format_review_status`/`t('chargen.ok')`/`t('chargen.not_set')` to match the rest of the checklist's visual style exactly.
+- New `custom-install/custom_app_review.snippet.rb`, matching this project's established two-option snippet pattern (method is stock-empty / method already has content from another plugin like Inklings, with a documented combine-instead-of-overwrite pattern since only one `return` can execute).
+- README's Step 4 corrected: previously implied `app_review_commands` alone was sufficient ("show the SOUL sheet during app review... controls what staff's `app <character>` review command runs" — conflated the two commands, inherited from FR-008 not yet knowing about this distinction). Now explains both commands need separate changes, with the new snippet documented as the second one.
+- Along the way, found and removed a real but harmless dead-code duplicate in `plugin/soul.rb#get_cmd_handler`: two identical `when "cg", "cg/resonance", ...` branches for `SoulChargenCmd` (the second, missing `cg/catalogue`, was unreachable — Ruby's `case` takes the first match) — leftover from an earlier merge, cleaned up while already editing this file.
+- New `plugin/spec/soul_spec.rb` (this project's first direct coverage of the root `Soul` module) covers the disabled/no-data/nil-character/has-data/Resonance-enabled cases for `.app_review`.
+
 ### FR-012: Unique CSS classes for installer styling hooks
 
 **Status:** 🟡 Partially done — plain HTML wrappers fixed; `BsModalSimple` components not addressed
