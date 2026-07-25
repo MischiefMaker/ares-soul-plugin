@@ -21,8 +21,9 @@ absolute rating.
 `+soul/cg/catalogue` - List every active Boon and Bane available during
 character generation, including the ID and tag used by `+soul/cg/bnb`.
 
-`+soul/cg/bnb <id or tag>[/<level>]=<explanation>` - Select a starting
-Boon or Bane. The level defaults to `minor`.
+`+soul/cg/bnb <id or tag>[/<level>[/<skill1,skill2,...>]]=<explanation>` -
+Select a starting Boon or Bane. The level defaults to `minor`. Skills only
+need to be specified if the entry has no fixed default.
 
 `+soul/cg/drop <entry id or tag>` - Remove one of your chargen selections.
 The entry ID is shown in `+soul/cg`'s own status listing, or use the

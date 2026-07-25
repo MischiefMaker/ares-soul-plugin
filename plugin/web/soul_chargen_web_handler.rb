@@ -25,7 +25,8 @@ module AresMUSH
       when "soulChargenBnb"
         result = SoulBnbApi.grant(character, request.args['reference'],
           level_state: request.args['level_state'] || "minor", source: "chargen",
-          explanation: request.args['explanation'])
+          explanation: request.args['explanation'],
+          associated_skills: request.args['associated_skills'].presence)
         result[:error] ? result : self.class.status(character)
       when "soulChargenDrop"
         result = SoulBnbApi.drop_chargen_selection(request.args['entry_id'], character)

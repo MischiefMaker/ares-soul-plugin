@@ -168,14 +168,15 @@ end
 
 ### Step 6: Migrate Boons & Banes
 
-**Option A — Manual (recommended for small catalogues):** real implemented syntax is `+bnb/create <kind>/<tag>/<name>/<skill1,skill2,...>=<description>` (see `docs/reference/Commands.md`) — `kind` is `boon` or `bane`, and at least one associated Skill key is required (comma-separated if more than one; used by `+roll`'s suggested-candidates flow):
+**Option A — Manual (recommended for small catalogues):** real implemented syntax is `+bnb/create <kind>/<tag>/<name>[/<skill1,skill2,...>]=<description>` (see `docs/reference/Commands.md`) — `kind` is `boon` or `bane`; the Skill segment is optional, only for entries with a fixed default:
 ```
 +bnb/create boon/lucky/Lucky/wit=You have uncanny good fortune.
-+bnb/create bane/cursed/Cursed/strength,stamina=Bad luck dogs your heels.
++bnb/create bane/cursed/Cursed=Bad luck dogs your heels.
 ```
-Then grant existing character B&Bs — `+bnb/grant <character>/<catalogue id or tag>[/<level>]=<explanation>`:
+Then grant existing character B&Bs — `+bnb/grant <character>/<catalogue id or tag>[/<level>[/<skill1,skill2,...>]]=<explanation>` (Skills default to the entry's own fixed default; specify them here for a "configurable per instance" entry like Cursed):
 ```
-+bnb/grant Alice/cursed/minor=Migrated from FS3; originally granted for the Ashford incident.
++bnb/grant Alice/lucky/minor=Migrated from FS3.
++bnb/grant Alice/cursed/minor/strength,stamina=Migrated from FS3; originally granted for the Ashford incident.
 ```
 
 **Option B — Scripted (for large catalogues):** go through `SoulBnbApi` rather than creating `BnbCatalogueEntry`/`CharacterBnbEntry` records directly — it enforces tag uniqueness (check-then-create, since Ohm has no native unique constraint) and the 2:1 Boon-to-Bane ratio, and correctly stamps `source: "migration"` on each granted entry for audit/history purposes:

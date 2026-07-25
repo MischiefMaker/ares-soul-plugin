@@ -105,21 +105,19 @@ before continuing.
 
 **Optional but recommended: create starter Boons & Banes.** A fresh install has an
 empty B&B catalogue, so chargen's `+soul/cg/bnb`/`+soul/cg/catalogue` have nothing
-to offer until staff create entries with `+bnb/create <kind>/<tag>/<name>/<skill1,skill2,...>=<description>`
-(`kind` is `boon` or `bane`; at least one associated Skill key is required — see
-Configuration's `framework.skills` for your game's configured keys, and
-`docs/architecture/API_and_Hooks.md`/`+roll` for how `+roll`'s suggested-candidates
-flow uses this list). Four general-purpose starters, with placeholder Skill keys
-to replace with ones from your own `game/config/soul.yml`:
+to offer until staff create entries with `+bnb/create <kind>/<tag>/<name>=<description>`
+(`kind` is `boon` or `bane`). Four general-purpose starters:
 
 ```
-+bnb/create bane/cursed/Cursed/<skill_key>=Your character carries some sort of curse.
-+bnb/create boon/artifact/Artifact/<skill_key>=Your character possesses some sort of magical artifact that grants them something extra.
-+bnb/create boon/contacts/Contacts/<skill_key>=Your character knows important people.
-+bnb/create bane/bad_rep/Bad Reputation/<skill_key>=Your character has some sort of bad reputation that precedes them.
++bnb/create bane/cursed/Cursed=Your character carries some sort of curse.
++bnb/create boon/artifact/Artifact=Your character possesses some sort of magical artifact that grants them something extra.
++bnb/create boon/contacts/Contacts=Your character knows important people.
++bnb/create bane/bad_rep/Bad Reputation=Your character has some sort of bad reputation that precedes them.
 ```
 
-See [Default Boons & Banes](docs/reference/Default_BnBs.md) for more examples and
+These are "configurable per instance" — whoever grants one (staff, or a player
+via `+soul/cg/bnb`) picks the affected Skill(s) at that point. See
+[Default Boons & Banes](docs/reference/Default_BnBs.md) for more examples and
 the full catalogue entry anatomy, and [Commands](docs/reference/Commands.md) for
 `+bnb/create`'s full syntax.
 

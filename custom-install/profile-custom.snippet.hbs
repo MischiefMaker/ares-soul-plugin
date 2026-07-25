@@ -49,19 +49,8 @@
   - This integration is optional. SOUL remains usable through MUSH commands
     without these snippets.
 
-  INVOCATION SYNTAX (2026-07-25):
-  - Uses angle-bracket invocation (<Soul::Sheet @character={{...}} />), not
-    curly-brace ({{soul/sheet character=...}}). Both are valid Ember syntax
-    for a component that lives at app/components/soul/sheet.js - no file
-    move or rename is needed, this is purely how it's invoked here. Switched
-    after a live-testing report of the profile page failing to load at all
-    ("WeakMap key null must be an object or an unregistered symbol",
-    immediately on page load) that persisted across multiple rebuilds -
-    angle-bracket invocation resolves nested/namespaced component names
-    through a different, less resolver-version-sensitive code path than
-    bare curly-brace slash invocation. If you already installed the old
-    curly-brace version and are still seeing that error, replace it with
-    this version.
+  If you already pasted an older version of this snippet using
+  {{soul/sheet character=...}} syntax, replace it with the version below.
 -->
 
 {{#if (and this.char.custom.soul_enabled (or this.char.custom.is_approved this.char.custom.can_manage_soul))}}

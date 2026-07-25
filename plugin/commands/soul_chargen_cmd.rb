@@ -5,7 +5,7 @@ module AresMUSH
       include TemplateFormatters
 
       attr_accessor :value, :skill, :aspect, :rating, :reference, :level,
-                    :explanation, :entry_ref
+                    :explanation, :entry_ref, :skill_associations
 
       # Dispatched under the "soul" root as a compound switch ("cg",
       # "cg/resonance", "cg/skill", "cg/bnb", "cg/drop") - not its own
@@ -33,9 +33,11 @@ module AresMUSH
           args = cmd.parse_args(ArgParser.arg1_equals_arg2)
           self.aspect, self.rating = args.arg1, integer_arg(args.arg2)
         when "bnb"
+          # +soul/cg/bnb <id or tag>/<level>/<skill1,skill2,...>=<explanation>
           left, self.explanation = cmd.args.to_s.split("=", 2)
-          self.reference, self.level = left.to_s.split("/", 2)
+          self.reference, self.level, skills_raw = left.to_s.split("/", 3)
           self.level ||= "minor"
+          self.skill_associations = skills_raw.to_s.split(",").map(&:strip).reject(&:blank?)
         when "drop"
           # Accepts either the entry ID shown in +soul/cg's status listing
           # or the catalogue entry's tag (SoulBnbApi.drop_chargen_selection
@@ -75,7 +77,8 @@ module AresMUSH
         when "aspect" then set_aspect
         when "bnb"
           emit_result SoulBnbApi.grant(enactor, self.reference, level_state: self.level,
-            source: "chargen", explanation: self.explanation)
+            source: "chargen", explanation: self.explanation,
+            associated_skills: self.skill_associations.presence)
         when "catalogue" then show_catalogue
         when "drop" then emit_result SoulBnbApi.drop_chargen_selection(self.entry_ref, enactor)
         end

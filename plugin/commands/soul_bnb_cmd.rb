@@ -10,25 +10,26 @@ module AresMUSH
         raw = cmd.args.to_s
         case cmd.switch
         when "create"
-          # +bnb/create <kind>/<tag>/<name>/<skill1,skill2,...>=<description>
-          # The comma-separated Skill list is required (mischief bug list
-          # item 8, 2026-07-25) - a catalogue entry with no associated
-          # Skills is invisible to SoulRollApi's roll-suggestion logic, so
-          # every entry needs at least one.
+          # +bnb/create <kind>/<tag>/<name>[/<skill1,skill2,...>]=<description>
+          # The Skill segment is optional - only for B&Bs that always affect
+          # the same fixed Skill(s). Most B&Bs are configurable per instance
+          # and take their Skill(s) at +bnb/grant time instead.
           left, self.description = raw.split("=", 2)
           self.kind, self.tag, self.name, skills_raw = left.to_s.split("/", 4)
           self.skill_associations = skills_raw.to_s.split(",").map(&:strip).reject(&:blank?)
         when "skills"
-          # +bnb/skills <id or tag>=<skill1,skill2,...> - the one editable
-          # field on an existing catalogue entry (SoulBnbApi.
-          # set_skill_associations), for fixing a legacy entry created
-          # before the associated-Skill requirement existed.
+          # +bnb/skills <id or tag>=<skill1,skill2,...>
           self.reference, skills_raw = raw.split("=", 2)
           self.skill_associations = skills_raw.to_s.split(",").map(&:strip).reject(&:blank?)
         when "grant"
+          # +bnb/grant <character>/<id or tag>/<level>/<skill1,skill2,...>=<explanation>
+          # <level> and the Skill segment are both optional - level defaults
+          # to minor, Skills default to the catalogue entry's own fixed
+          # Skill(s) if it has any.
           left, self.explanation = raw.split("=", 2)
-          self.name, self.reference, self.level = left.to_s.split("/", 3)
+          self.name, self.reference, self.level, skills_raw = left.to_s.split("/", 4)
           self.level ||= "minor"
+          self.skill_associations = skills_raw.to_s.split(",").map(&:strip).reject(&:blank?)
         when "progress"
           left, self.level = raw.split("=", 2)
           self.name, id = left.to_s.split("/", 2)
@@ -213,7 +214,8 @@ module AresMUSH
 
       def grant_entry(character)
         result = SoulBnbApi.grant(character, self.reference, level_state: self.level,
-          source: "admin", explanation: self.explanation, enactor: enactor)
+          source: "admin", explanation: self.explanation, enactor: enactor,
+          associated_skills: self.skill_associations.presence)
         emit_result result, 'soul.bnb_granted'
       end
 

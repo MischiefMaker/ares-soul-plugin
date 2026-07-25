@@ -39,18 +39,19 @@ character (distinct from their player-facing Narrative History).
 
 ## Boons and Banes
 
-`+bnb/create <kind>/<tag>/<name>/<skill1,skill2,...>=<description>` — Create a
-catalogue entry. At least one associated Skill key is required (comma-separated
-if more than one) — `+roll`'s suggested-candidates flow matches B&Bs to a Skill
-roll using this list, so an entry with none is invisible to it.
+`+bnb/create <kind>/<tag>/<name>[/<skill1,skill2,...>]=<description>` —
+Create a catalogue entry. The Skill segment is optional and only sets a
+*fixed* default for entries that always affect the same Skill(s) — most
+B&Bs pick their Skill(s) at grant time instead (see `+bnb/grant`).
 
 `+bnb/skills <id or tag>=<skill1,skill2,...>` — Set an existing entry's
-associated Skills — the only field editable after creation. Use this to fix
-a legacy entry created before Skills were required; `.grant` refuses to
-grant any entry with an empty list.
+fixed default Skill(s) — the only field editable after creation.
 
-`+bnb/grant <character>/<id or tag>[/<level>]=<explanation>` — Grant an
-entry. `level` defaults to `minor`.
+`+bnb/grant <character>/<id or tag>[/<level>[/<skill1,skill2,...>]]=<explanation>`
+— Grant an entry. `level` defaults to `minor`. Skills default to the
+entry's own fixed default if it has one; otherwise specify at least one
+here — `+roll`'s suggested-candidates flow matches against this grant's
+Skills, so one with none is invisible to it.
 
 `+bnb/progress <character>/<entry id>=<new level>` — Progress or retreat an
 entry's level.

@@ -46,6 +46,26 @@ module AresMUSH
       expect(SoulBnbApi).to have_received(:get_catalogue).with(chargen_available: true)
     end
 
+    describe "cg/bnb parsing" do
+      it "parses id-or-tag/level/skills=explanation" do
+        cmd = double(switch: "cg/bnb", args: "cursed/major/blade,spirit=Cursed by a witch.")
+        handler = Soul::SoulChargenCmd.new(nil, cmd, nil)
+        handler.parse_args
+        expect(handler.reference).to eq("cursed")
+        expect(handler.level).to eq("major")
+        expect(handler.skill_associations).to eq(["blade", "spirit"])
+        expect(handler.explanation).to eq("Cursed by a witch.")
+      end
+
+      it "defaults level to minor and Skills to empty when both are omitted" do
+        cmd = double(switch: "cg/bnb", args: "cursed=Cursed by a witch.")
+        handler = Soul::SoulChargenCmd.new(nil, cmd, nil)
+        handler.parse_args
+        expect(handler.level).to eq("minor")
+        expect(handler.skill_associations).to eq([])
+      end
+    end
+
     describe "#check_permission" do
       it "allows an unapproved character even with no play_permission configured (BUG-005)" do
         enactor = double(is_approved?: false)

@@ -16,6 +16,13 @@ module AresMUSH
     # Private; owner + authorized staff only (FINAL REQ-018). Never shown
     # in public presentation.
     attribute :character_explanation
+    # Skill(s) this specific instance affects - set at grant time
+    # (SoulBnbApi.grant), since most B&Bs are configurable per instance
+    # rather than a fixed catalogue-wide property (docs/reference/
+    # Default_BnBs.md's Cursed example). Falls back to the catalogue
+    # entry's own skill_associations when the granter doesn't specify any.
+    # SoulRollApi's suggested-candidates flow reads this field, not the
+    # catalogue's.
     attribute :associated_skills, :type => DataType::Array, :default => []
     # e.g. "[Chargen]", "[Inkling 234]", "[Admin]".
     attribute :source

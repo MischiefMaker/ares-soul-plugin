@@ -37,7 +37,8 @@ module AresMUSH
         level_state = request.args['level_state'].blank? ? "minor" : request.args['level_state']
         result = SoulBnbApi.grant(character, request.args['catalogue_ref'],
           level_state: level_state, source: "admin",
-          explanation: request.args['explanation'], enactor: enactor)
+          explanation: request.args['explanation'], enactor: enactor,
+          associated_skills: request.args['associated_skills'].presence)
         result[:error] ? result : { success: true, entry: serialize_character_entry(result[:entry], true) }
       when "soulBnbProgress"
         result = SoulBnbApi.progress(request.args['entry_id'], request.args['level_state'],

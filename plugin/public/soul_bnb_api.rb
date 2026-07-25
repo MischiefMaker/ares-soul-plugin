@@ -13,13 +13,17 @@ module AresMUSH
       return { error: "Kind must be 'boon' or 'bane'." } unless %w[boon bane].include?(kind.to_s)
       return { error: "Tag is required." } if tag.to_s.blank?
       return { error: "That tag is already in use." } if BnbCatalogueEntry.find_one(tag_upcase: tag.to_s.upcase)
-      # Required (mischief bug list item 8, 2026-07-25): a catalogue entry
-      # with no associated Skills is invisible to SoulRollApi's suggestion
-      # logic (.build_applied_modifiers/candidate matching, keyed off
-      # skill_associations) - every entry needs at least one, so +roll's
-      # suggested-candidates flow actually surfaces it.
-      return { error: "At least one associated Skill is required." } if (skill_associations || []).empty?
-      unknown_skills = skill_associations.reject { |key| SoulFrameworkApi.valid_skill_key?(key) }
+      # Optional here, not required (corrected 2026-07-25 - see Bug_List.md
+      # FR-011's correction note): skill_associations at the catalogue level
+      # is only a *fixed default* for B&Bs that always affect the same
+      # Skill(s) (e.g. Ceremonial Attunement -> Ceremonial Magic always).
+      # Many B&Bs are "configurable per instance" (docs/reference/
+      # Default_BnBs.md's own Cursed example) - the granter picks the
+      # affected Skill(s) per character at grant time instead (see .grant's
+      # associated_skills:), stored on CharacterBnbEntry, not here. An entry
+      # with no fixed default is completely valid; .grant is where "must
+      # have at least one Skill from somewhere" is actually enforced.
+      unknown_skills = (skill_associations || []).reject { |key| SoulFrameworkApi.valid_skill_key?(key) }
       return { error: "Unknown Skill(s): #{unknown_skills.join(', ')}" } if unknown_skills.any?
 
       entry = BnbCatalogueEntry.create(
@@ -184,21 +188,30 @@ module AresMUSH
     # etc. Chargen-sourced grants are validated against the Resonance
     # tables; Boon grants of any source are validated against the
     # continuous 2:1 ratio (FINAL REQ-019).
-    def self.grant(character, catalogue_ref, level_state:, source:, explanation: nil, enactor: nil)
+    # associated_skills: the Skill(s) THIS grant affects, chosen by whoever
+    # is granting it (staff, or the player themself via chargen) - the
+    # correct place for this (2026-07-25 correction, see Bug_List.md
+    # FR-011): many B&Bs are "configurable per instance" (Cursed affects
+    # different Skills for different characters), not a fixed catalogue-
+    # wide property. Falls back to the catalogue entry's own configured
+    # skill_associations when omitted, for B&Bs that DO always affect the
+    # same Skill(s) (e.g. Ceremonial Attunement). Either source is fine, but
+    # at least one Skill has to come from somewhere - +roll's suggested-
+    # candidates flow is keyed off CharacterBnbEntry#associated_skills, so a
+    # grant with none would be invisible to it forever.
+    def self.grant(character, catalogue_ref, level_state:, source:, explanation: nil, enactor: nil,
+                    associated_skills: nil)
       return { error: "Character not found" } unless character
       catalogue_entry = catalogue_ref.kind_of?(BnbCatalogueEntry) ? catalogue_ref : get_catalogue_entry(catalogue_ref)
       return { error: "Unknown Boon/Bane: #{catalogue_ref}" } unless catalogue_entry
-      # create_catalogue_entry has required at least one associated Skill
-      # since 2026-07-25 (mischief bug list item 8), but that only guards
-      # entries created after the fix - this catches any legacy entry from
-      # before then that's still missing it, at the point it would actually
-      # reach a character (chargen selection or any other grant), rather
-      # than leaving it silently invisible to +roll's suggestions forever.
-      if (catalogue_entry.skill_associations || []).empty?
-        return { error: "#{catalogue_entry.name} has no associated Skills configured and " \
-          "cannot be granted until it does - ask staff to fix it with +bnb/create's " \
-          "<skill1,skill2,...> segment (a fresh entry, since catalogue entries can't be edited in place)." }
+
+      effective_skills = associated_skills.presence || catalogue_entry.skill_associations || []
+      if effective_skills.empty?
+        return { error: "#{catalogue_entry.name} has no fixed Skill configured - specify at least one " \
+          "associated Skill when granting it." }
       end
+      unknown_skills = effective_skills.reject { |key| SoulFrameworkApi.valid_skill_key?(key) }
+      return { error: "Unknown Skill(s): #{unknown_skills.join(', ')}" } if unknown_skills.any?
 
       definitions = Global.read_config("soul", "bnb", "level_definitions") || {}
       return { error: "Unknown level/state: #{level_state}" } unless definitions.key?(level_state.to_s)
@@ -217,6 +230,7 @@ module AresMUSH
         catalogue_entry: catalogue_entry,
         level_state: level_state.to_s,
         character_explanation: explanation,
+        associated_skills: effective_skills,
         source: source.to_s,
         progression_history: [{
           "level_state" => level_state.to_s, "explanation" => explanation, "source" => source.to_s, "at" => Time.now.to_s

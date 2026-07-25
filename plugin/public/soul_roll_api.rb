@@ -11,7 +11,7 @@ module AresMUSH
         entry.resolved != "true" &&
           catalogue &&
           catalogue.modifier_eligible == "true" &&
-          (catalogue.skill_associations || []).include?(skill_key.to_s)
+          (entry.associated_skills || []).include?(skill_key.to_s)
       end
     end
 

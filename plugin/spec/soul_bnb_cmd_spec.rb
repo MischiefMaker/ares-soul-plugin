@@ -121,7 +121,7 @@ module AresMUSH
         expect(h.skill_associations).to eq(["blade"])
       end
 
-      it "yields an empty Skill list when the segment is omitted, letting the API reject it" do
+      it "yields an empty Skill list when the segment is omitted (no fixed default)" do
         h = handler("boon/lucky/Lucky=You have uncanny good fortune.")
         expect(h.skill_associations).to eq([])
       end
@@ -166,6 +166,44 @@ module AresMUSH
         ).and_return(success: true)
 
         h.set_skills_entry
+      end
+    end
+
+    describe "+bnb/grant" do
+      let(:enactor) { Fabricate(:character) }
+      let(:client) { double(emit_success: nil, emit_failure: nil) }
+
+      def handler(args)
+        cmd = double(switch: "grant", args: args)
+        h = Soul::SoulBnbCmd.new(client, cmd, enactor)
+        h.parse_args
+        h
+      end
+
+      it "parses character/id-or-tag/level/skills=explanation" do
+        h = handler("Alice/cursed/major/blade,spirit=Cursed by a witch.")
+        expect(h.name).to eq("Alice")
+        expect(h.reference).to eq("cursed")
+        expect(h.level).to eq("major")
+        expect(h.skill_associations).to eq(["blade", "spirit"])
+        expect(h.explanation).to eq("Cursed by a witch.")
+      end
+
+      it "defaults level to minor and Skills to empty when both are omitted" do
+        h = handler("Alice/cursed=Cursed by a witch.")
+        expect(h.level).to eq("minor")
+        expect(h.skill_associations).to eq([])
+      end
+
+      it "passes a presence-checked Skill list through to SoulBnbApi.grant" do
+        target = Fabricate(:character)
+        h = handler("Alice/cursed/minor/blade=Cursed by a witch.")
+        expect(SoulBnbApi).to receive(:grant).with(
+          target, "cursed", level_state: "minor", source: "admin",
+          explanation: "Cursed by a witch.", enactor: enactor, associated_skills: ["blade"]
+        ).and_return(success: true)
+
+        h.grant_entry(target)
       end
     end
   end

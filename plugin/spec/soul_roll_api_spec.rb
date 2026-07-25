@@ -56,6 +56,7 @@ module AresMUSH
         character: owner,
         catalogue_entry: catalogue(tag, kind: kind, modifier: modifier, skills: skills),
         level_state: level,
+        associated_skills: skills,
         resolved: "false"
       )
     end

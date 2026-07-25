@@ -21,7 +21,7 @@ The default Sheet fits roughly one MUSH screen (CI-02); drill-down commands belo
 | `+soul/cg/resonance <value>` | Select or change Resonance | unapproved player |
 | `+soul/cg/skill <key>=<rating>` | Set an absolute starting Skill rating | unapproved player |
 | `+soul/cg/catalogue` | List active Boons and Banes available during chargen | unapproved player |
-| `+soul/cg/bnb <id or tag>[/<level>]=<explanation>` | Add a chargen-available B&B | unapproved player |
+| `+soul/cg/bnb <id or tag>[/<level>[/<skill1,skill2,...>]]=<explanation>` | Add a chargen-available B&B; Skills only needed if the entry has no fixed default | unapproved player |
 | `+soul/cg/drop <entry id or tag>` | Remove a chargen-selected B&B | unapproved player |
 
 The optional web chargen tab provides the same actions, including a modal
@@ -37,9 +37,9 @@ game's chargen configuration.
 | `+bnb/here <tag>` | Canonical (REQ-022, concise alias configurable) | Minimal scene-scoped lookup limited to involved players and permitted data | play |
 | `+bnb/search <tag>` | Canonical (REQ-022, concise alias configurable) | Staff/admin global search; may support detail/full modes | manage_soul |
 | `+bnb/catalogue` | Proposed | Browse the full public catalogue | play |
-| `+bnb/create <kind>/<tag>/<name>/<skill1,skill2,...>=<description>` | Proposed (implemented; syntax fixed 2026-07-24, associated Skills required 2026-07-25) | Create a new catalogue entry (`kind`: boon/bane); at least one associated Skill key is required, comma-separated if more than one — this is what `+roll`'s suggested-candidates flow uses to match a B&B to a Skill roll | manage_soul |
-| `+bnb/skills <id or tag>=<skill1,skill2,...>` | Proposed (implemented 2026-07-25) | Set an existing catalogue entry's associated Skills — the only editable field on an entry after creation; exists to fix a legacy entry created before Skills were required, since `.grant` now refuses to grant one with an empty list | manage_soul |
-| `+bnb/grant <character>/<catalogue id or tag>[/<level>]=<explanation>` | Proposed (implemented) | Grant a character entry (post-chargen, non-XP); `level` defaults to `minor` if omitted | manage_soul |
+| `+bnb/create <kind>/<tag>/<name>[/<skill1,skill2,...>]=<description>` | Proposed (implemented; syntax fixed 2026-07-24) | Create a new catalogue entry (`kind`: boon/bane); the Skill segment is optional and only sets a *fixed* default for entries that always affect the same Skill(s) — most B&Bs take their Skill(s) at grant time instead (see `+bnb/grant`) | manage_soul |
+| `+bnb/skills <id or tag>=<skill1,skill2,...>` | Proposed (implemented 2026-07-25) | Set an existing catalogue entry's fixed default Skill(s) — the only editable field on an entry after creation | manage_soul |
+| `+bnb/grant <character>/<catalogue id or tag>[/<level>[/<skill1,skill2,...>]]=<explanation>` | Proposed (implemented) | Grant a character entry (post-chargen, non-XP); `level` defaults to `minor`; Skills default to the catalogue entry's own fixed default if it has one — at least one Skill must come from somewhere, since this is what `+roll`'s suggested-candidates flow matches against | manage_soul |
 | `+bnb/progress <character>/<entry id>=<new level>` | Proposed (implemented) | Progress (or retreat) an entry's level | manage_soul |
 | `+bnb/resolve <character>/<entry id>=<reason>` | Proposed (implemented 2026-07-24) | Resolve/negate an entry, preserving its prior level for restoration (REQ-020) — the recommended non-destructive alternative to `+bnb/delete` | manage_soul |
 | `+bnb/restore <character>/<entry id>` | Proposed (implemented 2026-07-24) | Restore a resolved/negated entry to its preserved level (REQ-020) | manage_soul |

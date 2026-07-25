@@ -54,13 +54,13 @@ module AresMUSH
         expect(result[:error]).to match(/boon.*bane/i)
       end
 
-      it "rejects an entry with no associated Skills" do
+      it "allows an entry with no fixed associated Skills (configurable per instance instead)" do
         result = SoulBnbApi.create_catalogue_entry(name: "X", description: "x", kind: "boon", tag: "x",
           enactor: staff, skill_associations: [])
-        expect(result[:error]).to match(/associated Skill/i)
+        expect(result[:success]).to be true
       end
 
-      it "rejects an unknown Skill key" do
+      it "rejects an unknown Skill key when a fixed default is given" do
         result = SoulBnbApi.create_catalogue_entry(name: "X", description: "x", kind: "boon", tag: "x",
           enactor: staff, skill_associations: ["nonexistent_skill"])
         expect(result[:error]).to match(/unknown skill/i)
