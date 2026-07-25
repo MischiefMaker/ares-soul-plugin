@@ -5,6 +5,7 @@ export default Component.extend({
   tagName: '',
   api: service('game-api'),
   isLoading: false,
+  bnbModalOpen: false,
 
   didReceiveAttrs() {
     this._super(...arguments);

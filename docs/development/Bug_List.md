@@ -177,6 +177,18 @@ A bare `+bnb` previously required an argument and just returned an "invalid synt
 
 ---
 
+## BUG-012: Blank Boon/Bane detail modal opened automatically on the profile page's initial load
+
+**Status:** ✅ Fixed (`webportal/components/soul-sheet.js`)
+
+**Reported:** 2026-07-25, live testing, after BUG-007's web portal fix finally got the SOUL tab rendering. User's report: "a blank boon/bane detail modal is opening on the profile's initial load."
+
+**Root cause:** `soul-sheet.js`'s `bnbModalOpen` property, bound to `<BsModalSimple @open={{this.bnbModalOpen}}>` in `soul-sheet.hbs`, was never given an explicit default — it only ever got set (to `true`/`false`) by the `showBnbDetail`/`closeBnbDetail` actions. Left `undefined` on first render, `BsModalSimple` treats that as open. Every other modal-toggle flag in this same codebase (`catalogueOpen` in `soul-chargen.js`, `rollOpen`/`gmReviewOpen` in `soul-roll.js`) is explicitly defaulted to `false` on the component; this one was the one place that convention was missed, and with no `selectedBnb` set yet either, the modal opened showing nothing.
+
+**Fix:** added `bnbModalOpen: false` alongside `isLoading: false` in `soul-sheet.js`.
+
+---
+
 ## BUG-011: `+soul/cg/drop` only took a numeric entry ID, unlike every other B&B lookup
 
 **Status:** ✅ Fixed (`plugin/public/soul_bnb_api.rb`, `plugin/commands/soul_chargen_cmd.rb`, docs)
