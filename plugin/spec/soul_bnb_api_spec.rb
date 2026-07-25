@@ -122,6 +122,15 @@ module AresMUSH
       end
     end
 
+    describe ".get_character_entry_public" do
+      it "includes kind - the web/MUSH B&B list displays render blank without it" do
+        boon = create_boon("lucky")
+        entry = SoulBnbApi.grant(character, boon, level_state: "minor", source: "admin")[:entry]
+        result = SoulBnbApi.get_character_entry_public(character, entry.id)
+        expect(result[:kind]).to eq("boon")
+      end
+    end
+
     describe "chargen Resonance-level limits (Addendum §5.2)" do
       before do
         allow(Global).to receive(:read_config).with("soul", "bnb", "resonance_levels").and_return(

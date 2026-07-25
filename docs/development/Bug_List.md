@@ -323,6 +323,25 @@ A bare `+bnb` previously required an argument and just returned an "invalid synt
 
 ---
 
+## BUG-017: Profile B&B list showed a blank "Kind" column
+
+**Status:** ✅ Fixed (`plugin/public/soul_bnb_api.rb`, spec)
+
+**Reported:** 2026-07-25, live testing, with a screenshot showing a granted "Artifact" entry with an empty
+Kind cell: "Getting a blank 'kind' after adding from chargen. If this means either boon or bane, that
+should pull automatically from the catalogue."
+
+**Root cause:** `SoulBnbApi.get_character_entry_public` — the shared "public view of a character's B&B
+entry" serializer used by `soulBnbList` (the profile's B&B widget), `+bnb`'s scene lookup, and
+`SoulRollApi`'s candidate data — never included `kind` at all, even though `soul-bnb.hbs`'s table has
+always rendered `{{entry.kind}}`. Not new to this session's rework; a pre-existing gap in a method that
+existed since Phase 3, just never surfaced until FR-015 added a UI that actually displays `kind` per row.
+
+**Fix:** added `kind: entry.catalogue_entry.kind` to `get_character_entry_public`'s returned hash - it was
+already reading everything else off the same `catalogue_entry`, `kind` was simply missing from the list.
+
+---
+
 ## BUG-016: New B&B request web commands were never registered in the dispatch table — "Oops! Something went wrong..."
 
 **Status:** ✅ Fixed (`plugin/soul.rb`, `plugin/spec/soul_spec.rb`)

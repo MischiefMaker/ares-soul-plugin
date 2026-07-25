@@ -466,6 +466,7 @@ module AresMUSH
         catalogue_id: entry.catalogue_entry.id,
         tag: entry.catalogue_entry.tag,
         name: entry.catalogue_entry.name,
+        kind: entry.catalogue_entry.kind,
         level_state: entry.level_state,
         modifier: level_modifier(entry.catalogue_entry, entry.level_state),
         resolved: entry.resolved == "true"
