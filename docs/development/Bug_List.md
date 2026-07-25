@@ -8,6 +8,18 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-014: Web chargen no longer blocks already-approved characters (MUSH `+soul/cg` still does)
+
+**Status:** ✅ Done (`plugin/web/soul_chargen_web_handler.rb`, spec)
+
+**Requested:** 2026-07-25, live testing: user's initial premise was that this check is fully redundant since "AresMUSH already blocks chargen for those who are approved" — verified against real AresMUSH source and that's only true for the *ordinary* case (a non-approver's own approved-character chargen page redirects home before any SOUL component mounts, via `chargen_char_request_handler.rb`). Characters with approve permission are exempt from that core block and can still load their own already-approved chargen page.
+
+**Accepted trade-off (explicitly chosen by the user over two safer alternatives):** `SoulChargenWebHandler` always operates on `request.enactor` (never a separately-targeted character), and neither `SoulCharacterApi.set_skill_rating`/`set_aspect_rating` nor `SoulBnbApi.grant` have any approval/lock check of their own (only `SoulResonanceApi.set_resonance` does). So an approver revisiting their own already-approved chargen page can grant themselves free Skill/Aspect points and Boons/Banes through the chargen budget, bypassing normal XP cost. This is a narrow, staff-only edge case, not reachable by ordinary players, and the user chose to accept it as-is rather than add lock checks to the underlying APIs.
+
+**Fix:** removed the `return { error: t('soul.chargen_approved') } if character.is_approved?` gate from `SoulChargenWebHandler#handle`. `SoulChargenCmd#check_permission` (the `+soul/cg` MUSH command) keeps its own identical check — the user was explicit this should stay gated on the MUSH side; it isn't provably redundant there either (`+soul/cg` is a standalone command under `soul`, independent of core's own chargen command tree, so nothing upstream blocks it).
+
+---
+
 ### FR-013: SOUL data doesn't appear in `+app`/`+app/review` — missing `custom_app_review` hook
 
 **Status:** ✅ Done (`plugin/soul.rb`, `custom-install/custom_app_review.snippet.rb`, `README.md`)
@@ -174,6 +186,18 @@ One inherent consequence, not a bug: `custom_scene_data.snippet.rb` no longer pa
 A bare `+bnb` previously required an argument and just returned an "invalid syntax" error — there was no command to list all of a player's own entries at once (only single-entry lookup by ID/tag, the scene-scoped `/here`, and the public `/catalogue`). Added `SoulBnbCmd#show_own_entries`, reached when `+bnb` is given with no reference: lists every entry `SoulBnbApi.get_character_entries(enactor)` returns, each showing catalogue ID, tag, name, kind, level, and the character's own private `character_explanation` (never shown to anyone else). Operates strictly on `enactor` — no new privacy exposure, matching the same self-only scope `+xp`/`+soul` already use for private data.
 
 **Web/staff follow-up:** flagged here as needing a real privacy decision rather than a reflexive copy-paste — done in FR-003 above.
+
+---
+
+## BUG-013: First click on the web chargen SOUL tab showed Inklings' content instead — not a SOUL bug
+
+**Status:** ✅ Investigated, not a SOUL defect — root cause is in `ares-inklings-plugin`
+
+**Reported:** 2026-07-25, live testing: "first time opening the soul tab, it shows inklings, then second open it is fine."
+
+**Root cause (verified against real Bootstrap 5.3.3 `tab.js` and both plugins' actual install snippets):** Bootstrap's tab JS tracks which pane is "active" entirely via the `.active` class on the nav `<a data-bs-toggle="tab">` trigger element, not on the pane itself — `_getActiveElem()` scans triggers, never panes, and cascades activate/deactivate from there. Inklings' own `custom-install/chargen-custom.snippet.hbs` hardcodes `class="tab-pane fade active show"` directly on its pane (so it displays by default on page load), but its paired `chargen-custom-tabs.snippet.hbs` never marks Inklings' own `<a>` trigger `.active` to match. Bootstrap therefore never registers Inklings' pane as "the tracked active one," so it's never programmatically deactivated by anything — it just stays rendered from page load and visually shows through until something else (the second click, a reflow, SOUL's own async data load finally landing) pushes it out of view. SOUL's own snippets have no `active`/`show` anywhere and are not the cause.
+
+**Fix:** none needed in this repo. The fix belongs in `ares-inklings-plugin`'s `custom-install/chargen-custom.snippet.hbs` — either drop the hardcoded `active show` from Inklings' pane and let the page's genuine default tab own that, or add matching `active` to Inklings' own nav trigger in `chargen-custom-tabs.snippet.hbs`. Not fixed here since it's outside this repo's scope; flagging for the user to patch directly in their own already-pasted `chargen-custom.hbs`, or in the Inklings repo if that's preferred.
 
 ---
 

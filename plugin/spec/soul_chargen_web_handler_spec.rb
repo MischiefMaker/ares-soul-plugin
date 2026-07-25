@@ -8,10 +8,21 @@ module AresMUSH
       allow(Website).to receive(:check_login).and_return(nil)
     end
 
-    it "rejects an approved character" do
+    it "allows an already-approved character (web chargen intentionally has no is_approved? gate)" do
       allow(character).to receive(:is_approved?).and_return(true)
+      allow(SoulResonanceApi).to receive(:enabled?).and_return(false)
+      allow(SoulResonanceApi).to receive(:get_resonance).and_return(nil)
+      allow(SoulResonanceApi).to receive(:chargen_allowance).and_return(
+        skill_points: 15, starting_cap: 7, aspect_points: 5
+      )
+      allow(SoulFrameworkApi).to receive(:get_skills).and_return([])
+      allow(SoulFrameworkApi).to receive(:get_aspects).and_return([])
+      allow(SoulFrameworkApi).to receive(:aspect_min_rating).and_return(0)
+      allow(SoulFrameworkApi).to receive(:aspect_max_rating).and_return(5)
+      allow(SoulBnbApi).to receive(:get_character_entries).and_return([])
+      allow(SoulBnbApi).to receive(:get_catalogue).and_return([])
       request = double(cmd: "soulChargenStatus", enactor: character, args: {})
-      expect(subject.handle(request)[:error]).to be_present
+      expect(subject.handle(request)[:error]).to be_nil
     end
 
     it "allows an unapproved character with no play_permission configured (BUG-005)" do
