@@ -26,7 +26,7 @@ export default Component.extend({
       let result = await this.api.requestOne('soulBnbHere', {
         scene_id: this.get('scene.id'),
         reference: this.bnbReference
-      });
+      }, null);
       if (!result.error) {
         this.set('bnbMatches', result.matches || []);
       }
@@ -38,7 +38,7 @@ export default Component.extend({
       let result = await this.api.requestOne('soulSheet', {
         character: this.selectedParticipant.name,
         scene_id: this.get('scene.id')
-      });
+      }, null);
       if (!result.error) {
         this.set('participantSheet', result);
       }

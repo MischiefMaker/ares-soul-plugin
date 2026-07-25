@@ -34,8 +34,8 @@ export default Component.extend({
     this.set('isLoading', true);
     try {
       let [xp, sheet] = await Promise.all([
-        this.api.requestOne('soulXp', {}),
-        this.api.requestOne('soulSheet', { character: this.character })
+        this.api.requestOne('soulXp', {}, null),
+        this.api.requestOne('soulSheet', { character: this.character }, null)
       ]);
       if (xp.error || sheet.error) {
         return;
@@ -79,7 +79,7 @@ export default Component.extend({
         trait_type: traitType,
         trait_key: traitKey,
         amount
-      });
+      }, null);
       if (preview.error) {
         this.setProperties({ spendError: preview.error, spendPreview: null });
       } else {
@@ -97,7 +97,7 @@ export default Component.extend({
         trait_key: traitKey,
         amount,
         confirmed: 'true'
-      });
+      }, null);
       if (result.error) {
         this.set('spendError', result.error);
       } else {

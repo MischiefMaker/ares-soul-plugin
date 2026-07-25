@@ -20,7 +20,7 @@ export default Component.extend({
   async loadList() {
     this.set('isLoading', true);
     try {
-      let result = await this.api.requestOne('soulBnbList', { character: this.character });
+      let result = await this.api.requestOne('soulBnbList', { character: this.character }, null);
       this.setProperties({ entries: result.entries, requests: result.requests });
     } finally {
       this.set('isLoading', false);
@@ -32,7 +32,7 @@ export default Component.extend({
     try {
       let result = await this.api.requestOne('soulBnbCatalogue', {
         page: page || this.page, per_page: this.perPage, query: this.query
-      });
+      }, null);
       this.setProperties({
         catalogueEntries: result.entries, page: result.page, totalPages: result.total_pages,
         availableSkills: result.available_skills
@@ -82,7 +82,7 @@ export default Component.extend({
           level_state: this.requestLevel || 'minor',
           explanation: this.requestExplanation,
           associated_skills: skills
-        });
+        }, null);
         if (result.error) {
           this.set('requestError', result.error);
           return;

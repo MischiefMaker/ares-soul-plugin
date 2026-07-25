@@ -138,6 +138,28 @@ module AresMUSH
       expect(SoulBnbApi).to have_received(:get_catalogue).with(chargen_available: true)
     end
 
+    it "flags catalogue entries with no fixed Skill so the UI can show a Skill picker (BUG-015)" do
+      allow(SoulResonanceApi).to receive(:get_resonance).and_return(0)
+      allow(SoulResonanceApi).to receive(:chargen_allowance).and_return(
+        skill_points: 5, starting_cap: 4, aspect_points: 5
+      )
+      allow(SoulResonanceApi).to receive(:enabled?).and_return(false)
+      allow(SoulFrameworkApi).to receive(:get_skills).and_return([])
+      allow(SoulFrameworkApi).to receive(:get_aspects).and_return([])
+      allow(SoulFrameworkApi).to receive(:aspect_min_rating).and_return(0)
+      allow(SoulFrameworkApi).to receive(:aspect_max_rating).and_return(5)
+      allow(SoulBnbApi).to receive(:get_character_entries).and_return([])
+      configurable = double(id: 1, tag: "cursed", name: "Cursed", description: "x", kind: "bane",
+        skill_associations: [])
+      fixed = double(id: 2, tag: "attuned", name: "Attuned", description: "x", kind: "boon",
+        skill_associations: ["blade"])
+      allow(SoulBnbApi).to receive(:get_catalogue).and_return([configurable, fixed])
+
+      status = SoulChargenWebHandler.status(character)
+      expect(status[:catalogue].find { |e| e[:id] == 1 }[:has_fixed_skills]).to be false
+      expect(status[:catalogue].find { |e| e[:id] == 2 }[:has_fixed_skills]).to be true
+    end
+
     it "reports readiness indicators without blocking anything (informational only)" do
       allow(SoulResonanceApi).to receive(:get_resonance).and_return(0)
       allow(SoulResonanceApi).to receive(:chargen_allowance).and_return(

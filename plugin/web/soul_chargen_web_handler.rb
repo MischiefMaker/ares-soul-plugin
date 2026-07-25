@@ -109,7 +109,8 @@ module AresMUSH
       end
       {
         id: entry.id, tag: entry.tag, name: entry.name, description: entry.description,
-        kind: entry.kind, skill_associations: skill_names.join(", ")
+        kind: entry.kind, skill_associations: skill_names.join(", "),
+        has_fixed_skills: entry.skill_associations.present?
       }
     end
 

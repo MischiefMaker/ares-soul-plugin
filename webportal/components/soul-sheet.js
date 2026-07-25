@@ -14,7 +14,7 @@ export default Component.extend({
   async loadSheet() {
     this.set('isLoading', true);
     try {
-      let sheet = await this.api.requestOne('soulSheet', { character: this.character });
+      let sheet = await this.api.requestOne('soulSheet', { character: this.character }, null);
       this.set('sheet', sheet);
     } finally {
       this.set('isLoading', false);

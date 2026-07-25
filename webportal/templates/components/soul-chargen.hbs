@@ -125,6 +125,16 @@
         {{#if this.selectedCatalogue.description}}
           <p class="cg-tip mt-2">{{this.selectedCatalogue.description}}</p>
         {{/if}}
+        {{#if (and this.selectedCatalogue (not this.selectedCatalogue.has_fixed_skills))}}
+          <div class="mt-2">
+            <Input @type="text" @value={{this.bnbSkills}} class="form-control"
+              placeholder="Associated Skill(s), comma-separated, e.g. blade,spirit" />
+            <div class="form-text">
+              This entry has no fixed Skill - choose which of your Skills it affects.
+              Available: {{#each this.status.skills as |skill|}}{{skill.name}} ({{skill.key}}){{#unless @last}}, {{/unless}}{{/each}}
+            </div>
+          </div>
+        {{/if}}
         <div class="row g-2 mt-2">
           <div class="col-md-3">
             <select class="form-select" aria-label="Boon or Bane level"
@@ -140,7 +150,8 @@
           </div>
           <div class="col-md-2">
             <button type="button" class="btn btn-primary w-100"
-              disabled={{or (not this.selectedCatalogue) (not this.explanation)}}
+              disabled={{or (not this.selectedCatalogue) (not this.explanation)
+                (and (not this.selectedCatalogue.has_fixed_skills) (not this.bnbSkills))}}
               onclick={{action "addBnb"}}>Add</button>
           </div>
         </div>

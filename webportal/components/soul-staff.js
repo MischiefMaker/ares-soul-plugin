@@ -14,7 +14,7 @@ export default Component.extend({
   async call(cmd, args, resultProperty, successMessage) {
     this.set('isLoading', true);
     try {
-      let result = await this.api.requestOne(cmd, args || {});
+      let result = await this.api.requestOne(cmd, args || {}, null);
       this.setProperties({
         error: result.error || null,
         successMessage: result.error
@@ -33,7 +33,7 @@ export default Component.extend({
   },
 
   async loadAudit() {
-    let result = await this.api.requestOne('soulAudit', { character: this.character });
+    let result = await this.api.requestOne('soulAudit', { character: this.character }, null);
     if (!result.error) {
       this.set('auditResult', result);
     }

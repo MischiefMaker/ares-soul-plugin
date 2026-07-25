@@ -14,7 +14,7 @@ export default Component.extend({
   async loadHistory() {
     this.set('isLoading', true);
     try {
-      let result = await this.api.requestOne('soulHistory', { character: this.character });
+      let result = await this.api.requestOne('soulHistory', { character: this.character }, null);
       this.set('entries', result.entries);
     } finally {
       this.set('isLoading', false);

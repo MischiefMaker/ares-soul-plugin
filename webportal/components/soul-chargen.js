@@ -13,7 +13,7 @@ export default Component.extend({
   },
 
   async refreshStatus() {
-    let result = await this.api.requestOne('soulChargenStatus', {});
+    let result = await this.api.requestOne('soulChargenStatus', {}, null);
     if (result.error) {
       this.setProperties({ status: null, error: result.error });
       return;
@@ -24,7 +24,7 @@ export default Component.extend({
   async request(cmd, args) {
     this.set('isLoading', true);
     try {
-      let result = await this.api.requestOne(cmd, args || {});
+      let result = await this.api.requestOne(cmd, args || {}, null);
       if (result.error) {
         // Reload from the server so a rejected Skill/Resonance/B&B change
         // (e.g. over budget) doesn't leave a stale, never-actually-saved
@@ -34,7 +34,7 @@ export default Component.extend({
         await this.refreshStatus();
       } else {
         this.setProperties({
-          status: result, error: null, selectedCatalogue: null, explanation: null
+          status: result, error: null, selectedCatalogue: null, explanation: null, bnbSkills: null
         });
       }
     } finally {
@@ -80,16 +80,19 @@ export default Component.extend({
       });
     },
     selectCatalogue(entry) {
-      this.set('selectedCatalogue', entry);
+      this.setProperties({ selectedCatalogue: entry, bnbSkills: '' });
     },
     addBnb() {
       if (!this.selectedCatalogue || !this.explanation) {
         return;
       }
+      let skills = (this.bnbSkills || '')
+        .split(',').map((key) => key.trim()).filter((key) => key.length);
       return this.request('soulChargenBnb', {
         reference: this.selectedCatalogue.id,
         level_state: this.selectedLevel || 'minor',
-        explanation: this.explanation
+        explanation: this.explanation,
+        associated_skills: skills
       });
     },
     dropBnb(entry) {

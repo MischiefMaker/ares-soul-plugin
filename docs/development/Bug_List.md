@@ -260,6 +260,60 @@ A bare `+bnb` previously required an argument and just returned an "invalid synt
 
 ---
 
+## BUG-015: Web chargen's "Add a Boon or Bane" form had no way to specify the affected Skill
+
+**Status:** ✅ Fixed (`plugin/web/soul_chargen_web_handler.rb`, `webportal/components/soul-chargen.js`,
+`webportal/templates/components/soul-chargen.hbs`, spec)
+
+**Reported:** 2026-07-25, live testing: "bnbs do not have a spot to take an affected skill but won't save
+without one."
+
+**Root cause:** FR-011's design correction (2026-07-25, same day) moved Skill selection from the
+catalogue entry to grant time for "configurable per instance" B&Bs (most of them) — `SoulBnbApi.grant`
+requires at least one Skill from somewhere, either the catalogue's own fixed default or an explicit
+`associated_skills:` argument. The MUSH side (`+soul/cg/bnb`) was updated for this in the same change. The
+web chargen form was not: `soul-chargen.hbs`'s "Add a Boon or Bane" section had a catalogue picker, a
+level selector, and an explanation field, but no Skill input at all, and `soul-chargen.js`'s `addBnb()`
+never sent `associated_skills`. Selecting a catalogue entry with no fixed Skill and clicking Add always
+hit `SoulBnbApi.grant`'s "has no fixed Skill configured" error.
+
+**Fix:** `catalogue_hash` (used for `status.catalogue`) now includes `has_fixed_skills`. The template shows
+a comma-separated Skill input (reusing the character's own Skill list, already present as `status.skills`)
+only when the selected entry lacks a fixed default, and the Add button is disabled until one is given in
+that case. `addBnb()` now sends `associated_skills`.
+
+---
+
+## BUG-014: Web chargen (and most of the SOUL web portal) redirected to the homepage on any validation error instead of showing it inline
+
+**Status:** ✅ Fixed (`webportal/components/soul-chargen.js`, `soul-bnb.js`, `soul-staff.js`,
+`soul-culmination.js`, `soul-history.js`, `soul-sheet.js`, `soul-scene-tools.js`, `soul-xp.js`)
+
+**Reported:** 2026-07-25, live testing: "trying to spend too many points throws the user back to the
+homepage with an error that it's too many -- just give them an inline warning."
+
+**Root cause:** confirmed against the real `ares-webportal/app/services/game-api.js` (cloned during this
+session's earlier investigation): `requestOne(cmd, args = {}, transitionToOnError = 'home')` always shows
+a toast via `flashMessages.danger` on any `response.error`, **and**, unless the caller explicitly passes
+`null` for the third argument, also calls `router.transitionTo('home')` — its own comment says exactly
+this: "Pass null to transitionToOnError to stay on the page (so you can show a failure message)."
+`soul-chargen.js`'s `request()` (used for every chargen mutation, including the Skill-spend budget check
+the user hit) called `requestOne` with only two arguments, so every validation error — over-budget Skill
+spend, invalid Resonance, a rejected B&B pick — redirected home instead of showing the inline `error`
+property the surrounding code was clearly written to display. A grep across every `soul-*.js` component
+found the same omission nearly everywhere: only `soul-roll.js` consistently passed `null`. This affected
+`soul-xp.js`'s `previewSpend`/`confirmSpend` (XP spend errors on the profile), `soul-staff.js` (every staff
+mutation), `soul-bnb.js`, `soul-scene-tools.js`, and the read-only fetches in `soul-culmination.js`/
+`soul-history.js`/`soul-sheet.js` — not just chargen.
+
+**Fix:** added the missing `null` third argument to every `requestOne` call across all `soul-*.js`
+components (and the newly-added `soul-bnb.js`/`admin-soul.js` from FR-015, which already had it in most
+but not all spots). Route-level model hooks (e.g. `admin-soul.js`'s route) correctly keep `'home'`,
+matching Inklings' own `admin-inklings.js` route convention — only action-triggered component/controller
+calls needed the fix.
+
+---
+
 ## BUG-013: First click on the web chargen SOUL tab showed Inklings' content instead — not a SOUL bug
 
 **Status:** ✅ Investigated, not a SOUL defect — root cause is in `ares-inklings-plugin`
