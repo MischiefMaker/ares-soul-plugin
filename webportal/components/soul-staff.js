@@ -9,6 +9,14 @@ export default Component.extend({
   didReceiveAttrs() {
     this._super(...arguments);
     this.loadAudit();
+    this.loadCatalogue();
+  },
+
+  async loadCatalogue() {
+    let result = await this.api.requestOne('soulBnbCatalogue', { per_page: 1000 }, null);
+    if (!result.error) {
+      this.setProperties({ catalogueEntries: result.entries, availableSkills: result.available_skills });
+    }
   },
 
   async call(cmd, args, resultProperty, successMessage) {
@@ -81,10 +89,21 @@ export default Component.extend({
           `${result.old_available} to ${result.new_available}.`
       );
     },
+    selectBnbCatalogue(entry) {
+      this.setProperties({ bnbCatalogueEntry: entry, bnbSkills: [] });
+    },
+    selectBnbSkills(skills) {
+      this.set('bnbSkills', skills);
+    },
     bnbGrant() {
+      if (!this.bnbCatalogueEntry) {
+        return;
+      }
+      let skills = (this.bnbSkills || []).map((skill) => skill.key);
       return this.mutate('soulBnbGrant', {
-        character: this.character, catalogue_ref: this.bnbReference,
-        level_state: this.bnbLevel, explanation: this.bnbExplanation
+        character: this.character, catalogue_ref: this.bnbCatalogueEntry.id,
+        level_state: this.bnbLevel || 'minor', explanation: this.bnbExplanation,
+        associated_skills: skills
       }, (result) => `Granted ${result.entry.name}.`);
     },
     bnbTransition(cmd) {

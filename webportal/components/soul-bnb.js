@@ -66,17 +66,19 @@ export default Component.extend({
     pick(entry) {
       this.setProperties({
         selectedCatalogueEntry: entry, requestLevel: 'minor',
-        requestSkills: '', requestExplanation: '', requestError: null
+        requestSkills: [], requestExplanation: '', requestError: null
       });
     },
     backToList() {
       this.set('selectedCatalogueEntry', null);
     },
+    selectRequestSkills(skills) {
+      this.set('requestSkills', skills);
+    },
     async submitRequest() {
       this.set('isSubmitting', true);
       try {
-        let skills = (this.requestSkills || '')
-          .split(',').map((key) => key.trim()).filter((key) => key.length);
+        let skills = (this.requestSkills || []).map((skill) => skill.key);
         let result = await this.api.requestOne('soulBnbRequest', {
           catalogue_ref: this.selectedCatalogueEntry.id,
           level_state: this.requestLevel || 'minor',

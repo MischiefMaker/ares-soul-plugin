@@ -8,6 +8,54 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-021: Boon/Bane level and Skill fields converted to dropdowns everywhere they're entered
+
+**Status:** ✅ Done (`webportal/components/soul-chargen.js`, `webportal/templates/components/soul-chargen.hbs`,
+`webportal/components/soul-bnb.js`, `webportal/templates/components/soul-bnb.hbs`,
+`webportal/components/soul-staff.js`, `webportal/templates/components/soul-staff.hbs`,
+`webportal/routes/admin-soul.js`, `webportal/controllers/admin-soul.js`, `webportal/templates/admin-soul.hbs`)
+
+**Requested:** 2026-07-25, live testing: "I would also like to copy the boon/bane dropdown selection (and
+levels) from chargen to the admin panel and page. Also in the modal the request to add one from the web,
+let's make the level a dropdown similarly. In all places, I would also like the associated skill to be a
+dropdown of available skills (but able to select more than one, like the player-dropdown)."
+
+**Background:** Chargen's B&B picker already used a catalogue `PowerSelect` and a free-text comma-separated
+Skill `<Input>`. Every other surface that grants, requests, or configures a B&B - the profile page's "Add a
+Boon/Bane" modal (`soul-bnb.hbs`), the profile staff panel's Grant flow (`soul-staff.hbs`), and the admin
+page's catalogue create/edit-skills forms (`admin-soul.hbs`) - used free-text `<Input>`s for level and Skill
+keys instead, which is error-prone (typos silently fail to match a real Skill/level) and inconsistent with
+the player-dropdown convention already used elsewhere (e.g. `admin-soul.hbs`'s XP-to-Player picker).
+
+**Implementation:** Level fields became native `<select>`s (minor/major/legendary, matching chargen).
+Skill fields became `PowerSelectMultiple` bound to the config-driven Skill catalogue
+(`SoulFrameworkApi.get_skills`, already exposed as `available_skills` on `soulBnbCatalogue`'s response),
+following the same pattern as the existing player-name `PowerSelect`s. Chargen's own conversion (multi-select
+Skill picker replacing the comma-split `<Input>`, plus a `(not this.bnbSkills.length)` fix for the
+empty-array-is-truthy footgun in the Add button's disabled check) landed earlier in this batch alongside
+BUG-018's fix; this entry covers the remaining three surfaces:
+- `soul-bnb.hbs`'s "Add a Boon/Bane" modal: Level `<Input>` → native `<select>`; Skill `<Input>` →
+  `PowerSelectMultiple` over `availableSkills`.
+- `soul-staff.hbs`'s "Adjust Boons and Banes" → Grant subsection: added a catalogue `PowerSelect`
+  (`soul-staff.js` gained `loadCatalogue()`, fetching `soulBnbCatalogue` on `didReceiveAttrs`), a Level
+  `<select>`, and a Skill `PowerSelectMultiple`. This also fixed a real pre-existing bug: `bnbGrant()` never
+  sent `associated_skills` at all, so any catalogue entry without fixed Skills would grant with no Skill
+  association - same class of bug as BUG-015 on the chargen side, just never reported because staff rarely
+  exercises this path against a live game.
+- `admin-soul.hbs`'s catalogue section: the create-form's Skill field (comma-separated `<Input>`) → a
+  `PowerSelectMultiple`; the edit-skills subsection's catalogue-ID-or-tag `<Input>` → a `PowerSelect` over
+  `model.catalogue.entries`, and its Skill-keys `<Input>` → a `PowerSelectMultiple`. `admin-soul.js`'s route
+  now fetches `catalogue: this.gameApi.requestOne('soulBnbCatalogue', { per_page: 1000 }, 'home')`
+  alongside `requests`/`characters`; the controller's `bnbCreate`/`bnbSetSkills` actions now map selected
+  Skill/entry objects to key/id arrays instead of parsing free text.
+
+All four surfaces now share the same catalogue-`PowerSelect` / level-`<select>` / Skill-`PowerSelectMultiple`
+pattern. No backend/API changes were needed - `soulBnbCreate`, `soulBnbSetSkills`, and `soulBnbGrant` already
+accepted `skill_associations`/`associated_skills` as arrays; only the web layer was ever sending
+mis-shaped or missing data.
+
+---
+
 ### FR-020: Roll results now always post to the scene transcript (reverses the original private-by-design decision)
 
 **Status:** ✅ Done (`plugin/public/soul_roll_api.rb`, `plugin/web/soul_roll_web_handler.rb`,

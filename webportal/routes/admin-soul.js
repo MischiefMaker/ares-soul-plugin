@@ -22,7 +22,11 @@ export default Route.extend({
       // Every character, not just approved ones - matches Jobs'/Inklings'
       // own "characters" fetch for an admin character-picker dropdown
       // (select: 'all').
-      characters: this.gameApi.requestMany('characters', { select: 'all' })
+      characters: this.gameApi.requestMany('characters', { select: 'all' }),
+      // A large per_page effectively defeats pagination for this
+      // dropdown-population use - same convention as soul-staff.js's own
+      // catalogue picker.
+      catalogue: this.gameApi.requestOne('soulBnbCatalogue', { per_page: 1000 }, 'home')
     });
   }
 });

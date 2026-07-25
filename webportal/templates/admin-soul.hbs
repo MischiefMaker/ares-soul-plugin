@@ -70,14 +70,26 @@
     <Input @value={{this.bnbTag}} class="form-control my-2" placeholder="Tag" />
     <Input @value={{this.bnbKind}} class="form-control my-2" placeholder="boon or bane" />
     <Textarea @value={{this.bnbDescription}} class="form-control my-2" placeholder="Description" />
-    <Input @value={{this.bnbSkillAssociations}} class="form-control my-2"
-      placeholder="Fixed associated Skill keys, comma-separated (optional - leave blank if configurable per instance)" />
-    <button class="btn btn-primary" type="button" onclick={{action "bnbCreate"}}>Create Catalogue Entry</button>
+    <label class="form-label mt-2 mb-0">Fixed associated Skill(s) <span class="text-muted">(optional - leave blank if configurable per instance)</span></label>
+    <PowerSelectMultiple @selected={{this.bnbSkillAssociations}} @options={{this.model.catalogue.available_skills}}
+      @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
+      @onChange={{action "selectBnbCreateSkills"}} as |skill|>
+      {{skill.name}}
+    </PowerSelectMultiple>
+    <button class="btn btn-primary mt-2" type="button" onclick={{action "bnbCreate"}}>Create Catalogue Entry</button>
     <hr>
     <p class="text-muted">Edit an existing entry's fixed associated Skill(s).</p>
-    <Input @value={{this.bnbSkillsReference}} class="form-control my-2" placeholder="Catalogue ID or tag" />
-    <Input @value={{this.bnbSkillsValue}} class="form-control my-2" placeholder="Skill keys, comma-separated" />
-    <button class="btn btn-warning" type="button" onclick={{action "bnbSetSkills"}}>Update Associated Skills</button>
+    <PowerSelect @selected={{this.bnbSkillsEntry}} @options={{this.model.catalogue.entries}}
+      @searchField="name" @searchEnabled=true @placeholder="Select a catalogue entry..."
+      @onChange={{action "selectBnbSkillsEntry"}} as |entry|>
+      {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
+    </PowerSelect>
+    <PowerSelectMultiple @selected={{this.bnbSkillsValue}} @options={{this.model.catalogue.available_skills}}
+      @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
+      @onChange={{action "selectBnbSkillsValue"}} as |skill|>
+      {{skill.name}}
+    </PowerSelectMultiple>
+    <button class="btn btn-warning mt-2" type="button" onclick={{action "bnbSetSkills"}}>Update Associated Skills</button>
   </section>
 
   <section class="card card-body mb-3">

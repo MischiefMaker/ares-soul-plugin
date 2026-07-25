@@ -71,20 +71,30 @@ export default Controller.extend({
           : 'SOUL configuration validation completed with errors.'
       );
     },
+    selectBnbCreateSkills(skills) {
+      this.set('bnbSkillAssociations', skills);
+    },
     bnbCreate() {
-      let skillAssociations = (this.bnbSkillAssociations || '')
-        .split(',').map((key) => key.trim()).filter((key) => key.length);
+      let skillAssociations = (this.bnbSkillAssociations || []).map((skill) => skill.key);
       return this.call('soulBnbCreate', {
         name: this.bnbName, tag: this.bnbTag, kind: this.bnbKind,
         description: this.bnbDescription, chargen_available: this.bnbChargen,
         modifier_eligible: this.bnbModifierEligible, skill_associations: skillAssociations
       }, null, (result) => `Created catalogue entry #${result.entry.id} ${result.entry.name}.`);
     },
+    selectBnbSkillsEntry(entry) {
+      this.set('bnbSkillsEntry', entry);
+    },
+    selectBnbSkillsValue(skills) {
+      this.set('bnbSkillsValue', skills);
+    },
     bnbSetSkills() {
-      let skillAssociations = (this.bnbSkillsValue || '')
-        .split(',').map((key) => key.trim()).filter((key) => key.length);
+      if (!this.bnbSkillsEntry) {
+        return;
+      }
+      let skillAssociations = (this.bnbSkillsValue || []).map((skill) => skill.key);
       return this.call('soulBnbSetSkills', {
-        id_or_tag: this.bnbSkillsReference, skill_associations: skillAssociations
+        id_or_tag: this.bnbSkillsEntry.id, skill_associations: skillAssociations
       }, null, (result) => `Associated Skills for ${result.entry.name} updated.`);
     },
     xpScene(catchup) {

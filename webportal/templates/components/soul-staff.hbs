@@ -37,13 +37,32 @@
   </details>
 
   <details class="mb-3"><summary>Adjust Boons and Banes</summary>
-    <Input @value={{this.bnbReference}} class="form-control my-2" placeholder="Catalogue ID or tag" />
-    <Input @value={{this.bnbEntryId}} class="form-control my-2" placeholder="Character entry ID" />
-    <Input @value={{this.bnbLevel}} class="form-control my-2" placeholder="Level" />
+    <p class="text-muted mb-1">Grant a new Boon or Bane</p>
+    <PowerSelect @selected={{this.bnbCatalogueEntry}} @options={{this.catalogueEntries}}
+      @searchField="name" @searchEnabled=true @placeholder="Select a Boon/Bane..."
+      @onChange={{action "selectBnbCatalogue"}} as |entry|>
+      {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
+    </PowerSelect>
+    <select class="form-select my-2" aria-label="Boon or Bane level"
+      onchange={{action (mut this.bnbLevel) value="target.value"}}>
+      <option value="minor">Minor</option>
+      <option value="major">Major</option>
+      <option value="legendary">Legendary</option>
+    </select>
+    {{#unless this.bnbCatalogueEntry.has_fixed_skills}}
+      <PowerSelectMultiple @selected={{this.bnbSkills}} @options={{this.availableSkills}}
+        @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
+        @onChange={{action "selectBnbSkills"}} as |skill|>
+        {{skill.name}}
+      </PowerSelectMultiple>
+    {{/unless}}
     <Input @value={{this.bnbExplanation}} class="form-control my-2" placeholder="Explanation" />
+    <button class="btn btn-primary" type="button" onclick={{action "bnbGrant"}}>Grant</button>
+
+    <p class="text-muted mb-1 mt-3">Manage an existing entry</p>
+    <Input @value={{this.bnbEntryId}} class="form-control my-2" placeholder="Character entry ID" />
     <Input @value={{this.bnbReason}} class="form-control my-2" placeholder="Reason" />
     <div class="d-flex gap-2 flex-wrap">
-      <button class="btn btn-primary" type="button" onclick={{action "bnbGrant"}}>Grant</button>
       <button class="btn btn-secondary" type="button" onclick={{action "bnbTransition" "soulBnbProgress"}}>Progress</button>
       <button class="btn btn-secondary" type="button" onclick={{action "bnbTransition" "soulBnbResolve"}}>Resolve</button>
       <button class="btn btn-secondary" type="button" onclick={{action "bnbTransition" "soulBnbRestore"}}>Restore</button>

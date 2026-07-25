@@ -83,23 +83,36 @@
     {{#if this.requestError}}<div class="alert alert-danger">{{this.requestError}}</div>{{/if}}
     <div class="mb-2">
       <label class="form-label">Level</label>
-      <Input @value={{this.requestLevel}} class="form-control" placeholder="minor" />
+      <select class="form-select" aria-label="Boon or Bane level"
+        onchange={{action (mut this.requestLevel) value="target.value"}}>
+        <option value="minor">Minor</option>
+        <option value="major">Major</option>
+        <option value="legendary">Legendary</option>
+      </select>
     </div>
     {{#unless this.selectedCatalogueEntry.has_fixed_skills}}
       <div class="mb-2">
         <label class="form-label">Associated Skill(s)</label>
-        <Input @value={{this.requestSkills}} class="form-control"
-          placeholder="Comma-separated Skill keys, e.g. blade,spirit" />
-        <div class="form-text">
-          Available: {{#each this.availableSkills as |skill|}}{{skill.name}} ({{skill.key}}){{#unless @last}}, {{/unless}}{{/each}}
-        </div>
+        <PowerSelectMultiple
+          @selected={{this.requestSkills}}
+          @options={{this.availableSkills}}
+          @searchField="name"
+          @searchEnabled=true
+          @placeholder="Select Skill(s)..."
+          @onChange={{action "selectRequestSkills"}}
+          as |skill|
+        >
+          {{skill.name}}
+        </PowerSelectMultiple>
       </div>
     {{/unless}}
     <div class="mb-2">
       <label class="form-label">Why does your character have this?</label>
       <Textarea @value={{this.requestExplanation}} class="form-control" />
     </div>
-    <button type="button" class="btn btn-primary" disabled={{this.isSubmitting}}
+    <button type="button" class="btn btn-primary"
+      disabled={{or this.isSubmitting
+        (and (not this.selectedCatalogueEntry.has_fixed_skills) (not this.requestSkills.length))}}
       onclick={{action "submitRequest"}}>Submit Request</button>
   {{else}}
     <div class="input-group mb-3">
