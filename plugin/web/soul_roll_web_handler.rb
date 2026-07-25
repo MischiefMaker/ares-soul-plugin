@@ -149,7 +149,10 @@ module AresMUSH
         scene_id: roll.scene_id, difficulty: roll.difficulty, dice_result: roll.dice_result,
         net_modifier: roll.net_modifier, applied_modifiers: roll.applied_modifiers,
         final_result: roll.final_result, success_probability: roll.success_probability,
-        degree_of_success: roll.degree_of_success, extraordinary: roll.extraordinary,
+        degree_of_success: roll.degree_of_success,
+        degree_narrative: SoulRollApi.degree_narrative(roll.degree_of_success),
+        succeeded: SoulRollApi.degree_succeeded?(roll.degree_of_success),
+        extraordinary: roll.extraordinary,
         gm_assisted: roll.gm_assisted, rolled_at: roll.rolled_at
       }
     end

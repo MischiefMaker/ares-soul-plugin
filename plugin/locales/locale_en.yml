@@ -81,7 +81,7 @@ en:
     roll_pending_title: "Open Pending Rolls"
     roll_pending: "%{entries}"
     roll_result_title: "SOUL Roll #%{id}"
-    roll_result: "#%{id} %{skill}: %{result} — %{degree} (extraordinary: %{extraordinary})"
+    roll_result: "#%{id} %{skill}: %{narrative} (%{result} versus difficulty %{difficulty})"
     roll_history_title: "Roll History"
     roll_history: "%{entries}"
     roll_review_line: "#%{id} %{character}: %{skill}"

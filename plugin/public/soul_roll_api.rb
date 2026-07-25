@@ -341,12 +341,40 @@ module AresMUSH
     def self.build_scene_pose(character, roll)
       skill = SoulFrameworkApi.get_skill(roll.skill_key)
       skill_name = skill ? skill[:name] : roll.skill_key
-      degree_label = roll.degree_of_success.to_s.tr("_", " ").capitalize
+      narrative = degree_narrative(roll.degree_of_success)
       extraordinary = roll.extraordinary == "true" ? " (Extraordinary!)" : ""
-      "#{character.name} rolls #{skill_name}: #{degree_label}#{extraordinary} - " \
-        "#{roll.final_result} vs difficulty #{roll.difficulty}."
+      "#{character.name} rolls #{skill_name}: #{narrative}#{extraordinary} " \
+        "(#{roll.final_result} versus difficulty #{roll.difficulty})"
     end
     private_class_method :build_scene_pose
+
+    # Addendum §8.1's "Output Format - GM-Less (Player Authority)" table,
+    # verbatim - defined once so the scene pose, the MUSH private roll
+    # result, and the web roll modal all show identical wording instead
+    # of drifting (staff request, 2026-07-25: raw degree strings like
+    # "Exceptional success" weren't what the Addendum specifies).
+    DEGREE_NARRATIVE = {
+      "exceptional_success" => "You succeed, and may introduce an additional benefit resulting from your success.",
+      "success" => "You succeed.",
+      "complicated_success" => "You succeed, but should introduce an additional complication resulting from your success.",
+      "lucky_failure" => "You fail, but may introduce an additional benefit despite your failure.",
+      "failure" => "You fail.",
+      "catastrophic_failure" => "You fail, and should introduce an additional complication resulting from your failure."
+    }.freeze
+
+    # The three degrees that represent an actual success (Addendum §8.1's
+    # Six Degrees table) - Lucky Failure keeps a beneficial narrative
+    # flavor but is still a failure mechanically, matching
+    # resolve_pending's own `succeeded = final_result >= difficulty`.
+    SUCCESS_DEGREES = %w[exceptional_success success complicated_success].freeze
+
+    def self.degree_narrative(degree)
+      DEGREE_NARRATIVE[degree.to_s] || degree.to_s.tr("_", " ").capitalize
+    end
+
+    def self.degree_succeeded?(degree)
+      SUCCESS_DEGREES.include?(degree.to_s)
+    end
 
     def self.abort_pending(pending_roll_id, actor, reason:)
       return { error: "A reason is required to abort a pending roll." } if reason.to_s.blank?

@@ -229,8 +229,13 @@ module AresMUSH
       end
 
       def roll_line(roll)
-        t('soul.roll_result', id: roll.id, skill: roll.skill_key, result: roll.final_result,
-          degree: roll.degree_of_success, extraordinary: roll.extraordinary)
+        skill = SoulFrameworkApi.get_skill(roll.skill_key)
+        skill_name = skill ? skill[:name] : roll.skill_key
+        color = SoulRollApi.degree_succeeded?(roll.degree_of_success) ? "%xg" : "%xr"
+        extraordinary = roll.extraordinary == "true" ? " (Extraordinary!)" : ""
+        narrative = "#{color}#{SoulRollApi.degree_narrative(roll.degree_of_success)}#{extraordinary}%xn"
+        t('soul.roll_result', id: roll.id, skill: skill_name, narrative: narrative,
+          result: roll.final_result, difficulty: roll.difficulty)
       end
 
       def candidate_line(candidate)

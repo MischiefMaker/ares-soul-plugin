@@ -8,6 +8,43 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-034: Roll results use the Addendum §8.1 narrative wording, colored by success/failure, on MUSH and web
+
+**Status:** ✅ Done (`plugin/public/soul_roll_api.rb`, `plugin/web/soul_roll_web_handler.rb`,
+`plugin/commands/soul_roll_cmd.rb`, `plugin/locales/locale_en.yml`,
+`webportal/templates/components/soul-roll.hbs`, spec)
+
+**Requested:** 2026-07-25, live testing (with pasted scene-pose examples like "Mischief rolls Learning:
+Exceptional success - 27 vs difficulty 13."): "They aren't what I wanted. See the Addendum, 8.1. They should
+look like: 'You succeed, and may introduce an additional benefit resulting from your success.' I would put
+it like Mischief rolls Learning: You succeed, and may introduce an additional benefit resulting from your
+success. (27 versus difficulty 13). I would also like if success/fail messages could be in green/red
+respectively, on both the MUSH and the web."
+
+**Root cause:** Every surface (scene pose, MUSH's private `+roll` result, the web roll modal, roll history)
+displayed the raw `degree_of_success` string (`"exceptional_success"` etc.), just humanized
+(`.tr("_", " ").capitalize`) - never the actual Addendum §8.1 "Output Format - GM-Less (Player Authority)"
+narrative table, which is the real player-facing text the spec defines for each of the six degrees.
+
+**Fix:** Added `SoulRollApi.degree_narrative(degree)` (the six-degree table, verbatim from §8.1) and
+`.degree_succeeded?(degree)` (true for Exceptional/Success/Complicated Success; false for Lucky
+Failure/Failure/Catastrophic Failure - Lucky Failure keeps a beneficial narrative flavor but is still a
+failure mechanically, matching `resolve_pending`'s own `succeeded = final_result >= difficulty`), defined
+once and reused everywhere instead of letting the wording drift per surface:
+- **Scene pose** (`build_scene_pose`): `"#{character.name} rolls #{skill_name}: #{narrative}#{extraordinary} (#{final_result} versus difficulty #{difficulty})"`
+  - matches the requested format exactly. Not colored - a scene pose is plain text read via both MUSH
+  `+scene` and the web scene viewer, and there's no confirmation the latter renders MUSH color codes rather
+  than showing them as literal text, so this was left as a Bug_List-noted decision rather than risking
+  visibly broken color codes in a shared, permanent scene transcript.
+- **MUSH private roll result** (`+roll` and `+roll/history`, `roll_line`): now colored - `%xg`/`%xr` wrapped
+  around the narrative text, matching the same `emit_success`/`emit_failure` green/red convention already
+  used everywhere else in this plugin's MUSH output.
+- **Web roll modal** (Result stage and Recent Rolls history): `roll_hash` now includes `degree_narrative` and
+  `succeeded`; the template uses `succeeded` for a `text-success`/`text-danger` Bootstrap class and displays
+  `degree_narrative` instead of the raw degree.
+
+---
+
 ### FR-033: Profile page reorder (B&Bs above XP) and small polish (Preview button label, Culmination tooltip fix)
 
 **Status:** ✅ Done (`custom-install/profile-custom.snippet.hbs`, `webportal/templates/components/soul-xp.hbs`,
@@ -26,9 +63,14 @@ button now reads "Preview" instead of "Preview +1" - the amount is fixed at 1 al
 didn't need to restate it.
 
 **Culmination tooltip bug:** the `<span title="...">?</span>` badge sat inside `<summary>`, so any click on
-it - including one that only meant "read the tooltip" - bubbled up and triggered the `<details>` element's
-native open/close toggle. Fixed with `onclick="event.stopPropagation()"` on the badge (plain HTML attribute,
-no Ember action needed).
+it toggled the `<details>` element's native open/close. First attempt was `onclick="event.stopPropagation()"`
+on the badge - insufficient, because the native toggle is the click event's *default action*, not something
+a listener further down the bubble path adds; only `preventDefault()` on that same event suppresses it, and
+`stopPropagation()` alone doesn't call it. Rather than juggle both on an interactive element sitting inside
+another interactive element, moved the badge entirely: it's now on `soul-culmination.hbs`'s plain (non-toggling)
+`<h3>Culminations</h3>` player-facing header instead of the staff panel's `<details>/<summary>` - arguably the
+better home for it anyway, since that's where a player actually sees their own Culminations, not buried in a
+staff-only management panel. Removed from the staff panel's `<summary>` entirely rather than duplicated.
 
 ---
 

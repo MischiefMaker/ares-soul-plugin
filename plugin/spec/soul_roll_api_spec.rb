@@ -573,6 +573,17 @@ module AresMUSH
         expect(Scenes).to have_received(:add_to_scene).with(scene, a_string_matching(/#{character.name}/))
       end
 
+      it "posts the Addendum §8.1 narrative wording, not the raw degree string" do
+        scene = Fabricate(:scene)
+        allow(Scenes).to receive(:add_to_scene)
+        pending = pending_for(character, scene_id: scene.id.to_s)
+
+        SoulRollApi.resolve_pending(pending.id, character)
+        expect(Scenes).to have_received(:add_to_scene).with(
+          scene, a_string_matching(/You succeed\./)
+        )
+      end
+
       it "does not attempt to post when the roll has no scene" do
         allow(Scenes).to receive(:add_to_scene)
         pending = pending_for(character)
@@ -722,6 +733,43 @@ module AresMUSH
 
         expect(SoulRollApi.get_roll_history(character, limit: 1)).to eq([recent])
         expect(SoulRollApi.get_roll_history(character, limit: 2)).to eq([recent, old])
+      end
+    end
+
+    describe ".degree_narrative" do
+      it "returns the Addendum §8.1 Player Output wording for each of the six degrees" do
+        expect(SoulRollApi.degree_narrative("exceptional_success")).to eq(
+          "You succeed, and may introduce an additional benefit resulting from your success."
+        )
+        expect(SoulRollApi.degree_narrative("success")).to eq("You succeed.")
+        expect(SoulRollApi.degree_narrative("complicated_success")).to eq(
+          "You succeed, but should introduce an additional complication resulting from your success."
+        )
+        expect(SoulRollApi.degree_narrative("lucky_failure")).to eq(
+          "You fail, but may introduce an additional benefit despite your failure."
+        )
+        expect(SoulRollApi.degree_narrative("failure")).to eq("You fail.")
+        expect(SoulRollApi.degree_narrative("catastrophic_failure")).to eq(
+          "You fail, and should introduce an additional complication resulting from your failure."
+        )
+      end
+
+      it "falls back to a humanized label for an unrecognized degree" do
+        expect(SoulRollApi.degree_narrative("something_else")).to eq("Something else")
+      end
+    end
+
+    describe ".degree_succeeded?" do
+      it "treats the three success degrees as succeeded" do
+        expect(SoulRollApi.degree_succeeded?("exceptional_success")).to be true
+        expect(SoulRollApi.degree_succeeded?("success")).to be true
+        expect(SoulRollApi.degree_succeeded?("complicated_success")).to be true
+      end
+
+      it "treats Lucky Failure as a failure despite its beneficial narrative flavor" do
+        expect(SoulRollApi.degree_succeeded?("lucky_failure")).to be false
+        expect(SoulRollApi.degree_succeeded?("failure")).to be false
+        expect(SoulRollApi.degree_succeeded?("catastrophic_failure")).to be false
       end
     end
 

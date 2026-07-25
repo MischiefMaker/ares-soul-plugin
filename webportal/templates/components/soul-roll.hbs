@@ -176,8 +176,10 @@
       <dd class="col-sm-8">{{this.rollResult.skill_key}}</dd>
       <dt class="col-sm-4">Final result</dt>
       <dd class="col-sm-8">{{this.rollResult.final_result}}</dd>
-      <dt class="col-sm-4">Degree</dt>
-      <dd class="col-sm-8">{{this.rollResult.degree_of_success}}</dd>
+      <dt class="col-sm-4">Result</dt>
+      <dd class="col-sm-8 {{if this.rollResult.succeeded "text-success" "text-danger"}}">
+        {{this.rollResult.degree_narrative}}
+      </dd>
       <dt class="col-sm-4">Difficulty</dt>
       <dd class="col-sm-8">{{this.rollResult.difficulty}}</dd>
       {{#if (eq this.rollResult.extraordinary "true")}}
@@ -225,8 +227,9 @@
   <h4>Recent Rolls</h4>
   <ul class="list-group">
     {{#each this.rollHistory as |roll|}}
-      <li class="list-group-item">#{{roll.id}} {{roll.skill_key}}:
-        {{roll.final_result}} — {{roll.degree_of_success}}</li>
+      <li class="list-group-item">#{{roll.id}} {{roll.skill_key}}: {{roll.final_result}} —
+        <span class="{{if roll.succeeded "text-success" "text-danger"}}">{{roll.degree_narrative}}</span>
+      </li>
     {{/each}}
   </ul>
 </BsModalSimple>
