@@ -5,11 +5,6 @@
 
   FILE: ares-webportal/app/components/live-scene-custom-play.hbs
 
-  CONFIRMED EXTENSION POINT:
-  AresMUSH's LiveSceneControl invokes LiveSceneCustomPlay inside the Play
-  dropdown and passes it the current scene and custom scene data. The
-  standard live-scene-custom-play.hbs file is empty and intended for game
-  additions like this one.
 
   INSTALLATION:
 
@@ -22,9 +17,7 @@
   The component displays results privately. It never adds a roll result to
   the scene transcript.
 
-  Uses angle-bracket invocation (<Soul::Roll @scene={{...}} />), not
-  curly-brace ({{soul/roll scene=...}}) - see profile-custom.snippet.hbs
-  for why.
+
 -->
 
 <Soul::Roll @scene={{this.scene}} @custom={{this.custom}} />
