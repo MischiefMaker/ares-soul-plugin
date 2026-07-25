@@ -30,6 +30,7 @@ module AresMUSH
     end
 
     def self.status(character)
+      SoulResonanceApi.default_at_chargen(character)
       resonance = SoulResonanceApi.get_resonance(character)
       allowance = SoulResonanceApi.chargen_allowance(resonance || 0)
       skills = SoulFrameworkApi.get_skills.map do |skill|

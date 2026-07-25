@@ -76,6 +76,23 @@ module AresMUSH
       { success: true, resonance: r, chargen_allowance: chargen_allowance(r) }
     end
 
+    # Pre-fills Resonance to R0 the first time chargen status is checked
+    # for a character who hasn't chosen one yet, rather than showing
+    # "Unset" through the whole chargen process (2026-07-25: "let's set
+    # all characters starting chargen to R0, if possible"). Not locked -
+    # the player can still change it via +soul/cg/resonance or the web
+    # picker right up until approval, same as any other Resonance value;
+    # .lock_at_approval (which already defaulted to R0 at that point) is
+    # what actually finalizes it. A no-op if Resonance is disabled, the
+    # character is already approved (chargen is over), or a value is
+    # already set - safe to call on every status check.
+    def self.default_at_chargen(character)
+      return unless character && enabled?
+      return if character.is_approved?
+      return unless get_resonance(character).nil?
+      character.update(resonance: "0")
+    end
+
     # Called from the game's own plugins/chargen/custom_approval.rb, after
     # char.is_approved = true persists (see
     # custom-install/custom_approval.snippet.rb). Defaults to R0 if the

@@ -8,6 +8,26 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-018: Characters starting chargen default to R0 instead of showing "Unset"
+
+**Status:** ✅ Done (`plugin/public/soul_resonance_api.rb`, `plugin/web/soul_chargen_web_handler.rb`, spec)
+
+**Requested:** 2026-07-25, live testing: "Instead of saying unset, let's set all characters starting
+chargen to R0, if possible."
+
+`SoulResonanceApi.lock_at_approval` already defaulted an untouched Resonance to R0, but only at approval -
+during chargen itself, a character who hadn't yet run `+soul/cg/resonance` or used the web picker saw
+"Unset" the whole time. Added `SoulResonanceApi.default_at_chargen(character)`, called from
+`SoulChargenWebHandler.status` (the single shared status method both `+soul/cg` and the web chargen tab
+use) before `resonance_label` is computed: fills Resonance to R0 the first time chargen status is checked
+for a character who hasn't set one, as long as Resonance is enabled and the character isn't already
+approved. Not locked - the player can still change it right up until approval, same as any explicit
+choice; `.lock_at_approval` still does the actual finalizing. A no-op if a value is already set, so it's
+safe to call on every status check, and it retroactively fixes existing mid-chargen characters the next
+time they check status, not just newly-created ones.
+
+---
+
 ### FR-017: Admin page section renames, a config-editing note, and an "Award XP to Players" section with a character-picker dropdown
 
 **Status:** ✅ Done (`webportal/routes/admin-soul.js`, `webportal/controllers/admin-soul.js`, `webportal/templates/admin-soul.hbs`)

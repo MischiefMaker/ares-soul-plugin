@@ -41,6 +41,34 @@ module AresMUSH
       end
     end
 
+    describe ".default_at_chargen" do
+      it "sets an unset character to R0, unlocked" do
+        allow(character).to receive(:is_approved?).and_return(false)
+        SoulResonanceApi.default_at_chargen(character)
+        expect(SoulResonanceApi.get_resonance(character)).to eq(0)
+        expect(SoulResonanceApi.locked?(character)).to be false
+      end
+
+      it "does not override a value the player already chose" do
+        allow(character).to receive(:is_approved?).and_return(false)
+        character.update(resonance: "2")
+        SoulResonanceApi.default_at_chargen(character)
+        expect(SoulResonanceApi.get_resonance(character)).to eq(2)
+      end
+
+      it "is a no-op once the character is approved" do
+        allow(character).to receive(:is_approved?).and_return(true)
+        SoulResonanceApi.default_at_chargen(character)
+        expect(SoulResonanceApi.get_resonance(character)).to be_nil
+      end
+
+      it "is a no-op when Resonance is disabled" do
+        allow(Global).to receive(:read_config).with("soul", "resonance", "enabled").and_return(false)
+        SoulResonanceApi.default_at_chargen(character)
+        expect(SoulResonanceApi.get_resonance(character)).to be_nil
+      end
+    end
+
     describe ".set_resonance" do
       it "sets the value before locking" do
         result = SoulResonanceApi.set_resonance(character, 2, character)
