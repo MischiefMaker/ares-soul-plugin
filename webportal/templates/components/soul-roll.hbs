@@ -197,10 +197,9 @@
       </ul>
     {{/if}}
 
-    <p>
-      This result has not been posted to the scene. Pose or describe it
-      yourself if you want the other participants to see it.
-    </p>
+    {{#if this.postedToScene}}
+      <p class="text-muted">Posted to the scene.</p>
+    {{/if}}
     <button type="button" class="btn btn-secondary" onclick={{action "newRoll"}}>
       Start Another Roll
     </button>

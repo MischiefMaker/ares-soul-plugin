@@ -86,7 +86,8 @@ module AresMUSH
       return result if result[:error]
 
       resolved = SoulRollApi.resolve_pending(pending.id, request.enactor)
-      resolved[:error] ? resolved : { success: true, roll: roll_hash(resolved[:roll]) }
+      return resolved if resolved[:error]
+      { success: true, roll: roll_hash(resolved[:roll]), posted_to_scene: resolved[:posted_to_scene] }
     end
 
     def review(request)

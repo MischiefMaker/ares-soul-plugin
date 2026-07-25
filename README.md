@@ -273,8 +273,7 @@ This adds the following to a live scene's **Play** menu:
 - Scene-scoped B&B lookup.
 - Authorized participant Sheet viewing.
 
-Roll results remain private to the roller and are never automatically posted to the
-scene transcript.
+Roll results are automatically posted to the scene transcript, as the system character.
 
 ### Step 11: Build and Deploy the Portal
 
@@ -315,7 +314,10 @@ Use an unapproved test character, an approved player, and a staff/GM character:
 - On the `/admin-soul` page, validate configuration, create a catalogue
   entry, edit an entry's associated Skills, and award scene-wide XP.
 - In a live scene, complete a standard roll and a GM-assisted roll; verify pending,
-  history, abort, force-abort, scene lookup, and participant Sheet controls.
+  history, abort, force-abort, scene lookup, participant Sheet controls, and that each
+  result is posted to the scene transcript. Start a GM-assisted roll in a scene with no
+  reviewer available and confirm `+roll/cancelgm`/the web "Proceed Without One" button
+  lets it complete anyway.
 - Confirm an ordinary player cannot see staff-only controls, another player's
   profile-scoped staff panel, or reach `/admin-soul`.
 

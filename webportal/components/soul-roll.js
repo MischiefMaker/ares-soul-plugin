@@ -209,6 +209,7 @@ export default Component.extend({
       if (!response.error) {
         this.setProperties({
           rollResult: response.roll,
+          postedToScene: response.posted_to_scene,
           rollStage: 'result',
           pendingRoll: null
         });

@@ -562,6 +562,25 @@ module AresMUSH
         SoulRollApi.resolve_pending(pending.id, character)
         expect(Global.dispatcher).to have_received(:queue_event).with(an_instance_of(SoulRollResolvedEvent))
       end
+
+      it "posts the result to the scene transcript when the roll has a scene (2026-07-25: always post)" do
+        scene = Fabricate(:scene)
+        allow(Scenes).to receive(:add_to_scene)
+        pending = pending_for(character, scene_id: scene.id.to_s)
+
+        result = SoulRollApi.resolve_pending(pending.id, character)
+        expect(result[:posted_to_scene]).to be true
+        expect(Scenes).to have_received(:add_to_scene).with(scene, a_string_matching(/#{character.name}/))
+      end
+
+      it "does not attempt to post when the roll has no scene" do
+        allow(Scenes).to receive(:add_to_scene)
+        pending = pending_for(character)
+
+        result = SoulRollApi.resolve_pending(pending.id, character)
+        expect(result[:posted_to_scene]).to be false
+        expect(Scenes).not_to have_received(:add_to_scene)
+      end
     end
 
     describe Soul::XpCronHandler do

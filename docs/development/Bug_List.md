@@ -8,6 +8,35 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-020: Roll results now always post to the scene transcript (reverses the original private-by-design decision)
+
+**Status:** ✅ Done (`plugin/public/soul_roll_api.rb`, `plugin/web/soul_roll_web_handler.rb`,
+`webportal/components/soul-roll.js`, `webportal/templates/components/soul-roll.hbs`, `README.md`, spec)
+
+**Requested:** 2026-07-25, live testing: "Roll results should always be posted to the scene." (with a
+screenshot of the old "This result has not been posted to the scene..." message).
+
+**Background:** Phase 9's Scene Page Roll Widget work made a deliberate design decision that roll results
+would stay private to the roller, never auto-posting to the scene transcript (see
+`docs/spec/IMPLEMENTATION_CHECKLIST.md`'s 2026-07-24 entry) - REQ-031 never actually mandates this either
+way (it only requires notifications not leak private data), so this was purely an implementation choice,
+not a spec conflict, and safe to reverse.
+
+**Implementation:** verified the real posting mechanism against AresMUSH core rather than inventing one -
+`FS3Skills.emit_results` (`plugins/fs3skills/helpers/rolls.rb`) is the one existing precedent for a
+plugin posting roll results into a scene, and it calls `Scenes.add_to_scene(room.scene, message)` with no
+explicit `character` argument, defaulting to `Game.master.system_character` rather than attributing the
+post to the roller. `SoulRollApi.resolve_pending` now calls a new private `post_to_scene(character, roll)`
+after creating the `Roll` record: resolves `roll.scene_id` to a real `Scene` (a no-op, not an error, if
+there isn't one - e.g. a MUSH `+roll` made outside any scene) and posts a system-authored pose built from
+the Skill name, `degree_of_success` (humanized), final result, and difficulty. `Scenes.add_to_scene`'s own
+guards (disabled logging, blank pose) are trusted rather than duplicated. `resolve_pending` and the web
+`soulRollSelect` response both now include `posted_to_scene`; the web roll modal shows "Posted to the
+scene." instead of the old "has not been posted" disclaimer. No MUSH-side text change needed - the player
+sees the pose land in the room directly.
+
+---
+
 ### FR-019: Roll UI cleanup batch — GM-less scenes, owned-B&B dropdown, display polish
 
 **Status:** ✅ Done (`plugin/public/soul_roll_api.rb`, `plugin/web/soul_roll_web_handler.rb`,

@@ -313,8 +313,40 @@ module AresMUSH
         roll.degree_of_success, roll.extraordinary, roll.gm_assisted
       )
 
-      { success: true, roll: roll }
+      posted = post_to_scene(character, roll)
+
+      { success: true, roll: roll, posted_to_scene: posted }
     end
+
+    # Roll results always post to the scene transcript (2026-07-25: "Roll
+    # results should always be posted to the scene" - reverses the
+    # original private-by-default design). Posted as the system
+    # character, matching the one real precedent for this in AresMUSH
+    # core: FS3Skills.emit_results' own Scenes.add_to_scene call
+    # (plugins/fs3skills/helpers/rolls.rb) also defaults to
+    # Game.master.system_character rather than the roller. A no-op if the
+    # roll has no scene_id (e.g. a MUSH +roll made outside any scene) or
+    # Scenes.add_to_scene's own guards decline (logging disabled, scene
+    # gone) - never raises, since a roll should always succeed even if
+    # posting isn't possible.
+    def self.post_to_scene(character, roll)
+      scene = load_scene(roll.scene_id)
+      return false unless scene
+
+      Scenes.add_to_scene(scene, build_scene_pose(character, roll))
+      true
+    end
+    private_class_method :post_to_scene
+
+    def self.build_scene_pose(character, roll)
+      skill = SoulFrameworkApi.get_skill(roll.skill_key)
+      skill_name = skill ? skill[:name] : roll.skill_key
+      degree_label = roll.degree_of_success.to_s.tr("_", " ").capitalize
+      extraordinary = roll.extraordinary == "true" ? " (Extraordinary!)" : ""
+      "#{character.name} rolls #{skill_name}: #{degree_label}#{extraordinary} - " \
+        "#{roll.final_result} vs difficulty #{roll.difficulty}."
+    end
+    private_class_method :build_scene_pose
 
     def self.abort_pending(pending_roll_id, actor, reason:)
       return { error: "A reason is required to abort a pending roll." } if reason.to_s.blank?
