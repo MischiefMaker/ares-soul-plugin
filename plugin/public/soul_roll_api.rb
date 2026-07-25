@@ -343,8 +343,8 @@ module AresMUSH
       skill_name = skill ? skill[:name] : roll.skill_key
       narrative = degree_narrative(roll.degree_of_success)
       extraordinary = roll.extraordinary == "true" ? " (Extraordinary!)" : ""
-      "#{character.name} rolls #{skill_name}: #{narrative}#{extraordinary} " \
-        "(#{roll.final_result} versus difficulty #{roll.difficulty})"
+      "#{character.name} rolls #{skill_name} (rolled #{roll.final_result} v. difficulty #{roll.difficulty}): " \
+        "#{narrative}#{extraordinary}"
     end
     private_class_method :build_scene_pose
 
