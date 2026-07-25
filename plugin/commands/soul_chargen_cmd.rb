@@ -90,9 +90,13 @@ module AresMUSH
       def show_catalogue
         entries = SoulBnbApi.get_catalogue(chargen_available: true)
         lines = entries.map do |entry|
+          skill_names = (entry.skill_associations || []).map do |key|
+            SoulFrameworkApi.get_skill(key)&.dig(:name) || key
+          end
           t('soul.chargen_catalogue_line',
-            id: entry.id, tag: entry.tag, name: entry.name,
-            kind: entry.kind, description: entry.description)
+            id: entry.id, tag: entry.tag, name: entry.name, kind: entry.kind,
+            description: entry.description,
+            skills: skill_names.empty? ? t('soul.none') : skill_names.join(", "))
         end
         client.emit BorderedListTemplate.new(
           lines.empty? ? [t('soul.none')] : lines,
@@ -112,16 +116,28 @@ module AresMUSH
         entries = status[:selected_bnb].map do |entry|
           "##{entry[:id]} [#{entry[:tag]}] #{entry[:name]} (#{entry[:level_state]})"
         end
+        readiness = [
+          checklist_line("Skill points fully spent", status[:skill_points_fully_spent]),
+          checklist_line("Aspect points fully spent", status[:aspect_points_fully_spent]),
+          checklist_line("Boon/Bane ratio satisfied", status[:bnb_ratio_satisfied])
+        ].join("%r")
         body = t('soul.chargen_status',
           resonance: status[:resonance].nil? ? t('soul.unset') : "R#{status[:resonance]}",
           spent: status[:points_spent], remaining: status[:points_remaining],
           aspect_spent: status[:aspect_points_spent], aspect_remaining: status[:aspect_points_remaining],
-          skills: skills.join("%r"), bnb: entries.empty? ? t('soul.none') : entries.join("%r"))
+          skills: skills.join("%r"), bnb: entries.empty? ? t('soul.none') : entries.join("%r"),
+          readiness: readiness)
         client.emit BorderedDisplayTemplate.new(body, t('soul.chargen_title')).render
       end
 
       def emit_result(result)
         result[:error] ? client.emit_failure(result[:error]) : client.emit_success(t('soul.chargen_updated'))
+      end
+
+      # Informational readiness indicators only - approval is never blocked
+      # on these (see the comment on SoulChargenWebHandler.status).
+      def checklist_line(label, satisfied)
+        satisfied ? "%xg#{label}: Yes%xn" : "%xr#{label}: No%xn"
       end
     end
   end

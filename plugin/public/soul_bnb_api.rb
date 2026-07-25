@@ -13,6 +13,14 @@ module AresMUSH
       return { error: "Kind must be 'boon' or 'bane'." } unless %w[boon bane].include?(kind.to_s)
       return { error: "Tag is required." } if tag.to_s.blank?
       return { error: "That tag is already in use." } if BnbCatalogueEntry.find_one(tag_upcase: tag.to_s.upcase)
+      # Required (mischief bug list item 8, 2026-07-25): a catalogue entry
+      # with no associated Skills is invisible to SoulRollApi's suggestion
+      # logic (.build_applied_modifiers/candidate matching, keyed off
+      # skill_associations) - every entry needs at least one, so +roll's
+      # suggested-candidates flow actually surfaces it.
+      return { error: "At least one associated Skill is required." } if (skill_associations || []).empty?
+      unknown_skills = skill_associations.reject { |key| SoulFrameworkApi.valid_skill_key?(key) }
+      return { error: "Unknown Skill(s): #{unknown_skills.join(', ')}" } if unknown_skills.any?
 
       entry = BnbCatalogueEntry.create(
         tag: tag.to_s,
@@ -92,6 +100,23 @@ module AresMUSH
       ratio = Global.read_config("soul", "bnb", "chargen_ratio") || 2
       rounding = Global.read_config("soul", "bnb", "ratio_rounding") || "floor"
       required = (boon_count(character) + 1).to_f / ratio
+      required = case rounding
+                 when "ceil" then required.ceil
+                 when "round" then required.round
+                 else required.floor
+                 end
+      bane_count(character) >= required
+    end
+
+    # Whether the character's *current* allocation already satisfies the
+    # continuous 2:1 ratio - for chargen/status readiness display (mischief
+    # bug list item 12, 2026-07-25). Unlike .ratio_satisfied_after_boon?,
+    # which checks a hypothetical one-more-Boon addition before granting,
+    # this checks the ratio as it stands right now, with no pending grant.
+    def self.ratio_currently_satisfied?(character)
+      ratio = Global.read_config("soul", "bnb", "chargen_ratio") || 2
+      rounding = Global.read_config("soul", "bnb", "ratio_rounding") || "floor"
+      required = boon_count(character).to_f / ratio
       required = case rounding
                  when "ceil" then required.ceil
                  when "round" then required.round

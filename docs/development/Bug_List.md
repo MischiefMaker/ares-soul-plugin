@@ -8,6 +8,78 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-012: Unique CSS classes for installer styling hooks
+
+**Status:** 🟡 Partially done — plain HTML wrappers fixed; `BsModalSimple` components not addressed
+
+**Requested:** 2026-07-25, `docs/development/mischief_bug_list.md` item 15: *"Ensure we are including unique CSS classes wherever possible, for installers to be able to hook into their custom CSS."*
+
+**Audit:** most `soul/*` Ember components already had a unique top-level wrapper class (`soul-bnb`, `soul-chargen`, `soul-culminations`, `soul-history`, `soul-staff`, `soul-xp`, `soul-sheet`). Found and fixed three real gaps: `sheet.hbs`'s loading/error states had no class at all (`soul-sheet-loading`/`soul-sheet-error` added); `roll.hbs`'s two dropdown-menu `<li>` items were bare (`soul-roll-nav-item`/`soul-roll-review-nav-item` added); `scene-tools.hbs`'s dropdown `<li>` was bare and its modal only had an `id`, no class (`soul-scene-tools-nav-item`/`soul-scene-tools` added).
+
+**Not addressed:** the `BsModalSimple` invocations in `chargen.hbs`, `roll.hbs`, and `sheet.hbs` (an `ember-bootstrap` component, not plain HTML) were left alone — no `ember-bootstrap` addon source was available in this session to verify whether it accepts a passthrough class attribute, and guessing at an unverified API risked shipping a silently-no-op attribute. Needs a follow-up with the addon's actual API (or its rendered DOM inspected in a running portal) before adding a class there.
+
+### FR-011: B&B catalogue entries require at least one associated Skill, surfaced in chargen
+
+**Status:** ✅ Done (`plugin/public/soul_bnb_api.rb`, `soul_framework_api.rb`, `plugin/commands/soul_bnb_cmd.rb`, `soul_chargen_cmd.rb`, `plugin/web/soul_chargen_web_handler.rb`, `web-portal/app/components/soul/staff.js`, `web-portal/app/templates/components/soul/staff.hbs`/`chargen.hbs`, docs)
+
+**Requested:** 2026-07-25, `docs/development/mischief_bug_list.md` item 8: *"bnbs need to take 'impacted skills' when adding them to a player, so that the roll command knows what to suggest. This could be added in a second step, but it needs to be required and explained, including in chargen."*
+
+**The mechanism already existed and was already wired into rolls** — `BnbCatalogueEntry#skill_associations` (an array attribute) was already read by `SoulRollApi` to match B&B candidates to a Skill roll. What was actually missing was narrower than the "second step" the report anticipated: `+bnb/create` (the MUSH command) never exposed this field at all — only the web `soulBnbCreate` operation accepted it, and neither interface required it, so a staffer creating B&Bs the normal way (MUSH) would silently produce entries `+roll` could never suggest.
+
+**Done:**
+- `SoulBnbApi.create_catalogue_entry` now requires a non-empty `skill_associations` list and validates every key against `SoulFrameworkApi.valid_skill_key?`, returning a clear error otherwise — the single source of truth, so both MUSH and web get this for free (CP-09).
+- `+bnb/create` syntax extended: `<kind>/<tag>/<name>/<skill1,skill2,...>=<description>` (comma-separated Skill keys, new 4th slash-segment). Old 3-segment syntax (no Skill list) now correctly fails with "At least one associated Skill is required."
+- The web staff "Create Catalogue Entry" form (`soul/staff`) gained a comma-separated Skill-keys input, parsed the same way as the MUSH command, so it isn't left broken by the new requirement.
+- **Chargen ("including in chargen"):** `+soul/cg/catalogue` (MUSH) and the chargen catalogue modal (web) now both display each entry's associated Skills, so players can see what a B&B affects before selecting it — `SoulChargenWebHandler.catalogue_hash` and `SoulChargenCmd#show_catalogue` both resolve Skill keys to display names via `SoulFrameworkApi.get_skill`.
+- Updated `docs/reference/Commands.md`, `plugin/help/en/soul_bnb.md`/`manage_soul.md`, `docs/reference/Default_BnBs.md`'s examples, `docs/development/Migration_From_FS3.md`'s B&B migration examples, and README's new starter-B&B install step (FR-010) — all previously showed the old 3-segment syntax.
+- `plugin/spec/soul_bnb_api_spec.rb`'s `create_boon`/`create_bane` test helpers (used by ~24 examples across the file for unrelated features) now pass a stubbed Skill key, since the new requirement would otherwise have broken every one of them. New spec coverage for the requirement itself, the syntax parsing, and the web form's argument-passing.
+
+### FR-010: Default starter Boons & Banes added to install instructions
+
+**Status:** ✅ Done (`README.md`)
+
+**Requested:** 2026-07-25, `docs/development/mischief_bug_list.md` item 13: *"We were going to include some default bnbs in the install instructions which never got added,"* listing four: Cursed (bane), Artifact (boon), Contacts (boon), Bad Reputation (bane).
+
+**Done:** Added an "Optional but recommended: create starter Boons & Banes" subsection to README's Step 2 (Configure Your Framework), with the exact four entries as ready-to-run `+bnb/create` commands (using the corrected syntax from FR-011, with a placeholder Skill key installers replace with one of their own configured Skills, since Skills are entirely game-specific config). Cross-references `docs/reference/Default_BnBs.md` for more examples and catalogue anatomy.
+
+### FR-009: Chargen readiness checks for Skill/Aspect points and B&B ratio
+
+**Status:** ✅ Done, informational only — 🟡 whether it should also block approval is an open decision
+
+**Requested:** 2026-07-25, `docs/development/mischief_bug_list.md` item 12: *"Add cg checks for: Points spent on Aspects < Points allowed, points spent on skills < points allowed, bnbs < allowed number and ratio as 3 separate items. See inklings for how to implement."* (Inklings' own source was not available in this session to consult directly for its implementation pattern — implemented from this project's own established conventions instead.)
+
+**Existing enforcement, confirmed first:** `SoulChargenWebHandler.set_skill`/`.set_aspect` already reject any allocation that would *exceed* budget, and `SoulBnbApi.grant` already rejects a chargen grant that would violate the 2:1 ratio or a Resonance-level count/level limit — none of the three can currently be over-spent. What was missing was visibility into whether a character is *under*-spent or otherwise not "ready," since nothing currently stops leaving points unallocated or approving with an unsatisfied ratio (e.g., one Bane and zero Boons).
+
+**Done:** Added three informational readiness indicators to `+soul/cg` (MUSH) and the chargen status payload (web): `skill_points_fully_spent`, `aspect_points_fully_spent`, `bnb_ratio_satisfied` (new `SoulBnbApi.ratio_currently_satisfied?`, checking the ratio as it stands rather than `.ratio_satisfied_after_boon?`'s hypothetical one-more-Boon check). Displayed as a color-coded "Readiness" line in both the MUSH status display and a new banner in `chargen.hbs`.
+
+**Deliberately not implemented:** approval is not blocked on any of these. Making chargen *require* full allocation and a satisfied ratio before a character can be approved is a real product decision (e.g., should staff be able to override it? should partial Aspect spend ever be legitimate?) that the report's phrasing didn't unambiguously resolve — implemented the safe, reversible half (visibility) and left the blocking half for an explicit decision rather than guessing at approval-gating behavior.
+
+### FR-008: `+soul` added to `app_review_commands`; Inklings needs the same for `inkling/list`
+
+**Status:** ✅ Done for SOUL's own README; Inklings-side change out of scope for this repo
+
+**Requested:** 2026-07-25, `docs/development/mischief_bug_list.md` item 11: *"Installers should add to app_review_commands: - soul %{name} -- Note: we should add inkling/list ${name} to the Inkling instructions as well."*
+
+**Done:** Confirmed `app_review_commands` is a real core AresMUSH `chargen.yml` config list (drives what `app <character>` runs automatically during staff review) against the real engine source. Added a README step (in Step 4, alongside the existing chargen-stage installation) instructing installers to add `soul %{name}` to the list, with a pointer to also add Inklings' `inkling/list %{name}` if that plugin is installed. The Inklings-side documentation change itself lives in the separate `ares-inklings-plugin` repository, not accessible from this session — flagged here rather than silently skipped.
+
+### FR-007: FS3 disable instructions (plugin, chargen stage, `app_review_commands`)
+
+**Status:** ✅ Done (`docs/development/Migration_From_FS3.md`)
+
+**Requested:** 2026-07-25, `docs/development/mischief_bug_list.md` item 10: *"We need to add explanations how to disable FS3, including de-listing it in chargen, including: disabling the plugin, removing the chargen steps and app_review_commands for sheet."*
+
+**Done:** `Migration_From_FS3.md`'s "Long-Term Considerations" section previously only said "Remove or hide FS3 commands... once migration is validated" — no concrete steps. Replaced with a verified, concrete procedure (checked against the real engine): (1) add `fs3skills` to `game/config/plugins.yml`'s `disabled_plugins` (real `PluginManager#is_disabled?` mechanism); (2) remove FS3's `abilities` chargen stage from `chargen.yml` (confirmed that's FS3's own stage, `plugins/fs3skills/helpers/chargen.rb`, not a core one); (3) remove FS3's `+sheet` command (`plugins/fs3skills/commands/sheet_cmd.rb`) from `app_review_commands` and add `soul %{name}` in its place (ties into FR-008).
+
+### FR-006: Chargen help text corrected — Aspects DO advance post-chargen; dropped the command-name backstory
+
+**Status:** ✅ Done (`plugin/help/en/soul_chargen.md`)
+
+**Requested:** 2026-07-25, `docs/development/mischief_bug_list.md` item 9, quoting the then-current help text and correcting it: *"This is wrong: Aspects will allow post-chargen advancement. Resonance does not allow changing after chargen. Everything else does. Remove the language about the chargen command. Players do not care. Just tell them the commands they need."*
+
+**Context:** the factual claim itself (Aspects have no post-chargen advancement) had already been superseded by an unrelated, larger rework — Aspects now mirror Skills with an `xp.cost.aspect_cost_multiplier`-priced `+xp/spend/aspect` advancement path, `aspect_max_rating` defaulting to 10 (an "ultimate cap" like Skills, not a 0-5 chargen-only range) — landed in the intervening "Fix SOUL profile and chargen web UI" commit series, which had already partially corrected this help text (added "After approval, both Skills and Aspects can be advanced by spending XP") but left two things unaddressed.
+
+**Done:** Removed the closing paragraph explaining the `+chargen`-vs-`+soul/cg` naming collision (real backstory for developers, not something a player needs to read to use the commands) and removed the stale "(default 5)" aside on the Aspect max rating (now game-configurable, no longer always 5). Also added an explicit sentence stating Resonance is the *only* choice that locks permanently at approval — the report's second correction.
+
 ### FR-004: Default Skill set changed to setting-specific names
 
 **Status:** ✅ Done — skills changed; the related Aspect-values question was resolved by the user and implemented as FR-005 below.
@@ -73,6 +145,56 @@ One inherent consequence, not a bug: `custom_scene_data.snippet.rb` no longer pa
 A bare `+bnb` previously required an argument and just returned an "invalid syntax" error — there was no command to list all of a player's own entries at once (only single-entry lookup by ID/tag, the scene-scoped `/here`, and the public `/catalogue`). Added `SoulBnbCmd#show_own_entries`, reached when `+bnb` is given with no reference: lists every entry `SoulBnbApi.get_character_entries(enactor)` returns, each showing catalogue ID, tag, name, kind, level, and the character's own private `character_explanation` (never shown to anyone else). Operates strictly on `enactor` — no new privacy exposure, matching the same self-only scope `+xp`/`+soul` already use for private data.
 
 **Web/staff follow-up:** flagged here as needing a real privacy decision rather than a reflexive copy-paste — done in FR-003 above.
+
+---
+
+## BUG-009: `Global.read_config` called three keys deep — `ArgumentError` crashed `+xp/spend`, catch-up eligibility, and Grimoire's branch lookup
+
+**Status:** ✅ Fixed (`plugin/public/soul_xp_api.rb`, `soul_framework_api.rb`, and their specs)
+
+**Reported:** 2026-07-25, `docs/development/mischief_bug_list.md` item 14 (second half). User's exact report, from live game logs: `xp/spend/aspect mind=1` failed every time with `Error: "wrong number of arguments (given 4, expected 1..3)"`, backtrace through `global.rb:8:in 'read_config'` → `soul_xp_api.rb:109:in 'calculate_cost'` → `soul_xp_cmd.rb:106:in 'spend_xp'`.
+
+**Root cause, confirmed against the real engine (`/workspace/aresmush/engine/aresmush/global.rb`, `config/config_reader.rb`):** `Global.read_config(section, key = nil, subkey = nil)` supports at most **two levels** of nesting below the plugin name (3 args total) — `ConfigReader#get_config` only ever indexes `section → key → subkey`, nothing deeper. `SoulXpApi.calculate_cost` called it with **four** args in nine places (`Global.read_config("soul", "xp", "cost", "skill_curve_numerator")`, etc. — `soul.xp.cost.*` is three levels deep), plus two more in `catchup_eligible?`/`.award` (`soul.xp.catchup.*`) and one in `SoulFrameworkApi.get_skill_for_grimoire_branch` (`soul.integrations.grimoire.branch_skill_map`) — every one of these raised `ArgumentError` unconditionally, every time it ran, in a real game. This is the same "spec mocks an interface the real method doesn't have" failure mode this project has hit before (see BUG history) — every spec covering these methods mocked `Global.read_config` with the same over-deep 4-arg signature, so the test suite passed while the real code was 100% broken.
+
+**Fix:** Changed every over-deep call to the pattern already used correctly elsewhere in this codebase (e.g. `SoulBnbApi.level_modifier`): read the two-level parent hash once (`Global.read_config("soul", "xp", "cost")`), then index into it with plain Ruby hash access (`cost_config["skill_curve_numerator"]`). Applied to `calculate_cost`, `catchup_eligible?`, `.award`, and `get_skill_for_grimoire_branch`. Updated `soul_xp_api_spec.rb`'s and `soul_framework_api_spec.rb`'s `Global.read_config` mocks to match the real two-level signature (both would otherwise have kept masking this class of bug going forward). Audited every other `Global.read_config` call in `plugin/` for the same over-deep pattern — no other instances found.
+
+---
+
+## BUG-008: `app/approve` raised `Ohm::IndexNotFound` — B&B chargen finalization queried an unindexed attribute
+
+**Status:** ✅ Fixed (`plugin/models/narrative_history_entry.rb`)
+
+**Reported:** 2026-07-25, `docs/development/mischief_bug_list.md` item 14 (first half). User's exact report, from live game logs: `app/approve useless` raised `Ohm::IndexNotFound` but completed anyway. Backtrace through `ohm.rb:1484:in 'to_indices'` → `soul_bnb_api.rb:232:in 'block in finalize_chargen_grants'` → `custom_approval.rb:8`.
+
+**Root cause:** `SoulBnbApi.finalize_chargen_grants` calls `NarrativeHistoryEntry.find(soul_record_type: ..., soul_record_id: ...)` to check whether an entry's approval history was already created (so re-approval doesn't duplicate it). Ohm requires every attribute used in a `.find` filter to have a declared `index` — `NarrativeHistoryEntry` indexed `soul_record_type` but never `soul_record_id`, so any multi-key `.find` including it raised immediately. The error was non-fatal only because AresMUSH's own command dispatcher rescues and logs errors from hook code rather than aborting the approval — meaning the "starting B&B" Narrative History entry silently never got created for any approval, every time, since this hook was written.
+
+**Found the identical bug a second time while fixing this:** `SoulCulminationApi` (`plugin/public/soul_culmination_api.rb:130`) has the exact same `NarrativeHistoryEntry.find(soul_record_type:, soul_record_id:)` call pattern, checking for existing Culmination-approval history — it would have raised the same `Ohm::IndexNotFound` the first time it ran, just not yet reported because no Culmination had gone through approval in this testing session.
+
+**Fix:** Added `index :soul_record_id` to `NarrativeHistoryEntry`. Single-line fix at the root cause fixes both call sites (`SoulBnbApi.finalize_chargen_grants` and `SoulCulminationApi`'s approval-history check) since they share the same model. No spec change needed — the existing `soul_bnb_api_spec.rb` coverage for `.finalize_chargen_grants` was already correct Ruby, it just never ran against a real Redis-backed Ohm store in a context where this would surface (this project's specs are `ruby -c`/read verified in this session, not executed against a live game — the bug only surfaced via the user's actual live testing).
+
+---
+
+## BUG-007: SOUL web portal components crashed with "WeakMap key null" and cascading route-transition errors
+
+**Status:** ✅ Fixed (prior session — see the "Fix SOUL profile and chargen web UI" commit series; verified clean by a fresh audit today)
+
+**Reported:** 2026-07-24/25, `docs/development/mischief_bug_list.md` items 4 and 6. User's reports: the web chargen tab loaded nothing and the profile page threw `WeakMap key null must be an object or an unregistered symbol`; separately, navigating to any page after loading a profile threw `More context objects were passed than there are dynamic segments for the route`.
+
+**Root cause:** two independent issues. (1) Every `soul/*` Ember template referenced component properties without the `this.` prefix (e.g. `{{rollOpen}}`, `{{selectedSkill}}`, `{{candidates}}`) — implicit unprefixed property lookup that this portal's Ember version no longer resolves reliably, so these properties read as `null`/`undefined` at points the framework's internals (a `WeakMap`) require a real object, throwing. (2) Chargen's permission gate incorrectly required `Soul.can_play?` in addition to `is_approved?` (the same class of bug as BUG-005, independently present in an earlier version of this code path), and the chargen component silently discarded any API error instead of surfacing it — so an unapproved character's chargen tab looked empty with zero diagnostic signal. The route-transition error was a cascading failure once the primary `WeakMap` exception put the router in a broken state.
+
+**Fix (prior session, ~20 commits titled "Fix SOUL profile and chargen web UI"):** every `soul/*` template's component-property references were updated to the `this.`-prefixed form (`roll.hbs`, `staff.hbs`, `sheet.hbs`, `scene-tools.hbs`, `xp.hbs`, `history.hbs`, `culmination.hbs`, `chargen.hbs`, `bnb.hbs`); the redundant `can_play?` chargen gate was removed; `chargen.js`'s `refreshStatus` now surfaces a failed status fetch as a real error instead of a blank tab. **Verified today** with a full grep audit of every `soul/*` `.hbs` file for any remaining unprefixed component-property reference (as opposed to a correctly-unprefixed `{{#each ... as |x|}}` block param) — none found; the fix is complete and holding.
+
+---
+
+## BUG-006: Missing locale keys broke `+bnb`'s ownership display ("Translation missing")
+
+**Status:** ✅ Fixed (prior session; verified present in `plugin/locales/locale_en.yml` today)
+
+**Reported:** 2026-07-24, `docs/development/mischief_bug_list.md` item 1. User's report: using `+bnb` gave `Translation missing: en.soul.bnb_own_title`.
+
+**Root cause:** `bnb_own_title`, `bnb_own_line`, `bnb_your`, `bnb_your_explanation`, `bnb_whose`, `bnb_whose_explanation` were referenced by FR-001's ownership-display code but were never added to `locale_en.yml`.
+
+**Fix (prior session):** all six keys added, with the detail label made generic so it works across the command's self-view and staff-view (FR-003) call paths. **Verified today**: all six present in the current `locale_en.yml`.
 
 ---
 

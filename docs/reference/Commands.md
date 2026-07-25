@@ -37,7 +37,7 @@ game's chargen configuration.
 | `+bnb/here <tag>` | Canonical (REQ-022, concise alias configurable) | Minimal scene-scoped lookup limited to involved players and permitted data | play |
 | `+bnb/search <tag>` | Canonical (REQ-022, concise alias configurable) | Staff/admin global search; may support detail/full modes | manage_soul |
 | `+bnb/catalogue` | Proposed | Browse the full public catalogue | play |
-| `+bnb/create <kind>/<tag>/<name>=<description>` | Proposed (implemented; syntax fixed 2026-07-24) | Create a new catalogue entry (`kind`: boon/bane) | manage_soul |
+| `+bnb/create <kind>/<tag>/<name>/<skill1,skill2,...>=<description>` | Proposed (implemented; syntax fixed 2026-07-24, associated Skills required 2026-07-25) | Create a new catalogue entry (`kind`: boon/bane); at least one associated Skill key is required, comma-separated if more than one — this is what `+roll`'s suggested-candidates flow uses to match a B&B to a Skill roll | manage_soul |
 | `+bnb/grant <character>/<catalogue id or tag>[/<level>]=<explanation>` | Proposed (implemented) | Grant a character entry (post-chargen, non-XP); `level` defaults to `minor` if omitted | manage_soul |
 | `+bnb/progress <character>/<entry id>=<new level>` | Proposed (implemented) | Progress (or retreat) an entry's level | manage_soul |
 | `+bnb/resolve <character>/<entry id>=<reason>` | Proposed (implemented 2026-07-24) | Resolve/negate an entry, preserving its prior level for restoration (REQ-020) — the recommended non-destructive alternative to `+bnb/delete` | manage_soul |

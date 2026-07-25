@@ -103,6 +103,26 @@ This validates the live SOUL configuration and reports invalid references, such 
 a Skill assigned to an Aspect that does not exist. Correct all reported errors
 before continuing.
 
+**Optional but recommended: create starter Boons & Banes.** A fresh install has an
+empty B&B catalogue, so chargen's `+soul/cg/bnb`/`+soul/cg/catalogue` have nothing
+to offer until staff create entries with `+bnb/create <kind>/<tag>/<name>/<skill1,skill2,...>=<description>`
+(`kind` is `boon` or `bane`; at least one associated Skill key is required — see
+Configuration's `framework.skills` for your game's configured keys, and
+`docs/architecture/API_and_Hooks.md`/`+roll` for how `+roll`'s suggested-candidates
+flow uses this list). Four general-purpose starters, with placeholder Skill keys
+to replace with ones from your own `game/config/soul.yml`:
+
+```
++bnb/create bane/cursed/Cursed/<skill_key>=Your character carries some sort of curse.
++bnb/create boon/artifact/Artifact/<skill_key>=Your character possesses some sort of magical artifact that grants them something extra.
++bnb/create boon/contacts/Contacts/<skill_key>=Your character knows important people.
++bnb/create bane/bad_rep/Bad Reputation/<skill_key>=Your character has some sort of bad reputation that precedes them.
+```
+
+See [Default Boons & Banes](docs/reference/Default_BnBs.md) for more examples and
+the full catalogue entry anatomy, and [Commands](docs/reference/Commands.md) for
+`+bnb/create`'s full syntax.
+
 ### Step 3: Install the Required Approval Hook
 
 This server-side hook locks Resonance and creates Narrative History for the starting
@@ -140,6 +160,14 @@ introduces it at the correct point in the normal character-generation flow.
 
 The stage points players to `help soul_chargen`, which documents Resonance, Skill,
 and starting Boon/Bane selection.
+
+**Recommended: show the SOUL sheet during app review.** `game/config/chargen.yml`'s
+`app_review_commands` list controls what staff's `app <character>` review command
+runs automatically. Add `soul %{name}` to that list (alongside the stock `app`,
+`look`, `profile`, `bg`, `hooks`, and `sheet` entries) so a reviewer sees the
+applicant's Aspects/Skills/Resonance/B&Bs without a separate manual `+soul` lookup.
+If Inklings is also installed, its own instructions cover adding `inkling/list
+%{name}` to the same list — see the Inklings plugin's install documentation.
 
 ### Step 5: Add Profile Data for the Web Portal
 

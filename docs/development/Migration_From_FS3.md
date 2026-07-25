@@ -168,10 +168,10 @@ end
 
 ### Step 6: Migrate Boons & Banes
 
-**Option A — Manual (recommended for small catalogues):** real implemented syntax is `+bnb/create <kind>/<tag>/<name>=<description>` (see `docs/reference/Commands.md`) — `kind` is `boon` or `bane`, both required:
+**Option A — Manual (recommended for small catalogues):** real implemented syntax is `+bnb/create <kind>/<tag>/<name>/<skill1,skill2,...>=<description>` (see `docs/reference/Commands.md`) — `kind` is `boon` or `bane`, and at least one associated Skill key is required (comma-separated if more than one; used by `+roll`'s suggested-candidates flow):
 ```
-+bnb/create boon/lucky/Lucky=You have uncanny good fortune.
-+bnb/create bane/cursed/Cursed=Bad luck dogs your heels.
++bnb/create boon/lucky/Lucky/wit=You have uncanny good fortune.
++bnb/create bane/cursed/Cursed/strength,stamina=Bad luck dogs your heels.
 ```
 Then grant existing character B&Bs — `+bnb/grant <character>/<catalogue id or tag>[/<level>]=<explanation>`:
 ```
@@ -270,7 +270,33 @@ There is no separate "initialize" step to run — `Character`'s SOUL attributes 
 
 ## Long-Term Considerations
 
-- Remove or hide FS3 commands (`+skills`, `+skill`, etc.) once migration is validated.
+### Disabling FS3 Once Migration Is Validated
+
+FS3 (`fs3skills`) is a separate core plugin — SOUL does not disable it automatically, and the two are not designed to run side by side (REQ-001). After migration is validated (Step 7 above), disable it explicitly:
+
+1. **Disable the plugin.** In `game/config/plugins.yml`, add `fs3skills` to `disabled_plugins` (real mechanism: `PluginManager#is_disabled?` checks this list at load time — the plugin's files stay on disk, but its commands, config, and web routes never register):
+   ```yaml
+   plugins:
+     disabled_plugins:
+     - fs3skills
+   ```
+   If `fs3combat` (FS3's combat plugin) is also unused, disable it the same way.
+2. **Remove FS3's chargen stage.** In `game/config/chargen.yml`'s `stages:` section, remove the `abilities:` entry (`help: skills`) — that's FS3's own chargen step (`plugins/fs3skills/helpers/chargen.rb`), not a core stage. Leave SOUL's own stage (installed per the README's Step 4) in place.
+3. **Update `app_review_commands`.** FS3's `+sheet` command (`plugins/fs3skills/commands/sheet_cmd.rb`) no longer exists once FS3 is disabled. In `game/config/chargen.yml`'s `app_review_commands` list, remove `sheet %{name}` and add `soul %{name}` in its place (see the README's Step 4 for the same addition, needed regardless of whether FS3 is disabled):
+   ```yaml
+   app_review_commands:
+   - app %{name}
+   - look %{name}
+   - profile %{name}
+   - bg %{name}
+   - hooks %{name}
+   - soul %{name}
+   ```
+4. `load plugins` and `load chargen` (or restart) to pick up both changes.
+5. Remove or hide any other FS3-specific references your game added (help topics, +commands aliases, web portal FS3 components) once staff and players have confirmed SOUL is fully in use.
+
+### Other
+
 - Provide help files and an optional tutorial scene for the new system.
 - Monitor XP pacing and B&B usage; tune `xp.cost.*` and `bnb.*` config as needed (see `docs/reference/Configuration.md`).
 

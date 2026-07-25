@@ -17,7 +17,8 @@ your private explanation for each.
 
 `+bnb/search <query>` — Staff catalogue search.
 
-`+bnb/create <kind>/<tag>/<name>=<description>` — Create a catalogue entry.
+`+bnb/create <kind>/<tag>/<name>/<skill1,skill2,...>=<description>` — Create a
+catalogue entry. At least one associated Skill key is required.
 
 `+bnb/grant <character>/<id or tag>/<level>=<explanation>` — Grant an entry.
 The level defaults to `minor` when omitted.

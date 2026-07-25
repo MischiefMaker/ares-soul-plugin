@@ -126,5 +126,26 @@ module AresMUSH
       expect(status[:aspect_max_rating]).to eq(5)
       expect(SoulBnbApi).to have_received(:get_catalogue).with(chargen_available: true)
     end
+
+    it "reports readiness indicators without blocking anything (informational only)" do
+      allow(SoulResonanceApi).to receive(:get_resonance).and_return(0)
+      allow(SoulResonanceApi).to receive(:chargen_allowance).and_return(
+        skill_points: 5, starting_cap: 4, aspect_points: 5
+      )
+      allow(SoulResonanceApi).to receive(:enabled?).and_return(false)
+      allow(SoulFrameworkApi).to receive(:get_skills).and_return([{ key: "blade" }])
+      allow(SoulFrameworkApi).to receive(:get_aspects).and_return([{ key: "body" }])
+      allow(SoulFrameworkApi).to receive(:aspect_min_rating).and_return(0)
+      allow(SoulFrameworkApi).to receive(:aspect_max_rating).and_return(5)
+      allow(SoulCharacterApi).to receive(:get_skill_rating).and_return(5)
+      allow(SoulCharacterApi).to receive(:get_aspect_rating).and_return(2)
+      allow(SoulBnbApi).to receive(:get_character_entries).and_return([])
+      allow(SoulBnbApi).to receive(:get_catalogue).and_return([])
+
+      status = SoulChargenWebHandler.status(character)
+      expect(status[:skill_points_fully_spent]).to be true
+      expect(status[:aspect_points_fully_spent]).to be false
+      expect(status[:bnb_ratio_satisfied]).to be true
+    end
   end
 end

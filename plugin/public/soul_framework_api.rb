@@ -73,7 +73,8 @@ module AresMUSH
     # do with the returned Skill - SOUL never receives or stores spell data
     # (REQ-040).
     def self.get_skill_for_grimoire_branch(branch_key)
-      map = Global.read_config("soul", "integrations", "grimoire", "branch_skill_map") || {}
+      grimoire_config = Global.read_config("soul", "integrations", "grimoire") || {}
+      map = grimoire_config["branch_skill_map"] || {}
       skill_key = map[branch_key.to_s]
       return nil unless skill_key
       get_skill(skill_key)

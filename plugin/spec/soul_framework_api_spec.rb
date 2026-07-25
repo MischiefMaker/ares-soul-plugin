@@ -9,8 +9,8 @@ module AresMUSH
       it "returns the mapped Skill's hash for a configured branch" do
         allow(Global).to receive(:read_config).and_call_original
         allow(Global).to receive(:read_config)
-          .with("soul", "integrations", "grimoire", "branch_skill_map")
-          .and_return("evocation" => "ceremonial")
+          .with("soul", "integrations", "grimoire")
+          .and_return("branch_skill_map" => { "evocation" => "ceremonial" })
         allow(SoulFrameworkApi).to receive(:get_skill).with("ceremonial")
           .and_return(key: "ceremonial", name: "Ceremonial Magic", aspect_key: "spirit", order: 0)
 
@@ -21,8 +21,8 @@ module AresMUSH
       it "returns nil for an unmapped branch" do
         allow(Global).to receive(:read_config).and_call_original
         allow(Global).to receive(:read_config)
-          .with("soul", "integrations", "grimoire", "branch_skill_map")
-          .and_return({})
+          .with("soul", "integrations", "grimoire")
+          .and_return("branch_skill_map" => {})
 
         expect(SoulFrameworkApi.get_skill_for_grimoire_branch("evocation")).to be_nil
       end
@@ -30,7 +30,7 @@ module AresMUSH
       it "returns nil when no branch_skill_map is configured at all" do
         allow(Global).to receive(:read_config).and_call_original
         allow(Global).to receive(:read_config)
-          .with("soul", "integrations", "grimoire", "branch_skill_map")
+          .with("soul", "integrations", "grimoire")
           .and_return(nil)
 
         expect(SoulFrameworkApi.get_skill_for_grimoire_branch("evocation")).to be_nil

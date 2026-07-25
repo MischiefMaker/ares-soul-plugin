@@ -55,6 +55,16 @@ module AresMUSH
         aspect_points: allowance[:aspect_points],
         aspect_min_rating: SoulFrameworkApi.aspect_min_rating, aspect_max_rating: SoulFrameworkApi.aspect_max_rating,
         aspect_points_spent: aspect_spent, aspect_points_remaining: allowance[:aspect_points] - aspect_spent,
+        # Readiness indicators (mischief bug list item 12, 2026-07-25) -
+        # informational only, not enforced at approval: SoulCharacterApi/
+        # SoulBnbApi.grant already prevent ever *exceeding* a budget or the
+        # 2:1 ratio, but nothing stops a player leaving points unspent or
+        # approving with an unsatisfied ratio. Surfaced here so players and
+        # staff can see it before approval; whether to also block approval
+        # on it is an open product decision - see Bug_List.md.
+        skill_points_fully_spent: spent >= allowance[:skill_points],
+        aspect_points_fully_spent: aspect_spent >= allowance[:aspect_points],
+        bnb_ratio_satisfied: SoulBnbApi.ratio_currently_satisfied?(character),
         aspects: aspects, skills: skills,
         catalogue: SoulBnbApi.get_catalogue(chargen_available: true).map { |entry| catalogue_hash(entry) },
         selected_bnb: selected.map { |entry| selected_hash(entry) },
@@ -98,9 +108,12 @@ module AresMUSH
     end
 
     def self.catalogue_hash(entry)
+      skill_names = (entry.skill_associations || []).map do |key|
+        SoulFrameworkApi.get_skill(key)&.dig(:name) || key
+      end
       {
         id: entry.id, tag: entry.tag, name: entry.name, description: entry.description,
-        kind: entry.kind
+        kind: entry.kind, skill_associations: skill_names.join(", ")
       }
     end
 

@@ -6,18 +6,22 @@ module AresMUSH
 
     before do
       allow(Global).to receive(:read_config).and_call_original
-      allow(Global).to receive(:read_config).with("soul", "xp", "cost", "skill_curve_numerator").and_return(1)
-      allow(Global).to receive(:read_config).with("soul", "xp", "cost", "skill_curve_denominator").and_return(2)
-      allow(Global).to receive(:read_config).with("soul", "xp", "cost", "skill_cost_multiplier").and_return(1)
-      allow(Global).to receive(:read_config).with("soul", "xp", "cost", "aspect_cost_multiplier").and_return(4)
-      allow(Global).to receive(:read_config).with("soul", "xp", "cost", "development_base").and_return(1)
-      allow(Global).to receive(:read_config).with("soul", "xp", "cost", "development_scale").and_return(250)
-      allow(Global).to receive(:read_config).with("soul", "xp", "cost", "development_exponent").and_return(1.25)
-      allow(Global).to receive(:read_config).with("soul", "xp", "cost", "negative_resonance_rate").and_return(0.12)
-      allow(Global).to receive(:read_config).with("soul", "xp", "cost", "positive_resonance_rate").and_return(0.22)
-      allow(Global).to receive(:read_config).with("soul", "xp", "cost", "positive_resonance_surcharge").and_return(1)
-      allow(Global).to receive(:read_config).with("soul", "xp", "catchup", "enabled").and_return(true)
-      allow(Global).to receive(:read_config).with("soul", "xp", "catchup", "multiplier").and_return(2.0)
+      # Real Global.read_config (engine/aresmush/global.rb) is capped at
+      # section/key/subkey - three args, two levels deep. Reading a third
+      # level (e.g. soul.xp.cost.skill_curve_numerator) directly raises
+      # ArgumentError in production; the only supported approach is to read
+      # the two-level parent hash once and index into it in Ruby, so these
+      # mocks stub the same two-level calls the real code makes.
+      allow(Global).to receive(:read_config).with("soul", "xp", "cost").and_return(
+        "skill_curve_numerator" => 1, "skill_curve_denominator" => 2,
+        "skill_cost_multiplier" => 1, "aspect_cost_multiplier" => 4,
+        "development_base" => 1, "development_scale" => 250, "development_exponent" => 1.25,
+        "negative_resonance_rate" => 0.12, "positive_resonance_rate" => 0.22,
+        "positive_resonance_surcharge" => 1
+      )
+      allow(Global).to receive(:read_config).with("soul", "xp", "catchup").and_return(
+        "enabled" => true, "multiplier" => 2.0
+      )
       allow(Global).to receive(:read_config).with("soul", "framework", "skill_max_rating").and_return(10)
       allow(Global).to receive(:read_config).with("soul", "framework", "aspect_min_rating").and_return(0)
       allow(Global).to receive(:read_config).with("soul", "framework", "aspect_max_rating").and_return(10)

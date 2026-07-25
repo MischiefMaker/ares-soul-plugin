@@ -100,6 +100,8 @@
     <Input @value={{this.bnbTag}} class="form-control my-2" placeholder="Tag" />
     <Input @value={{this.bnbKind}} class="form-control my-2" placeholder="boon or bane" />
     <Textarea @value={{this.bnbDescription}} class="form-control my-2" placeholder="Description" />
+    <Input @value={{this.bnbSkillAssociations}} class="form-control my-2"
+      placeholder="Associated Skill keys, comma-separated (required, e.g. blade,spirit)" />
     <button class="btn btn-primary" type="button" onclick={{action "bnbCreate"}}>Create Catalogue Entry</button>
   </details>
 

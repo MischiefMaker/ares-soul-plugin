@@ -43,7 +43,8 @@ module AresMUSH
     # the weekly award cron being the main point awards happen.
     def self.catchup_eligible?(character)
       return false unless character
-      return false unless Global.read_config("soul", "xp", "catchup", "enabled")
+      catchup_config = Global.read_config("soul", "xp", "catchup") || {}
+      return false unless catchup_config["enabled"]
 
       progress = get_lifetime_earned_xp(character) + get_catchup_xp_earned(character)
       progress < median_earned_xp
@@ -70,7 +71,8 @@ module AresMUSH
       catchup_portion = 0
 
       if apply_catchup && catchup_eligible?(character)
-        multiplier = Global.read_config("soul", "xp", "catchup", "multiplier") || 2.0
+        catchup_config = Global.read_config("soul", "xp", "catchup") || {}
+        multiplier = catchup_config["multiplier"] || 2.0
         gap = median_earned_xp - (get_lifetime_earned_xp(character) + get_catchup_xp_earned(character))
         uncapped_bonus = (base_award * multiplier) - base_award
         catchup_portion = [[uncapped_bonus, gap].min, 0].max.floor
@@ -106,30 +108,32 @@ module AresMUSH
     #   equivalent_skill_cost = ceil(base_cost * development_modifier * resonance_modifier)
     #   final_cost = ceil(equivalent_skill_cost * advancement_type_multiplier)
     def self.calculate_cost(character, trait_key, new_rating, trait_type: "skill")
-      numerator = Global.read_config("soul", "xp", "cost", "skill_curve_numerator") || 1
-      denominator = Global.read_config("soul", "xp", "cost", "skill_curve_denominator") || 2
+      cost_config = Global.read_config("soul", "xp", "cost") || {}
+
+      numerator = cost_config["skill_curve_numerator"] || 1
+      denominator = cost_config["skill_curve_denominator"] || 2
       base_cost = (new_rating.to_i**2 * numerator).fdiv(denominator).ceil
 
-      dev_base = Global.read_config("soul", "xp", "cost", "development_base") || 1
-      dev_scale = Global.read_config("soul", "xp", "cost", "development_scale") || 250
-      dev_exponent = Global.read_config("soul", "xp", "cost", "development_exponent") || 1.25
+      dev_base = cost_config["development_base"] || 1
+      dev_scale = cost_config["development_scale"] || 250
+      dev_exponent = cost_config["development_exponent"] || 1.25
       xp_spent = get_lifetime_spent_xp(character)
       development_modifier = dev_base + (xp_spent.to_f / dev_scale)**dev_exponent
 
       resonance = SoulResonanceApi.get_resonance(character) || 0
       if resonance > 0
-        positive_rate = Global.read_config("soul", "xp", "cost", "positive_resonance_rate") || 0
-        surcharge = Global.read_config("soul", "xp", "cost", "positive_resonance_surcharge") || 0
+        positive_rate = cost_config["positive_resonance_rate"] || 0
+        surcharge = cost_config["positive_resonance_surcharge"] || 0
         resonance_modifier = 1 + (positive_rate * resonance) + (surcharge * resonance)
       else
-        negative_rate = Global.read_config("soul", "xp", "cost", "negative_resonance_rate") || 0
+        negative_rate = cost_config["negative_resonance_rate"] || 0
         resonance_modifier = 1 + (negative_rate * resonance)
       end
 
       equivalent_skill_cost = (base_cost * development_modifier * resonance_modifier).ceil
       multiplier_key = trait_type.to_s == "aspect" ? "aspect_cost_multiplier" : "skill_cost_multiplier"
       default_multiplier = trait_type.to_s == "aspect" ? 4 : 1
-      multiplier = Global.read_config("soul", "xp", "cost", multiplier_key) || default_multiplier
+      multiplier = cost_config[multiplier_key] || default_multiplier
       (equivalent_skill_cost * multiplier).ceil
     end
 

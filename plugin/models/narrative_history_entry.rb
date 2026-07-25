@@ -38,5 +38,6 @@ module AresMUSH
 
     index :event_type
     index :soul_record_type
+    index :soul_record_id
   end
 end

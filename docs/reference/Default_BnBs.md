@@ -140,11 +140,11 @@ When creating your own entries, consider:
 Once SOUL is installed, create these examples using:
 
 ```
-+bnb/create Keen Observer=You notice details others miss.
-+bnb/create Cursed=Your character carries some sort of curse.
++bnb/create boon/observer/Keen Observer/investigation=You notice details others miss.
++bnb/create bane/cursed/Cursed/strength,stamina=Your character carries some sort of curse.
 ```
 
-Follow-up prompts set category, level definitions, chargen flags, and Skill associations. See `docs/reference/Commands.md` for full command syntax.
+`kind` (`boon`/`bane`) and the comma-separated associated Skill list are both required — an entry with no associated Skills is invisible to `+roll`'s suggested-candidates flow, which matches B&Bs to a Skill roll using that list. Category, non-default chargen flags, and an Epic-level modifier are set via the web portal's staff `soulBnbCreate` operation, not `+bnb/create` (see `docs/reference/Commands.md` for the full command syntax).
 
 ## See Also
 

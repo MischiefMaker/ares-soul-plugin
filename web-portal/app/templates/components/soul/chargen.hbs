@@ -14,6 +14,18 @@
       {{this.status.aspect_points_remaining}} remaining.
       <strong class="ms-2">Range:</strong> {{this.status.aspect_min_rating}}–{{this.status.aspect_max_rating}}.
     </div>
+    <div class="alert alert-secondary soul-chargen-readiness">
+      <strong>Readiness:</strong>
+      <span class="ms-2 {{if this.status.skill_points_fully_spent "text-success" "text-danger"}}">
+        Skill points {{if this.status.skill_points_fully_spent "fully spent" "not fully spent"}}
+      </span>
+      <span class="ms-3 {{if this.status.aspect_points_fully_spent "text-success" "text-danger"}}">
+        Aspect points {{if this.status.aspect_points_fully_spent "fully spent" "not fully spent"}}
+      </span>
+      <span class="ms-3 {{if this.status.bnb_ratio_satisfied "text-success" "text-danger"}}">
+        Boon/Bane ratio {{if this.status.bnb_ratio_satisfied "satisfied" "not satisfied"}}
+      </span>
+    </div>
 
     {{#if this.status.resonance_enabled}}
       <div class="card mb-3">
@@ -156,6 +168,7 @@
                 <th scope="col">Name</th>
                 <th scope="col">Kind</th>
                 <th scope="col">Description</th>
+                <th scope="col">Associated Skills</th>
               </tr>
             </thead>
             <tbody>
@@ -167,6 +180,7 @@
                   </td>
                   <td>{{entry.kind}}</td>
                   <td>{{entry.description}}</td>
+                  <td>{{entry.skill_associations}}</td>
                 </tr>
               {{/each}}
             </tbody>

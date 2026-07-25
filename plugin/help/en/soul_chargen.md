@@ -29,9 +29,7 @@ Boon or Bane. The level defaults to `minor`.
 These commands stop working after approval. Skill ratings cost one point per
 rating level and cannot exceed the starting cap shown by `+soul/cg`. Aspect
 ratings cost one point per rating level and cannot exceed the configured
-Aspect max rating (default 5) shown by `+soul/cg`. After approval, both
-Skills and Aspects can be advanced by spending XP.
-
-A bare `+chargen` won't reach these commands — core AresMUSH's own chargen
-system claims that word (it's shorthand for the `+cg` review command). SOUL's
-chargen commands live under `+soul/cg` specifically to avoid that collision.
+Aspect max rating shown by `+soul/cg`. After approval, both Skills and
+Aspects can be advanced by spending XP (see `help soul_xp`). Resonance is
+the only choice that locks permanently at approval and cannot be changed
+afterward except by staff correction.

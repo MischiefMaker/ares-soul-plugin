@@ -22,14 +22,19 @@ module AresMUSH
       allow(Global).to receive(:read_config).with("soul", "bnb", "chargen_ratio").and_return(2)
       allow(Global).to receive(:read_config).with("soul", "bnb", "ratio_rounding").and_return("floor")
       allow(Global).to receive(:read_config).with("soul", "resonance", "enabled").and_return(true)
+      allow(Global).to receive(:read_config).with("soul", "framework", "skills").and_return(
+        "blade" => { "name" => "Blade", "aspect" => "body" }
+      )
     end
 
     def create_boon(tag)
-      SoulBnbApi.create_catalogue_entry(name: tag.capitalize, description: "test", kind: "boon", tag: tag, enactor: staff)[:entry]
+      SoulBnbApi.create_catalogue_entry(name: tag.capitalize, description: "test", kind: "boon", tag: tag,
+        enactor: staff, skill_associations: ["blade"])[:entry]
     end
 
     def create_bane(tag)
-      SoulBnbApi.create_catalogue_entry(name: tag.capitalize, description: "test", kind: "bane", tag: tag, enactor: staff)[:entry]
+      SoulBnbApi.create_catalogue_entry(name: tag.capitalize, description: "test", kind: "bane", tag: tag,
+        enactor: staff, skill_associations: ["blade"])[:entry]
     end
 
     describe ".create_catalogue_entry" do
@@ -92,7 +97,7 @@ module AresMUSH
         available = create_boon("lucky")
         SoulBnbApi.create_catalogue_entry(
           name: "Unlucky", description: "test", kind: "boon", tag: "unlucky",
-          enactor: staff, chargen_available: false
+          enactor: staff, chargen_available: false, skill_associations: ["blade"]
         )
 
         expect(SoulBnbApi.get_catalogue(chargen_available: true)).to eq([available])

@@ -118,10 +118,12 @@ export default Component.extend({
       );
     },
     bnbCreate() {
+      let skillAssociations = (this.bnbSkillAssociations || '')
+        .split(',').map((key) => key.trim()).filter((key) => key.length);
       return this.mutate('soulBnbCreate', {
         name: this.bnbName, tag: this.bnbTag, kind: this.bnbKind,
         description: this.bnbDescription, chargen_available: this.bnbChargen,
-        modifier_eligible: this.bnbModifierEligible
+        modifier_eligible: this.bnbModifierEligible, skill_associations: skillAssociations
       }, (result) => `Created catalogue entry #${result.entry.id} ${result.entry.name}.`);
     },
     bnbGrant() {

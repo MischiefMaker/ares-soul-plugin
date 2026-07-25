@@ -39,7 +39,10 @@ character (distinct from their player-facing Narrative History).
 
 ## Boons and Banes
 
-`+bnb/create <kind>/<tag>/<name>=<description>` — Create a catalogue entry.
+`+bnb/create <kind>/<tag>/<name>/<skill1,skill2,...>=<description>` — Create a
+catalogue entry. At least one associated Skill key is required (comma-separated
+if more than one) — `+roll`'s suggested-candidates flow matches B&Bs to a Skill
+roll using this list, so an entry with none is invisible to it.
 
 `+bnb/grant <character>/<id or tag>[/<level>]=<explanation>` — Grant an
 entry. `level` defaults to `minor`.

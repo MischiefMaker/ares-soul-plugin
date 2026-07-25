@@ -4,15 +4,20 @@ module AresMUSH
       include CommandHandler
 
       attr_accessor :reference, :name, :description, :kind, :tag, :entry_id,
-                    :level, :explanation, :reason, :confirmations
+                    :level, :explanation, :reason, :confirmations, :skill_associations
 
       def parse_args
         raw = cmd.args.to_s
         case cmd.switch
         when "create"
-          # Assumption: +bnb/create <kind>/<tag>/<name>=<description>
+          # +bnb/create <kind>/<tag>/<name>/<skill1,skill2,...>=<description>
+          # The comma-separated Skill list is required (mischief bug list
+          # item 8, 2026-07-25) - a catalogue entry with no associated
+          # Skills is invisible to SoulRollApi's roll-suggestion logic, so
+          # every entry needs at least one.
           left, self.description = raw.split("=", 2)
-          self.kind, self.tag, self.name = left.to_s.split("/", 3)
+          self.kind, self.tag, self.name, skills_raw = left.to_s.split("/", 4)
+          self.skill_associations = skills_raw.to_s.split(",").map(&:strip).reject(&:blank?)
         when "grant"
           left, self.explanation = raw.split("=", 2)
           self.name, self.reference, self.level = left.to_s.split("/", 3)
@@ -187,7 +192,7 @@ module AresMUSH
 
       def create_entry
         result = SoulBnbApi.create_catalogue_entry(name: self.name, description: self.description,
-          kind: self.kind, tag: self.tag, enactor: enactor)
+          kind: self.kind, tag: self.tag, enactor: enactor, skill_associations: self.skill_associations)
         emit_result result, 'soul.bnb_created'
       end
 

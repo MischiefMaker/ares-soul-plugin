@@ -94,8 +94,8 @@ en:
     chargen_updated: "SOUL chargen selection updated."
     chargen_title: "SOUL Character Generation"
     chargen_catalogue_title: "Chargen Boons & Banes"
-    chargen_catalogue_line: "#%{id} [%{tag}] %{name} (%{kind})%r  %{description}"
-    chargen_status: "%xhResonance:%xn %{resonance}    %xhSkill Points:%xn %{spent} spent / %{remaining} remaining%r%ld%r%{skills}%r%ld%r%xhSelected Boons & Banes:%xn%r%{bnb}"
+    chargen_catalogue_line: "#%{id} [%{tag}] %{name} (%{kind})%r  %{description}%r  %xhAssociated Skills:%xn %{skills}"
+    chargen_status: "%xhResonance:%xn %{resonance}    %xhSkill Points:%xn %{spent} spent / %{remaining} remaining    %xhAspect Points:%xn %{aspect_spent} spent / %{aspect_remaining} remaining%r%ld%r%{skills}%r%ld%r%xhSelected Boons & Banes:%xn%r%{bnb}%r%ld%r%xhReadiness:%xn%r%{readiness}"
     commands:
       soul:
         help: "Usage: +soul [character], +soul/history, or +soul/cg (before approval)"
