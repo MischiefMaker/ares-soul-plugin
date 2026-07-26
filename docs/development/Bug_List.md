@@ -8,6 +8,23 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-044: Configurable Boons & Banes chargen explanation
+
+**Status:** ✅ Done (`plugin/public/soul_bnb_api.rb`, `plugin/web/soul_chargen_web_handler.rb`,
+`webportal/templates/components/soul-chargen.hbs`, `game/config/soul.yml`, `docs/reference/Configuration.md`,
+`docs/reference/Default_Config.md`, spec)
+
+**Requested:** 2026-07-26, live testing: "Let's also add an explanation text for chargen BNBs, likewise
+configurable. Default like: Boons and Banes are special qualities, circumstances, possessions, or connections
+that help define your character. They may affect SOUL rolls, attract GM attention, provide plot hooks, or
+simply add depth to your character." (follows FR-043's Resonance description pattern.)
+
+**Fix:** `SoulBnbApi.chargen_description` reads `soul.bnb.description` from config, falling back to a new
+`DEFAULT_CHARGEN_DESCRIPTION` constant with the wording above - named `.chargen_description`, not
+`.description`, since every catalogue entry already has its own per-entry `description` field elsewhere in
+this class. The web chargen "Starting Boons & Banes" card now shows it as a `cg-tip`, same placement/style as
+the Resonance card's tip.
+
 ### FR-043: Configurable Resonance chargen explanation; non-blocking extreme-Resonance warning on `+app`
 
 **Status:** ✅ Done (`plugin/public/soul_resonance_api.rb`, `plugin/web/soul_chargen_web_handler.rb`,

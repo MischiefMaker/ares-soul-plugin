@@ -37,6 +37,20 @@ module AresMUSH
         enactor: staff, skill_associations: ["blade"])[:entry]
     end
 
+    describe ".chargen_description" do
+      it "falls back to DEFAULT_CHARGEN_DESCRIPTION when unconfigured" do
+        allow(Global).to receive(:read_config).with("soul", "bnb", "description").and_return(nil)
+        expect(SoulBnbApi.chargen_description).to eq(SoulBnbApi::DEFAULT_CHARGEN_DESCRIPTION)
+      end
+
+      it "uses the configured description when present (2026-07-26: made configurable at the " \
+        "project owner's request, matching SoulResonanceApi.description)" do
+        allow(Global).to receive(:read_config).with("soul", "bnb", "description")
+          .and_return("Custom flavor text.")
+        expect(SoulBnbApi.chargen_description).to eq("Custom flavor text.")
+      end
+    end
+
     describe ".create_catalogue_entry" do
       it "requires manage_soul permission" do
         result = SoulBnbApi.create_catalogue_entry(name: "Lucky", description: "x", kind: "boon", tag: "lucky", enactor: character)

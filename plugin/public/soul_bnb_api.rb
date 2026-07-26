@@ -3,6 +3,20 @@ module AresMUSH
   # through REQ-022, Addendum §5). See docs/architecture/Data_Model.md for
   # the two-layer catalogue/instance split.
   class SoulBnbApi
+    # Player-facing flavor/explanation text shown in chargen - configurable
+    # per game (2026-07-26 live testing: "Let's also add an explanation
+    # text for chargen BNBs, likewise configurable", following the same
+    # pattern as SoulResonanceApi.description). Named .chargen_description,
+    # not .description, since every catalogue entry already has its own
+    # per-entry "description" field elsewhere in this class.
+    DEFAULT_CHARGEN_DESCRIPTION = "Boons and Banes are special qualities, circumstances, possessions, " \
+      "or connections that help define your character. They may affect SOUL rolls, attract GM " \
+      "attention, provide plot hooks, or simply add depth to your character.".freeze
+
+    def self.chargen_description
+      Global.read_config("soul", "bnb", "description").presence || DEFAULT_CHARGEN_DESCRIPTION
+    end
+
     # --- Catalogue ---
 
     def self.create_catalogue_entry(name:, description:, kind:, tag:, enactor:,

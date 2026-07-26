@@ -120,6 +120,7 @@ Eligibility target is the median `xp_earned` across approved characters; progres
 
 | Key | Type | Default | Description |
 |---|---|---|---|
+| `bnb.description` | string | see `SoulBnbApi::DEFAULT_CHARGEN_DESCRIPTION` | Player-facing explanation of Boons & Banes shown in chargen |
 | `bnb.level_definitions` | map | Minor +1, Major +2, Legendary +3, Negated no modifier, Epic explicitly configured | Per-level mechanical effect and ordering (REQ-017) |
 | `bnb.level_chargen_availability` | map | Minor/Major/Legendary: configurable (default true); Negated: `false`; Epic: `false` | Per-level chargen availability |
 | `bnb.definition_defaults.chargen_available` | bool | `true` | New catalogue entries default to chargen-available |

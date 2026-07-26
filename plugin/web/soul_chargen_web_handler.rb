@@ -69,7 +69,8 @@ module AresMUSH
         aspects: aspects, skills: skills,
         catalogue: SoulBnbApi.get_catalogue(chargen_available: true).map { |entry| catalogue_hash(entry) },
         selected_bnb: selected.map { |entry| selected_hash(entry) },
-        has_selected_bnb: selected.any?
+        has_selected_bnb: selected.any?,
+        bnb_description: SoulBnbApi.chargen_description
       }
     end
 

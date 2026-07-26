@@ -155,6 +155,11 @@ soul:
   # ============================================================================
 
   bnb:
+    description: >-
+      Boons and Banes are special qualities, circumstances, possessions, or
+      connections that help define your character. They may affect SOUL
+      rolls, attract GM attention, provide plot hooks, or simply add depth
+      to your character.
     level_definitions:
       minor:
         modifier: 1
