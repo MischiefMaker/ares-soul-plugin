@@ -42,7 +42,8 @@ module AresMUSH
             skill_names = (entry.associated_skills || []).map do |key|
               SoulFrameworkApi.get_skill(key)&.dig(:name) || key
             end
-            t('soul.bnb_summary', name: entry.catalogue_entry.name, level: entry.level_state,
+            t('soul.bnb_summary', color: Soul.bnb_kind_color(entry.catalogue_entry),
+              name: entry.catalogue_entry.name, level: entry.level_state,
               skills: skill_names.empty? ? t('soul.none') : skill_names.join(", "))
           end.compact
           resonance = SoulResonanceApi.get_resonance(character)

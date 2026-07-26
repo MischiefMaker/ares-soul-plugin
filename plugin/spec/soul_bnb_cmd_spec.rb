@@ -22,26 +22,31 @@ module AresMUSH
         expect(handler.required_args).to eq([])
       end
 
-      it "lists the character's own entries, including the private explanation" do
-        catalogue = double(id: 12, tag: "cursed", name: "Cursed", kind: "bane")
+      it "lists the character's own entries, including the private explanation, colored red for a Bane" do
+        catalogue = double(id: 12, tag: "cursed", name: "Cursed", kind: "bane", boon?: false, bane?: true)
         entry = double(catalogue_entry: catalogue, level_state: "minor",
           character_explanation: "A witch's grudge.")
         allow(SoulBnbApi).to receive(:get_character_entries).with(enactor).and_return([entry])
-        expect(BorderedListTemplate).to receive(:new).with(
-          [a_string_matching(/#12 \[cursed\] Cursed \(bane, minor\): A witch's grudge\./)],
-          "Your Boons & Banes"
-        ).and_return(double(render: "rendered"))
+        expect(BorderedListTemplate).to receive(:new) do |lines, title|
+          expect(title).to eq("Your Boons & Banes")
+          expect(lines).to include(a_string_matching(/%xr#12 \[cursed\] Cursed \(bane, minor\)/))
+          expect(lines).to include(a_string_matching(/A witch's grudge\./))
+          double(render: "rendered")
+        end
 
         handler.show_entry
       end
 
-      it "shows 'None' in place of an unset explanation" do
-        catalogue = double(id: 3, tag: "lucky", name: "Lucky", kind: "boon")
+      it "shows 'None' in place of an unset explanation, colored green for a Boon" do
+        catalogue = double(id: 3, tag: "lucky", name: "Lucky", kind: "boon", boon?: true, bane?: false)
         entry = double(catalogue_entry: catalogue, level_state: "major", character_explanation: "")
         allow(SoulBnbApi).to receive(:get_character_entries).with(enactor).and_return([entry])
-        expect(BorderedListTemplate).to receive(:new).with(
-          [a_string_matching(/None/)], "Your Boons & Banes"
-        ).and_return(double(render: "rendered"))
+        expect(BorderedListTemplate).to receive(:new) do |lines, title|
+          expect(title).to eq("Your Boons & Banes")
+          expect(lines).to include(a_string_matching(/%xg#3 \[lucky\] Lucky \(boon, major\)/))
+          expect(lines).to include(a_string_matching(/None/))
+          double(render: "rendered")
+        end
 
         handler.show_entry
       end
@@ -58,16 +63,22 @@ module AresMUSH
         h
       end
 
-      it "lays a Boon and a Bane out side by side under Boons/Banes headers" do
-        boon = double(id: 1, tag: "brave", name: "Brave", boon?: true, bane?: false)
-        bane = double(id: 2, tag: "cursed", name: "Cursed", boon?: false, bane?: true)
+      it "lays a Boon and a Bane out side by side, colored, ID-aligned, with the description" do
+        boon = double(id: 1, tag: "brave", name: "Brave", description: "Stands firm.",
+          boon?: true, bane?: false)
+        bane = double(id: 22, tag: "cursed", name: "Cursed", description: "Marked by ill luck.",
+          boon?: false, bane?: true)
         allow(SoulBnbApi).to receive(:get_catalogue).and_return([boon, bane])
 
         expect(BorderedListTemplate).to receive(:new) do |lines, title|
           expect(title).to eq("Boon & Bane Catalogue")
-          expect(lines[0]).to match(/Boons/)
-          expect(lines[0]).to match(/Banes/)
-          expect(lines).to include(a_string_matching(/#1 \[brave\] Brave\s+#2 \[cursed\] Cursed/))
+          expect(lines[0]).to match(/%xg.*Boons/)
+          expect(lines[0]).to match(/%xr.*Banes/)
+          # ID right-justified against the widest ID in the catalogue (22 is
+          # 2 digits, so Boon #1 gets padded to "# 1").
+          expect(lines).to include(a_string_matching(/%xg# 1 \[%xcbrave%xg\] Brave%xn/))
+          expect(lines).to include(a_string_matching(/%xr#22 \[%xccursed%xr\] Cursed%xn/))
+          expect(lines).to include(a_string_matching(/Stands firm\..*Marked by ill luck\./))
           double(render: "rendered")
         end
 
@@ -111,7 +122,7 @@ module AresMUSH
       end
 
       it "lists the target character's entries with a whose-name title" do
-        catalogue = double(id: 5, tag: "brave", name: "Brave", kind: "boon")
+        catalogue = double(id: 5, tag: "brave", name: "Brave", kind: "boon", boon?: true, bane?: false)
         entry = double(catalogue_entry: catalogue, level_state: "minor",
           character_explanation: "Ran into a burning building once.")
         allow(SoulBnbApi).to receive(:get_character_entries).with(target).and_return([entry])
@@ -123,7 +134,8 @@ module AresMUSH
       end
 
       it "shows a single entry with a whose-explanation label" do
-        catalogue = double(id: 5, tag: "brave", name: "Brave", kind: "boon", description: "Fearless.")
+        catalogue = double(id: 5, tag: "brave", name: "Brave", kind: "boon", description: "Fearless.",
+          boon?: true, bane?: false)
         entry = double(catalogue_entry: catalogue, character_explanation: "Ran into a burning building once.")
         allow(SoulBnbApi).to receive(:get_catalogue_entry).with("brave").and_return(catalogue)
         allow(SoulBnbApi).to receive(:get_character_entries).with(target).and_return([entry])

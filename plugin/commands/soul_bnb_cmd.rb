@@ -169,7 +169,8 @@ module AresMUSH
       def show_entries_for(character, whose:)
         lines = SoulBnbApi.get_character_entries(character).map do |entry|
           next unless entry.catalogue_entry
-          t('soul.bnb_own_line', id: entry.catalogue_entry.id, tag: entry.catalogue_entry.tag,
+          t('soul.bnb_own_line', color: Soul.bnb_kind_color(entry.catalogue_entry),
+            id: entry.catalogue_entry.id, tag: entry.catalogue_entry.tag,
             name: entry.catalogue_entry.name, kind: entry.catalogue_entry.kind,
             level: entry.level_state,
             explanation: entry.character_explanation.blank? ? t('soul.none') : entry.character_explanation)
@@ -187,7 +188,7 @@ module AresMUSH
         end
         owned = SoulBnbApi.get_character_entries(character).find { |entry| entry.catalogue_entry == catalogue }
         explanation = owned ? owned.character_explanation : nil
-        body = t('soul.bnb_detail', tag: catalogue.tag, kind: catalogue.kind,
+        body = t('soul.bnb_detail', color: Soul.bnb_kind_color(catalogue), tag: catalogue.tag, kind: catalogue.kind,
           description: catalogue.description, label: label,
           explanation: explanation.blank? ? t('soul.none') : explanation)
         client.emit BorderedDisplayTemplate.new(
@@ -202,11 +203,12 @@ module AresMUSH
           return
         end
         catalogue = SoulBnbApi.get_catalogue_entry(self.reference)
+        color = Soul.bnb_kind_color(catalogue)
         matches = scene.participants.map do |character|
           entry = SoulBnbApi.get_character_entries(character).find { |e| e.catalogue_entry == catalogue }
           next unless entry
           public_entry = SoulBnbApi.get_character_entry_public(character, entry.id)
-          t('soul.bnb_scene_line', character: character.name,
+          t('soul.bnb_scene_line', color: color, character: character.name,
             name: public_entry[:name], level: public_entry[:level_state])
         end.compact
         client.emit BorderedListTemplate.new(
@@ -223,26 +225,48 @@ module AresMUSH
       end
 
       def render_catalogue(entries)
-        boons = entries.select(&:boon?).map { |entry| catalogue_entry_line(entry) }
-        banes = entries.select(&:bane?).map { |entry| catalogue_entry_line(entry) }
+        # Right-justified against the widest ID in the whole catalogue (not
+        # per-column) so the "[" that follows lines up down both columns
+        # (2026-07-26 live testing: "let's ljust the numbers so everything
+        # lines up").
+        id_width = entries.map { |entry| entry.id.to_s.length }.max || 1
+        boons = entries.select(&:boon?).map { |entry| catalogue_entry_lines(entry, id_width) }
+        banes = entries.select(&:bane?).map { |entry| catalogue_entry_lines(entry, id_width) }
         client.emit BorderedListTemplate.new(
           catalogue_columns(boons, banes), t('soul.bnb_catalogue_title')
         ).render
       end
 
-      def catalogue_entry_line(entry)
-        t('soul.bnb_catalogue_line', id: entry.id, tag: entry.tag, name: entry.name)
+      # Each entry renders as two column lines: the colored "#id [tag]
+      # Name" header (green for Boons, red for Banes, cyan tag) and a
+      # plain, truncated public description beneath it (2026-07-26 live
+      # testing: "add some colour... In the catalogue, also include the
+      # public description").
+      def catalogue_entry_lines(entry, id_width)
+        name_line = t('soul.bnb_catalogue_line', color: Soul.bnb_kind_color(entry),
+          id: right(entry.id.to_s, id_width), tag: entry.tag, name: entry.name)
+        [name_line, catalogue_description(entry.description)]
+      end
+
+      def catalogue_description(description)
+        return "" if description.blank?
+        return description if description.length <= CATALOGUE_COLUMN_WIDTH
+
+        "#{truncate(description, CATALOGUE_COLUMN_WIDTH - 1)}…"
       end
 
       def catalogue_columns(boons, banes)
-        header = "%xh#{left(t('soul.bnb_catalogue_boons_header'), CATALOGUE_COLUMN_WIDTH)}  " \
-          "#{left(t('soul.bnb_catalogue_banes_header'), CATALOGUE_COLUMN_WIDTH)}%xn"
+        header = "#{left("%xh%xg#{t('soul.bnb_catalogue_boons_header')}%xn", CATALOGUE_COLUMN_WIDTH)}  " \
+          "#{left("%xh%xr#{t('soul.bnb_catalogue_banes_header')}%xn", CATALOGUE_COLUMN_WIDTH)}"
         divider = "#{'-' * CATALOGUE_COLUMN_WIDTH}  #{'-' * CATALOGUE_COLUMN_WIDTH}"
         return [header, divider, t('soul.none')] if boons.empty? && banes.empty?
 
         rows = [header, divider]
         [boons.length, banes.length].max.times do |i|
-          rows << "#{left(boons[i], CATALOGUE_COLUMN_WIDTH)}  #{left(banes[i], CATALOGUE_COLUMN_WIDTH)}"
+          boon_name, boon_desc = boons[i] || [nil, nil]
+          bane_name, bane_desc = banes[i] || [nil, nil]
+          rows << "#{left(boon_name, CATALOGUE_COLUMN_WIDTH)}  #{left(bane_name, CATALOGUE_COLUMN_WIDTH)}"
+          rows << "#{left(boon_desc, CATALOGUE_COLUMN_WIDTH)}  #{left(bane_desc, CATALOGUE_COLUMN_WIDTH)}"
         end
         rows
       end
@@ -310,7 +334,8 @@ module AresMUSH
       def show_requests
         requests = SoulBnbApi.get_requests(status: "pending")
         lines = requests.map do |req|
-          t('soul.bnb_request_line', id: req.id, character: req.character.name,
+          t('soul.bnb_request_line', color: Soul.bnb_kind_color(req.catalogue_entry), id: req.id,
+            character: req.character.name,
             name: req.catalogue_entry.name, tag: req.catalogue_entry.tag, level: req.level_state)
         end
         client.emit BorderedListTemplate.new(

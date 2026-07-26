@@ -8,6 +8,36 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-040: `+bnb/catalogue` alignment, color, and descriptions; matching web admin browse fix
+
+**Status:** ✅ Done (`plugin/commands/soul_bnb_cmd.rb`, `plugin/commands/soul_sheet_cmd.rb`, `plugin/soul.rb`,
+`plugin/locales/locale_en.yml`, `webportal/templates/admin-soul.hbs`, spec)
+
+**Requested:** 2026-07-26, live testing, in sequence:
+- "let's ljust the numbers so everything lines up, and add some colour -- maybe a cyan for the tag, green for
+  boons and red for banes. Let's see if that's too much."
+- "In the catalogue, also include the public description."
+- "Likewise on the MUSH, wherever boons and banes are displayed, like on the soul sheet, let's use red for
+  banes and green for boons."
+- (separately, re: the web admin catalogue browser added in FR-039) "there's some weird spacing in the
+  catalogue. Trail ending line breaks maybe?"
+
+**Fix:**
+- `+bnb/catalogue`/`+bnb/search`: the numeric ID is now right-justified against the widest ID in the whole
+  catalogue (not per-column, so both sides share one width) via AresMUSH's `right()` padding helper, so the
+  `[` that follows lines up down both columns. Each entry is colored green (Boon) or red (Bane) with the tag
+  carved out in cyan, and now renders as two lines - the colored `#id [tag] Name` header plus the catalogue
+  entry's public description (truncated with `…` past the 38-char column width) beneath it.
+- Added `Soul.bnb_kind_color(catalogue_entry)` (`plugin/soul.rb`) - a shared green/red/blank helper, kept out
+  of `SoulBnbApi` since ANSI codes are MUSH-only and would mean nothing to the web portal that API also
+  serves. Applied it everywhere else a Boon/Bane's kind shows on the MUSH side: `+bnb` (own entries),
+  `+bnb/detail`, `+bnb <id or tag>` detail view, `+bnb/here`, `+bnb/requests`, and the `soul` sheet's
+  Boons & Banes summary line.
+- The web admin page's "View Full Catalogue" browser added in FR-039 used a plain `<li>[tag] Name — description</li>`
+  line; a long description wrapping inline right after the bold name, with no block separation between list
+  items, is what read as "weird spacing" on a narrow viewport. Switched both Boons/Banes lists to the same
+  list-group card layout the profile's own picker already uses (name and description on their own lines).
+
 ### FR-039: Web Boon/Bane pickers split into Boons/Banes expandos; admin page gets a "View Full Catalogue" browser
 
 **Status:** ✅ Done (`webportal/components/soul-bnb.js`, `webportal/templates/components/soul-bnb.hbs`,

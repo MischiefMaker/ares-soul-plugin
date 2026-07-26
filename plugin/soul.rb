@@ -109,6 +109,18 @@ module AresMUSH
     # core) - same convention every bundled plugin uses (e.g.
     # Jobs.check_config, Chargen.check_config). Returns an array of
     # human-readable error strings; an empty array means config is valid.
+    # Shared MUSH-only display helper (2026-07-26 live testing: "wherever
+    # boons and banes are displayed, like on the soul sheet, let's use red
+    # for banes and green for boons") - a plain ANSI color code, not
+    # meaningful to the web portal, so it lives here (used by both
+    # SoulBnbCmd and SoulSheetCmd) rather than on SoulBnbApi, which both
+    # MUSH and web share.
+    def self.bnb_kind_color(catalogue_entry)
+      return "%xg" if catalogue_entry&.boon?
+      return "%xr" if catalogue_entry&.bane?
+      ""
+    end
+
     def self.check_config
       validator = SoulConfigValidator.new
       validator.validate

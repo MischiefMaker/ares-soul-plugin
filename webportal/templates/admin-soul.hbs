@@ -99,23 +99,29 @@
     {{#if this.catalogueBrowserOpen}}
       <details class="mb-2">
         <summary>Boons ({{this.catalogueBoons.length}})</summary>
-        <ul class="list-unstyled mt-2 mb-0">
+        <div class="list-group mt-2">
           {{#each this.catalogueBoons as |entry|}}
-            <li>[{{entry.tag}}] {{entry.name}} <span class="text-muted small">— {{entry.description}}</span></li>
+            <div class="list-group-item">
+              <h6 class="mb-1">[{{entry.tag}}] {{entry.name}}</h6>
+              <p class="mb-0 small text-muted">{{entry.description}}</p>
+            </div>
           {{else}}
-            <li class="text-muted small">No Boons found.</li>
+            <div class="text-muted small p-2">No Boons found.</div>
           {{/each}}
-        </ul>
+        </div>
       </details>
       <details class="mb-3">
         <summary>Banes ({{this.catalogueBanes.length}})</summary>
-        <ul class="list-unstyled mt-2 mb-0">
+        <div class="list-group mt-2">
           {{#each this.catalogueBanes as |entry|}}
-            <li>[{{entry.tag}}] {{entry.name}} <span class="text-muted small">— {{entry.description}}</span></li>
+            <div class="list-group-item">
+              <h6 class="mb-1">[{{entry.tag}}] {{entry.name}}</h6>
+              <p class="mb-0 small text-muted">{{entry.description}}</p>
+            </div>
           {{else}}
-            <li class="text-muted small">No Banes found.</li>
+            <div class="text-muted small p-2">No Banes found.</div>
           {{/each}}
-        </ul>
+        </div>
       </details>
     {{/if}}
     <p class="text-muted">Create a new catalogue entry.</p>
