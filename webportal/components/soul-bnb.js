@@ -9,8 +9,6 @@ export default Component.extend({
   isSubmitting: false,
   pickerOpen: false,
   detailOpen: false,
-  page: 1,
-  perPage: 10,
 
   didReceiveAttrs() {
     this._super(...arguments);
@@ -27,14 +25,22 @@ export default Component.extend({
     }
   },
 
-  async loadCatalogue(page) {
+  // Fetches the whole active catalogue (not paginated - split into a
+  // Boons expando and a Banes expando instead, 2026-07-26 live testing:
+  // "let's split them into Boons and Banes, and make each an expando
+  // type") and buckets it client-side, mirroring the same per_page: 1000
+  // "fetch everything" convention soul-staff.js/admin-soul.js/
+  // soul-scene-tools.js already use for this same endpoint.
+  async loadCatalogue() {
     this.set('catalogueLoading', true);
     try {
       let result = await this.api.requestOne('soulBnbCatalogue', {
-        page: page || this.page, per_page: this.perPage, query: this.query
+        per_page: 1000, query: this.query
       }, null);
+      let entries = result.entries || [];
       this.setProperties({
-        catalogueEntries: result.entries, page: result.page, totalPages: result.total_pages,
+        boonEntries: entries.filter((entry) => (entry.kind || '').toLowerCase() === 'boon'),
+        baneEntries: entries.filter((entry) => (entry.kind || '').toLowerCase() === 'bane'),
         availableSkills: result.available_skills
       });
     } finally {
@@ -45,23 +51,13 @@ export default Component.extend({
   actions: {
     openPicker() {
       this.setProperties({ pickerOpen: true, selectedCatalogueEntry: null, requestError: null, query: '' });
-      this.loadCatalogue(1);
+      this.loadCatalogue();
     },
     closePicker() {
       this.set('pickerOpen', false);
     },
     search() {
-      return this.loadCatalogue(1);
-    },
-    previousPage() {
-      if (this.page > 1) {
-        this.loadCatalogue(this.page - 1);
-      }
-    },
-    nextPage() {
-      if (this.page < this.totalPages) {
-        this.loadCatalogue(this.page + 1);
-      }
+      return this.loadCatalogue();
     },
     pick(entry) {
       this.setProperties({

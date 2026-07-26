@@ -77,6 +77,21 @@ export default Controller.extend({
     loadFramework() {
       return this.call('soulFramework', {}, 'framework', 'Framework loaded.');
     },
+    // model.catalogue.entries is already the whole active catalogue (the
+    // route loads it with per_page: 1000) - bucket it client-side rather
+    // than making a second request (2026-07-26 live testing: "add a
+    // button/link to also view the full catalogue, organized the same"
+    // as the profile's Boons/Banes expando picker).
+    toggleCatalogueBrowser() {
+      if (!this.catalogueBrowserOpen) {
+        let entries = (this.model.catalogue && this.model.catalogue.entries) || [];
+        this.setProperties({
+          catalogueBoons: entries.filter((entry) => (entry.kind || '').toLowerCase() === 'boon'),
+          catalogueBanes: entries.filter((entry) => (entry.kind || '').toLowerCase() === 'bane')
+        });
+      }
+      this.toggleProperty('catalogueBrowserOpen');
+    },
     reloadConfig() {
       return this.call(
         'soulReload', {}, 'reloadResult',

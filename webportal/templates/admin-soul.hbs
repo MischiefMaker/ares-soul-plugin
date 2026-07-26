@@ -93,6 +93,31 @@
 
   <section class="card card-body mb-3">
     <h4>Boon &amp; Bane catalogue</h4>
+    <button type="button" class="btn btn-sm btn-outline-secondary mb-2" onclick={{action "toggleCatalogueBrowser"}}>
+      {{if this.catalogueBrowserOpen "Hide Full Catalogue" "View Full Catalogue"}}
+    </button>
+    {{#if this.catalogueBrowserOpen}}
+      <details class="mb-2">
+        <summary>Boons ({{this.catalogueBoons.length}})</summary>
+        <ul class="list-unstyled mt-2 mb-0">
+          {{#each this.catalogueBoons as |entry|}}
+            <li>[{{entry.tag}}] {{entry.name}} <span class="text-muted small">— {{entry.description}}</span></li>
+          {{else}}
+            <li class="text-muted small">No Boons found.</li>
+          {{/each}}
+        </ul>
+      </details>
+      <details class="mb-3">
+        <summary>Banes ({{this.catalogueBanes.length}})</summary>
+        <ul class="list-unstyled mt-2 mb-0">
+          {{#each this.catalogueBanes as |entry|}}
+            <li>[{{entry.tag}}] {{entry.name}} <span class="text-muted small">— {{entry.description}}</span></li>
+          {{else}}
+            <li class="text-muted small">No Banes found.</li>
+          {{/each}}
+        </ul>
+      </details>
+    {{/if}}
     <p class="text-muted">Create a new catalogue entry.</p>
     <Input @value={{this.bnbName}} class="form-control my-2" placeholder="Name" />
     <Input @value={{this.bnbTag}} class="form-control my-2" placeholder="Tag" />

@@ -127,22 +127,34 @@
     {{#if this.catalogueLoading}}
       <div class="text-muted">Loading…</div>
     {{else}}
-      <div class="list-group">
-        {{#each this.catalogueEntries as |entry|}}
-          <button type="button" class="list-group-item list-group-item-action soul-bnb-catalogue-entry"
-            onclick={{action "pick" entry}}>
-            <h6 class="mb-1">[{{entry.tag}}] {{entry.name}} <span class="badge bg-secondary">{{entry.kind}}</span></h6>
-            <p class="mb-0 small">{{entry.description}}</p>
-          </button>
-        {{/each}}
-      </div>
-      <div class="d-flex justify-content-between align-items-center mt-3">
-        <button type="button" class="btn btn-sm btn-outline-secondary" disabled={{eq this.page 1}}
-          onclick={{action "previousPage"}}>Previous</button>
-        <span class="text-muted small">Page {{this.page}} of {{this.totalPages}}</span>
-        <button type="button" class="btn btn-sm btn-outline-secondary" disabled={{eq this.page this.totalPages}}
-          onclick={{action "nextPage"}}>Next</button>
-      </div>
+      <details class="mb-2">
+        <summary>Boons ({{this.boonEntries.length}})</summary>
+        <div class="list-group mt-2">
+          {{#each this.boonEntries as |entry|}}
+            <button type="button" class="list-group-item list-group-item-action soul-bnb-catalogue-entry"
+              onclick={{action "pick" entry}}>
+              <h6 class="mb-1">[{{entry.tag}}] {{entry.name}}</h6>
+              <p class="mb-0 small">{{entry.description}}</p>
+            </button>
+          {{else}}
+            <div class="text-muted small p-2">No Boons found.</div>
+          {{/each}}
+        </div>
+      </details>
+      <details>
+        <summary>Banes ({{this.baneEntries.length}})</summary>
+        <div class="list-group mt-2">
+          {{#each this.baneEntries as |entry|}}
+            <button type="button" class="list-group-item list-group-item-action soul-bnb-catalogue-entry"
+              onclick={{action "pick" entry}}>
+              <h6 class="mb-1">[{{entry.tag}}] {{entry.name}}</h6>
+              <p class="mb-0 small">{{entry.description}}</p>
+            </button>
+          {{else}}
+            <div class="text-muted small p-2">No Banes found.</div>
+          {{/each}}
+        </div>
+      </details>
     {{/if}}
   {{/if}}
 </BsModalSimple>

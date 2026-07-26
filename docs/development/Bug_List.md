@@ -8,7 +8,26 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
-### FR-038: `+bnb/catalogue` (and `+bnb/search`) split into a Boons column and a Banes column
+### FR-039: Web Boon/Bane pickers split into Boons/Banes expandos; admin page gets a "View Full Catalogue" browser
+
+**Status:** ✅ Done (`webportal/components/soul-bnb.js`, `webportal/templates/components/soul-bnb.hbs`,
+`webportal/controllers/admin-soul.js`, `webportal/templates/admin-soul.hbs`)
+
+**Requested:** 2026-07-26, live testing (follow-up to FR-038): "Similarly on the web, when viewing the full
+list (such as on requesting to add a new bnb on the profile), let's split them into Boons and Banes, and make
+each a expando type." Then: "And on the admin page, when adding a new bnb to the catalogue, let's add a
+button/link to also view the full catalogue, organized the same as above."
+
+**Fix:**
+- Profile's "Add a Boon/Bane" picker (`soul-bnb.js`) dropped its server-side pagination (`page`/`per_page: 10`,
+  Previous/Next) in favor of fetching the whole active catalogue at once (`per_page: 1000`, the same "fetch
+  everything" convention `soul-staff.js`/`admin-soul.js`/`soul-scene-tools.js` already use for this endpoint),
+  bucketed client-side into `boonEntries`/`baneEntries` and rendered as two `<details>` expandos (matching the
+  `<details>/<summary>` convention already used throughout `soul-staff.hbs`), each with its own count in the
+  summary and an empty-state message. The search box still filters server-side before the split.
+- Admin page's "Boon & Bane catalogue" card gets a "View Full Catalogue" toggle button (`model.catalogue.entries`
+  is already loaded whole by the route - no extra request) that reveals the same Boons/Banes expando layout,
+  read-only (name/tag/description only, no action).
 
 **Status:** ✅ Done (`plugin/commands/soul_bnb_cmd.rb`, `plugin/locales/locale_en.yml`, spec)
 
