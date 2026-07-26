@@ -74,8 +74,7 @@ Canonical symmetric table (REQ-012):
 |---|---|---|---|
 | `xp.weekly_award` | int | `1` | Weekly award per approved character (no login/activity required) |
 | `xp.weekly_award_cron` | cron map | Sunday 00:00 | Schedule for automatic weekly and forum reconciliation awards |
-| `xp.scene_sharer_award` | int | `2` | Award to the scene sharer, once per scene/recipient/award-type |
-| `xp.scene_participant_award` | int | `1` | Award to each other approved participant |
+| `xp.scene_participant_award` | int | `1` | Award to every approved participant when a scene is shared (including the scene's owner - there is no separate "sharer" bonus; see FR-042 in `docs/development/Bug_List.md`) |
 | `xp.forum_award` | int | `1` | First qualifying player-authored forum topic/reply per week (later contributions that week award 0) |
 | `xp.cost.skill_curve_numerator` | int | `1` | Numerator of the skill rating curve (`rating² / denominator`) |
 | `xp.cost.skill_curve_denominator` | int | `2` | Denominator of the skill rating curve |

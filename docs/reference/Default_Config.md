@@ -116,7 +116,8 @@ soul:
 
   xp:
     weekly_award: 1
-    scene_sharer_award: 2
+    # No separate sharer bonus - every approved participant, including
+    # the scene's owner, gets this same amount when a scene is shared.
     scene_participant_award: 1
     forum_award: 1
 
@@ -306,7 +307,7 @@ Faster advancement:
 soul:
   xp:
     weekly_award: 2
-    scene_sharer_award: 3
+    scene_participant_award: 2
 ```
 
 ### Adding Custom Aspects or Skills

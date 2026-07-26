@@ -23,7 +23,7 @@ module AresMUSH
           "positive_starting_cap_per_level" => 1, "negative_starting_cap_per_level" => 1
         },
         "xp" => {
-          "weekly_award" => 1, "scene_sharer_award" => 2,
+          "weekly_award" => 1,
           "scene_participant_award" => 1, "forum_award" => 1,
           "cost" => {
             "skill_curve_numerator" => 1, "skill_curve_denominator" => 2,

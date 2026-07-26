@@ -119,7 +119,11 @@ soul:
 
   xp:
     weekly_award: 1
-    scene_sharer_award: 2
+    # No separate sharer bonus (dropped 2026-07-26 at the project owner's
+    # direction) - the real SceneSharedEvent never says who actually ran
+    # +scene/share, only Scene#owner, which isn't reliably the same
+    # person since any participant can share a scene. Every approved
+    # participant, including the owner, gets this same amount.
     scene_participant_award: 1
     forum_award: 1
 

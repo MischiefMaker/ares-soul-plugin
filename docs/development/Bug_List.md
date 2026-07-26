@@ -8,6 +8,30 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-042: Dropped the scene-sharer XP bonus - CI-01/REQ-013 deviation
+
+**Status:** ✅ Done (`plugin/events/soul_scene_shared_event_handler.rb`, `game/config/soul.yml`,
+`plugin/soul_config_validator.rb`, `docs/reference/Configuration.md`, `docs/reference/Default_Config.md`, spec)
+
+**Requested:** 2026-07-26, live testing: "Sharing a scene only gave me a participant XP" - then, after being
+walked through why (`SceneSharedEvent` only ever carries the scene's id, not who ran `+scene/share`; the only
+usable proxy was `Scene#owner`, the scene's original creator, but any participant can share a scene so the
+owner isn't reliably the same person) and asked to choose between keeping the owner-as-sharer proxy, dropping
+the bonus, or deciding later: "Let's drop the scene share XP then."
+
+**Background:** REQ-013 (Automatic XP Award Sources) specifies a scene-sharer/participant split, resolved
+during Phase 9 by using `Scene#owner` as the sharer since the real event has no better data (documented in
+`docs/spec/CLAUDE_ADR.md`). Live testing confirmed that resolution produces visibly wrong results whenever
+someone other than the scene's original owner actually shares it - a normal, permitted action
+(`Scenes.can_edit_scene?` allows any participant, not just the owner) - so the "sharer" credit routinely went
+to the wrong character. This is a deliberate deviation from REQ-013's split, not a bug fix, made on the
+project owner's explicit instruction - the same "verify against spec, document the deviation, proceed on
+explicit direction" pattern used for FR-020 (roll-privacy reversal) and FR-032 (B&B `category` removal).
+
+**Fix:** `SceneSharedEventHandler` now awards every approved scene participant, including the owner, the same
+`scene_participant_award` amount - no separate sharer branch. Removed the now-dead `xp.scene_sharer_award`
+config key from the default config, validator, and reference docs.
+
 ### FR-041: Admin page - edit a granted B&B's Skills, find players by B&B, tabbed layout with Open GM Rolls
 
 **Status:** ✅ Done (`plugin/public/soul_bnb_api.rb`, `plugin/web/soul_bnb_web_handler.rb`, `plugin/soul.rb`,

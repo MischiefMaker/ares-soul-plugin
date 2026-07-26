@@ -113,7 +113,7 @@ module AresMUSH
         xp = @validator.config["xp"]
         return unless xp.kind_of?(Hash)
 
-        %w[weekly_award scene_sharer_award scene_participant_award forum_award].each do |key|
+        %w[weekly_award scene_participant_award forum_award].each do |key|
           if !xp[key].kind_of?(Integer) || xp[key] < 0
             @validator.add_error("soul:xp.#{key} must be a non-negative whole number.")
           end
