@@ -93,24 +93,6 @@
 
   {{#if (eq this.activeTab "xp")}}
     <section class="card card-body mb-3">
-      <h4>Award XP to Scene</h4>
-      <Input @type="number" @value={{this.xpAmount}} class="form-control my-2" placeholder="Amount" />
-      <Input @value={{this.xpReason}} class="form-control my-2" placeholder="Reason" />
-      <PowerSelect @selected={{this.xpScene}} @options={{this.model.scenes}}
-        @searchField="title" @searchEnabled=true @placeholder="Select a scene..."
-        @onChange={{action "selectXpScene"}} as |scene|>
-        {{scene.title}}
-      </PowerSelect>
-      <div class="form-text mb-0">Only already-shared scenes appear here (the Scenes plugin keeps unshared
-        scenes private to their participants) - share the scene first if it's missing.</div>
-      <div class="d-flex gap-2 flex-wrap mt-2">
-        <button class="btn btn-secondary" type="button" onclick={{action "xpScene" false}}>Preview/Confirm Scene</button>
-        <button class="btn btn-secondary" type="button" onclick={{action "xpScene" true}}>Preview/Confirm Scene + Catch-up</button>
-      </div>
-      {{#if this.scenePreview.recipients}}<p>Recipients: {{this.scenePreview.recipients}}</p>{{/if}}
-    </section>
-
-    <section class="card card-body">
       <h4>Award XP to Players</h4>
       <div class="mb-2">
         <label for="soul-admin-xp-player" class="form-label">Player</label>
@@ -134,6 +116,24 @@
         <button class="btn btn-warning" type="button" onclick={{action "xpCorrectPlayer" "correction"}}>Add Correction</button>
         <button class="btn btn-warning" type="button" onclick={{action "xpCorrectPlayer" "reversal"}}>Reverse XP</button>
       </div>
+    </section>
+
+    <section class="card card-body">
+      <h4>Award XP to Scene</h4>
+      <Input @type="number" @value={{this.xpAmount}} class="form-control my-2" placeholder="Amount" />
+      <Input @value={{this.xpReason}} class="form-control my-2" placeholder="Reason" />
+      <PowerSelect @selected={{this.xpScene}} @options={{this.model.scenes}}
+        @searchField="title" @searchEnabled=true @placeholder="Select a scene..."
+        @onChange={{action "selectXpScene"}} as |scene|>
+        {{scene.title}}
+      </PowerSelect>
+      <div class="form-text mb-0">Only already-shared scenes appear here (the Scenes plugin keeps unshared
+        scenes private to their participants) - share the scene first if it's missing.</div>
+      <div class="d-flex gap-2 flex-wrap mt-2">
+        <button class="btn btn-secondary" type="button" onclick={{action "xpScene" false}}>Preview/Confirm Scene</button>
+        <button class="btn btn-secondary" type="button" onclick={{action "xpScene" true}}>Preview/Confirm Scene + Catch-up</button>
+      </div>
+      {{#if this.scenePreview.recipients}}<p>Recipients: {{this.scenePreview.recipients}}</p>{{/if}}
     </section>
   {{/if}}
 
@@ -171,10 +171,10 @@
           </div>
         </details>
       {{/if}}
-      <p class="text-muted">Create a new catalogue entry.</p>
+      <h5>Create New BNB</h5>
       <Input @value={{this.bnbName}} class="form-control my-2" placeholder="Name" />
       <Input @value={{this.bnbTag}} class="form-control my-2" placeholder="Tag" />
-      <select class="form-select my-2" aria-label="Boon or Bane kind"
+      <select class="form-select my-2" aria-label="Boon or Bane kind" value={{this.bnbKind}}
         onchange={{action (mut this.bnbKind) value="target.value"}}>
         <option value="">Kind…</option>
         <option value="boon">Boon</option>
@@ -189,6 +189,7 @@
       </PowerSelectMultiple>
       <button class="btn btn-primary mt-2" type="button" onclick={{action "bnbCreate"}}>Create Catalogue Entry</button>
       <hr>
+      <h5>Edit BNB Skills</h5>
       <p class="text-muted">Edit an existing entry's fixed associated Skill(s).</p>
       <PowerSelect @selected={{this.bnbSkillsEntry}} @options={{this.model.catalogue.entries}}
         @searchField="name" @searchEnabled=true @placeholder="Select a catalogue entry..."
@@ -280,7 +281,7 @@
           @onChange={{action "selectBnbGrantCatalogue"}} as |entry|>
           {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
         </PowerSelect>
-        <select class="form-select my-2" aria-label="Boon or Bane level"
+        <select class="form-select my-2" aria-label="Boon or Bane level" value={{this.bnbLevel}}
           onchange={{action (mut this.bnbLevel) value="target.value"}}>
           <option value="minor">Minor</option>
           <option value="major">Major</option>
@@ -331,6 +332,35 @@
   {{/if}}
 
   {{#if (eq this.activeTab "skills")}}
+    <section class="card card-body mb-3">
+      <h4>Adjust a Player's Skills or Aspects</h4>
+      <div class="mb-2">
+        <label for="soul-admin-skills-player" class="form-label">Player</label>
+        <PowerSelect
+          @selected={{this.skillsPlayer}}
+          @options={{this.model.characters}}
+          @searchField="name"
+          @searchEnabled=true
+          @placeholder="Select a player..."
+          @onChange={{action "selectSkillsPlayer"}}
+          as |char|
+        >
+          {{char.name}}
+        </PowerSelect>
+      </div>
+      {{#if this.skillsPlayer}}
+        <PowerSelect @selected={{this.skillsFrameworkEntry}} @options={{this.skillsFrameworkOptions}}
+          @searchField="name" @searchEnabled=true @placeholder="Select a Skill or Aspect..."
+          @onChange={{action "selectSkillsFrameworkEntry"}} as |entry|>
+          {{entry.name}} <span class="text-muted">({{entry.kind}})</span>
+        </PowerSelect>
+        <Input @type="number" @value={{this.skillsRating}} class="form-control my-2" placeholder="New rating" />
+        <Input @value={{this.skillsReason}} class="form-control my-2" placeholder="Reason" />
+        <button class="btn btn-warning" type="button" disabled={{not this.skillsFrameworkEntry}}
+          onclick={{action "correctPlayerSkill"}}>Correct</button>
+      {{/if}}
+    </section>
+
     <section class="card card-body">
       <h4>View Available Aspects and Skills</h4>
       <p class="text-muted">Read-only. To add, remove, or rename an Aspect or Skill, edit the Aspects/Skills

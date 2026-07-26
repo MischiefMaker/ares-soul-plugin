@@ -67,6 +67,20 @@ export default Controller.extend({
 
   actions: {
     selectTab(tab) {
+      // model.resonanceConfig already carries the full Aspect/Skill lists
+      // (fetched eagerly for the Resonance dropdown) - reuse it for the
+      // Skills tab's correction picker instead of a second request.
+      // Computed once, lazily, on first visit to the tab (2026-07-26 live
+      // testing: "Skills tab -- we should be able to modify a character's
+      // skills and aspects here too").
+      if (tab === 'skills' && !this.skillsFrameworkOptions) {
+        let config = this.model.resonanceConfig || {};
+        let aspects = (config.aspects || [])
+          .map((aspect) => ({ key: aspect.key, name: aspect.name, kind: 'aspect' }));
+        let skills = (config.skills || [])
+          .map((skill) => ({ key: skill.key, name: skill.name, kind: 'skill' }));
+        this.set('skillsFrameworkOptions', [...aspects, ...skills]);
+      }
       this.set('activeTab', tab);
     },
     async approveRequest(id) {
@@ -113,13 +127,18 @@ export default Controller.extend({
     selectBnbCreateSkills(skills) {
       this.set('bnbSkillAssociations', skills);
     },
-    bnbCreate() {
+    async bnbCreate() {
       let skillAssociations = (this.bnbSkillAssociations || []).map((skill) => skill.key);
-      return this.call('soulBnbCreate', {
+      let result = await this.call('soulBnbCreate', {
         name: this.bnbName, tag: this.bnbTag, kind: this.bnbKind,
         description: this.bnbDescription, chargen_available: this.bnbChargen,
         modifier_eligible: this.bnbModifierEligible, skill_associations: skillAssociations
       }, null, (result) => `Created catalogue entry #${result.entry.id} ${result.entry.name}.`);
+      if (!result.error) {
+        this.setProperties({
+          bnbName: '', bnbTag: '', bnbKind: '', bnbDescription: '', bnbSkillAssociations: []
+        });
+      }
     },
     selectBnbSkillsEntry(entry) {
       this.set('bnbSkillsEntry', entry);
@@ -127,14 +146,17 @@ export default Controller.extend({
     selectBnbSkillsValue(skills) {
       this.set('bnbSkillsValue', skills);
     },
-    bnbSetSkills() {
+    async bnbSetSkills() {
       if (!this.bnbSkillsEntry) {
         return;
       }
       let skillAssociations = (this.bnbSkillsValue || []).map((skill) => skill.key);
-      return this.call('soulBnbSetSkills', {
+      let result = await this.call('soulBnbSetSkills', {
         id_or_tag: this.bnbSkillsEntry.id, skill_associations: skillAssociations
       }, null, (result) => `Associated Skills for ${result.entry.name} updated.`);
+      if (!result.error) {
+        this.setProperties({ bnbSkillsEntry: null, bnbSkillsValue: [] });
+      }
     },
     selectResonancePlayer(player) {
       this.set('resonancePlayer', player);
@@ -142,16 +164,19 @@ export default Controller.extend({
     selectResonanceValue(value) {
       this.set('resonanceValue', value);
     },
-    correctResonance() {
+    async correctResonance() {
       if (!this.resonancePlayer || this.resonanceValue === undefined || this.resonanceValue === null) {
         return;
       }
-      return this.call('soulResonance', {
+      let result = await this.call('soulResonance', {
         character: this.resonancePlayer.name, value: this.resonanceValue, reason: this.resonanceReason
       }, null, (result) =>
         `${this.resonancePlayer.name}'s Resonance changed from ` +
           `${result.old_value === null ? 'Unset' : `R${result.old_value}`} to R${result.new_value}.`
       );
+      if (!result.error) {
+        this.setProperties({ resonancePlayer: null, resonanceValue: null, resonanceReason: '' });
+      }
     },
     // Reverse lookup - which characters hold a given catalogue entry
     // (2026-07-26 live testing: "let's add to the admin page a way to
@@ -192,7 +217,7 @@ export default Controller.extend({
         entry_id: this.bnbEntry.id, skill_associations: skills
       }, null, (result) => `${result.entry.name}'s associated Skills updated.`);
       if (!result.error) {
-        this.set('bnbEntry', null);
+        this.setProperties({ bnbEntry: null, bnbEntrySkills: [] });
         await this.loadBnbEntriesForPlayer();
       }
     },
@@ -213,6 +238,9 @@ export default Controller.extend({
         associated_skills: skills
       }, null, (result) => `Granted ${result.entry.name} to ${this.bnbPlayer.name}.`);
       if (!result.error) {
+        this.setProperties({
+          bnbCatalogueEntry: null, bnbLevel: 'minor', bnbSkills: [], bnbExplanation: ''
+        });
         await this.loadBnbEntriesForPlayer();
       }
     },
@@ -228,8 +256,14 @@ export default Controller.extend({
       );
       if (!result.error) {
         // Clear rather than leave the stale pre-update object selected -
-        // the refreshed list has the new level_state.
-        this.set('bnbEntry', null);
+        // the refreshed list has the new level_state. Also clear the
+        // reason text and delete-confirm checkboxes so they don't carry
+        // over to whichever entry is picked next (2026-07-26 live
+        // testing: "we generally need to reset the entry fields when
+        // something is submitted").
+        this.setProperties({
+          bnbEntry: null, bnbReason: '', deleteConfirmOne: false, deleteConfirmTwo: false
+        });
         await this.loadBnbEntriesForPlayer();
       }
     },
@@ -250,7 +284,9 @@ export default Controller.extend({
         cmd, args, null, `Boon/Bane entry #${this.bnbEntry.id} ${labels[cmd]}.`
       );
       if (!result.error) {
-        this.set('bnbEntry', null);
+        this.setProperties({
+          bnbEntry: null, bnbReason: '', deleteConfirmOne: false, deleteConfirmTwo: false
+        });
         await this.loadBnbEntriesForPlayer();
       }
     },
@@ -269,7 +305,17 @@ export default Controller.extend({
         : `Scene XP award completed for scene #${this.xpScene.id}.`
       ).then((result) => {
         if (!result.error) {
-          this.set('scenePreview', result.preview ? result : null);
+          if (result.preview) {
+            this.set('scenePreview', result);
+          } else {
+            // The real (confirmed) award went through - reset for the
+            // next one instead of leaving stale amount/reason/scene
+            // behind (2026-07-26 live testing: "we generally need to
+            // reset the entry fields when something is submitted").
+            this.setProperties({
+              scenePreview: null, xpScene: null, xpAmount: '', xpReason: ''
+            });
+          }
         }
         return result;
       });
@@ -277,29 +323,63 @@ export default Controller.extend({
     selectXpPlayer(char) {
       this.set('xpPlayer', char);
     },
-    xpAwardPlayer(catchup) {
+    async xpAwardPlayer(catchup) {
       if (!this.xpPlayer) {
         return;
       }
-      return this.call('soulXpAward', {
+      let result = await this.call('soulXpAward', {
         character: this.xpPlayer.name, amount: this.xpPlayerAmount, reason: this.xpPlayerReason,
         apply_catchup: catchup
       }, null, (result) =>
         `Awarded ${result.awarded} XP to ${this.xpPlayer.name}` +
           `${result.catchup_portion ? ` (${result.catchup_portion} catch-up)` : ''}.`
       );
+      if (!result.error) {
+        this.setProperties({ xpPlayerAmount: '', xpPlayerReason: '' });
+      }
     },
-    xpCorrectPlayer(direction) {
+    async xpCorrectPlayer(direction) {
       if (!this.xpPlayer) {
         return;
       }
-      return this.call('soulXpCorrect', {
+      let result = await this.call('soulXpCorrect', {
         character: this.xpPlayer.name, amount: this.xpPlayerAmount, reason: this.xpPlayerReason,
         direction: direction
       }, null, (result) =>
         `${direction === 'reversal' ? 'Reversed' : 'Corrected'} ${this.xpPlayer.name}'s available XP from ` +
           `${result.old_available} to ${result.new_available}.`
       );
+      if (!result.error) {
+        this.setProperties({ xpPlayerAmount: '', xpPlayerReason: '' });
+      }
+    },
+    // Adjust a specific player's Skill/Aspect rating (2026-07-26 live
+    // testing: "Skills tab -- we should be able to modify a character's
+    // skills and aspects here too") - mirrors soul-staff.js's own
+    // correctFramework action, scoped by a player picker instead of the
+    // implicit "whichever profile is open" context.
+    selectSkillsPlayer(player) {
+      this.setProperties({
+        skillsPlayer: player, skillsFrameworkEntry: null, skillsRating: '', skillsReason: ''
+      });
+    },
+    selectSkillsFrameworkEntry(entry) {
+      this.set('skillsFrameworkEntry', entry);
+    },
+    async correctPlayerSkill() {
+      if (!this.skillsPlayer || !this.skillsFrameworkEntry) {
+        return;
+      }
+      let kind = this.skillsFrameworkEntry.kind;
+      let result = await this.call('soulFrameworkCorrect', {
+        character: this.skillsPlayer.name, kind: kind,
+        key: this.skillsFrameworkEntry.key, rating: this.skillsRating, reason: this.skillsReason
+      }, null, (result) =>
+        `${this.skillsPlayer.name}'s ${kind} ${result.key} changed from ${result.old_rating} to ${result.new_rating}.`
+      );
+      if (!result.error) {
+        this.setProperties({ skillsFrameworkEntry: null, skillsRating: '', skillsReason: '' });
+      }
     }
   }
 });

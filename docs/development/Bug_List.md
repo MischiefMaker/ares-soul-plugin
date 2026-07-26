@@ -8,6 +8,32 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-046: Admin page tab polish - reorder, headers, Skill/Aspect correction, form resets
+
+**Status:** ✅ Done (`webportal/controllers/admin-soul.js`, `webportal/templates/admin-soul.hbs`)
+
+**Requested:** 2026-07-26, live testing: "The admin page is looking better, but some tweaking: On the XP tab,
+put players above scenes. On the BNB tab, add a header like 'Create New BNB' above where they do that. Skills
+tab-- we should be able to modify a character's skills and aspects here too. We also generally need to reset
+the entry fields when something is submitted, if possible. It's confusing that they just keep the text after
+the change is done."
+
+**Fix:**
+- XP tab: "Award XP to Players" now comes before "Award XP to Scene".
+- BNBs tab: added "Create New BNB" and "Edit BNB Skills" headers above their respective forms.
+- Skills tab: new "Adjust a Player's Skills or Aspects" section (player picker + the same Skill/Aspect
+  correction PowerSelect + rating/reason inputs `soul-staff.js`'s profile panel already has, wired to the same
+  `soulFrameworkCorrect` command) - reuses `model.resonanceConfig`'s already-fetched Aspect/Skill lists rather
+  than a second request.
+- Every mutating action (`bnbCreate`, `bnbSetSkills`, `correctResonance`, `bnbGrant`, `bnbSetEntrySkills`,
+  `bnbAdjustLevel`/`bnbTransition` - which now also clear the reason text and delete-confirm checkboxes, a real
+  footgun since they previously stayed checked across different entries - `xpScene`'s real/confirmed award,
+  `xpAwardPlayer`, `xpCorrectPlayer`, and the new `correctPlayerSkill`) now clears its own input fields on
+  success, matching the pattern `bnbAdjustLevel`/`bnbTransition` already used for `bnbEntry`. Along the way,
+  found the two plain `<select>` elements (Kind, Level) had no `value=` binding, so resetting their JS
+  properties wouldn't have visually cleared them (unlike `<Input>`/`PowerSelect`, which already bind both
+  ways) - added the missing binding.
+
 ### FR-045: Split the MUSH chargen stage into two (Resonance & Skills, then Boons & Banes)
 
 **Status:** ✅ Done (`plugin/help/en/soul_chargen_resonance.md`, `plugin/help/en/soul_chargen_bnb.md`,
