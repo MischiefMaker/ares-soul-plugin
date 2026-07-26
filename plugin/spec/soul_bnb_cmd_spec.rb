@@ -47,6 +47,45 @@ module AresMUSH
       end
     end
 
+    describe "+bnb/catalogue (2026-07-26: split into a Boons column and a Banes column)" do
+      let(:enactor) { Fabricate(:character) }
+      let(:client) { double(emit: nil) }
+      let(:cmd) { double(switch: "catalogue", args: "") }
+
+      def handler
+        h = Soul::SoulBnbCmd.new(client, cmd, enactor)
+        h.parse_args
+        h
+      end
+
+      it "lays a Boon and a Bane out side by side under Boons/Banes headers" do
+        boon = double(id: 1, tag: "brave", name: "Brave", boon?: true, bane?: false)
+        bane = double(id: 2, tag: "cursed", name: "Cursed", boon?: false, bane?: true)
+        allow(SoulBnbApi).to receive(:get_catalogue).and_return([boon, bane])
+
+        expect(BorderedListTemplate).to receive(:new) do |lines, title|
+          expect(title).to eq("Boon & Bane Catalogue")
+          expect(lines[0]).to match(/Boons/)
+          expect(lines[0]).to match(/Banes/)
+          expect(lines).to include(a_string_matching(/#1 \[brave\] Brave\s+#2 \[cursed\] Cursed/))
+          double(render: "rendered")
+        end
+
+        handler.handle
+      end
+
+      it "shows 'None' when the catalogue is empty" do
+        allow(SoulBnbApi).to receive(:get_catalogue).and_return([])
+
+        expect(BorderedListTemplate).to receive(:new) do |lines, _title|
+          expect(lines).to include("None")
+          double(render: "rendered")
+        end
+
+        handler.handle
+      end
+    end
+
     describe "+bnb/detail (staff viewing another character's own B&Bs)" do
       let(:staff) { Fabricate(:character) }
       let(:target) { Fabricate(:character, name: "Jordan") }

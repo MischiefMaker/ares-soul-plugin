@@ -2,6 +2,13 @@ module AresMUSH
   module Soul
     class SoulBnbCmd
       include CommandHandler
+      include TemplateFormatters
+
+      # Two side-by-side columns (Boons/Banes) in a 78-char client width,
+      # with a 2-space gutter between them (2026-07-26, live testing: "The
+      # bnb catalogue is hard to read on the MUSH. Let's split it and space
+      # it out a bit.").
+      CATALOGUE_COLUMN_WIDTH = 38
 
       attr_accessor :reference, :name, :description, :kind, :tag, :entry_id,
                     :level, :explanation, :reason, :confirmations, :skill_associations, :request_id
@@ -216,13 +223,28 @@ module AresMUSH
       end
 
       def render_catalogue(entries)
-        lines = entries.map do |entry|
-          t('soul.bnb_catalogue_line', id: entry.id, tag: entry.tag,
-            name: entry.name, kind: entry.kind)
-        end
+        boons = entries.select(&:boon?).map { |entry| catalogue_entry_line(entry) }
+        banes = entries.select(&:bane?).map { |entry| catalogue_entry_line(entry) }
         client.emit BorderedListTemplate.new(
-          lines.empty? ? [t('soul.none')] : lines, t('soul.bnb_catalogue_title')
+          catalogue_columns(boons, banes), t('soul.bnb_catalogue_title')
         ).render
+      end
+
+      def catalogue_entry_line(entry)
+        t('soul.bnb_catalogue_line', id: entry.id, tag: entry.tag, name: entry.name)
+      end
+
+      def catalogue_columns(boons, banes)
+        header = "%xh#{left(t('soul.bnb_catalogue_boons_header'), CATALOGUE_COLUMN_WIDTH)}  " \
+          "#{left(t('soul.bnb_catalogue_banes_header'), CATALOGUE_COLUMN_WIDTH)}%xn"
+        divider = "#{'-' * CATALOGUE_COLUMN_WIDTH}  #{'-' * CATALOGUE_COLUMN_WIDTH}"
+        return [header, divider, t('soul.none')] if boons.empty? && banes.empty?
+
+        rows = [header, divider]
+        [boons.length, banes.length].max.times do |i|
+          rows << "#{left(boons[i], CATALOGUE_COLUMN_WIDTH)}  #{left(banes[i], CATALOGUE_COLUMN_WIDTH)}"
+        end
+        rows
       end
 
       def create_entry

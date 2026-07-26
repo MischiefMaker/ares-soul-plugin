@@ -8,6 +8,21 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-038: `+bnb/catalogue` (and `+bnb/search`) split into a Boons column and a Banes column
+
+**Status:** ✅ Done (`plugin/commands/soul_bnb_cmd.rb`, `plugin/locales/locale_en.yml`, spec)
+
+**Requested:** 2026-07-26, live testing: "The bnb catalogue is hard to read on the MUSH. Let's split it and
+space it out a bit. Can we have two columns, one for Boons, one for Banes?"
+
+**Fix:** `render_catalogue` (shared by `+bnb/catalogue` and `+bnb/search`) now splits entries via the
+catalogue entry's own `boon?`/`bane?` into two lists, and lays them out as two side-by-side 38-char columns
+(2-space gutter, fits the standard 78-char client width) under bold "Boons"/"Banes" headers with a dashed
+divider underneath, using AresMUSH's own `left()` padding/truncation helper (`TemplateFormatters`, the same
+module `soul_chargen_cmd.rb`/`soul_sheet_cmd.rb` already include) rather than hand-rolled padding. Each
+per-line entry (`#id [tag] Name`) dropped its old `(kind)` suffix since the column itself now conveys that.
+
+
 ### FR-037: Culmination "?" explanation still said "Staff propose... once approved" after FR-036
 
 **Status:** ✅ Done (`webportal/templates/components/soul-culmination.hbs`)
