@@ -15,6 +15,11 @@ export default Component.extend({
       return `${participant.id}` === `${viewerId}`;
     });
     let custom = this.custom || {};
+    // The whole SOUL Scene Tools panel (2026-07-26 live testing: "SOUL
+    // tools should be gated to GMs, not every participant" - it was
+    // being shown to every scene viewer, with only the View Sheet
+    // sub-section actually gated).
+    this.set('canUseTools', !!custom.soul_can_manage_soul || !!custom.soul_can_review_rolls);
     this.set(
       'canViewSheets',
       !!custom.soul_can_manage_soul ||

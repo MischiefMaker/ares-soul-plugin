@@ -122,25 +122,53 @@ module AresMUSH
       end
     end
 
-    describe "soulBnbHere" do
+    describe "soulBnbHere (2026-07-26: gated to GMs, not every scene participant)" do
       before do
         allow(Website).to receive(:check_login).and_return(nil)
         allow(Soul).to receive(:can_play?).and_return(true)
       end
 
-      it "rejects a requester who is not a participant in the scene" do
+      it "rejects a plain participant who is not a GM" do
         enactor = Fabricate(:character)
-        scene = double(participants: [])
+        scene = double(participants: [enactor])
         allow(Scene).to receive(:[]).and_return(scene)
+        allow(Soul).to receive(:can_manage_soul?).and_return(false)
+        allow(Soul).to receive(:can_review_rolls?).and_return(false)
         request = double(cmd: "soulBnbHere", enactor: enactor, args: { 'scene_id' => '1', 'reference' => 'tag' })
         expect(subject.handle(request)[:error]).to be_present
       end
 
-      it "returns public-safe matches among scene participants" do
+      it "rejects a review-rolls GM who is not a participant in this scene" do
+        enactor = Fabricate(:character)
+        scene = double(participants: [])
+        allow(Scene).to receive(:[]).and_return(scene)
+        allow(Soul).to receive(:can_manage_soul?).and_return(false)
+        allow(Soul).to receive(:can_review_rolls?).and_return(true)
+        request = double(cmd: "soulBnbHere", enactor: enactor, args: { 'scene_id' => '1', 'reference' => 'tag' })
+        expect(subject.handle(request)[:error]).to be_present
+      end
+
+      it "allows manage_soul staff even when they are not a scene participant" do
+        enactor = Fabricate(:character)
+        other = Fabricate(:character)
+        scene = double(participants: [other])
+        allow(Scene).to receive(:[]).and_return(scene)
+        allow(Soul).to receive(:can_manage_soul?).and_return(true)
+        allow(Soul).to receive(:can_review_rolls?).and_return(false)
+        allow(SoulBnbApi).to receive(:get_catalogue_entry).and_return(nil)
+        allow(SoulBnbApi).to receive(:get_character_entries).and_return([])
+
+        request = double(cmd: "soulBnbHere", enactor: enactor, args: { 'scene_id' => '1', 'reference' => 'tag' })
+        expect(subject.handle(request)[:error]).to be_nil
+      end
+
+      it "returns public-safe matches for a GM who is a participant" do
         enactor = Fabricate(:character)
         other = Fabricate(:character)
         scene = double(participants: [enactor, other])
         allow(Scene).to receive(:[]).and_return(scene)
+        allow(Soul).to receive(:can_manage_soul?).and_return(false)
+        allow(Soul).to receive(:can_review_rolls?).and_return(true)
         catalogue = double(id: 5)
         allow(SoulBnbApi).to receive(:get_catalogue_entry).and_return(catalogue)
         entry = double(id: 9, catalogue_entry: catalogue)

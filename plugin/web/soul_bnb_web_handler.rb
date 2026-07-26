@@ -105,9 +105,18 @@ module AresMUSH
       end
     end
 
+    # SOUL Scene Tools (2026-07-26 live testing: "SOUL tools should be
+    # gated to GMs, not every participant") - matches the exact
+    # manage_soul/review_rolls+participant combo custom_scene_data.rb and
+    # this same request's canViewSheets already use, not a plain "any
+    # scene participant" check.
     def here(request)
       scene = Scene[request.args['scene_id']]
-      return { error: t('soul.no_active_scene') } unless scene && scene.participants.include?(request.enactor)
+      return { error: t('soul.no_active_scene') } unless scene
+      enactor = request.enactor
+      authorized = Soul.can_manage_soul?(enactor) ||
+        (Soul.can_review_rolls?(enactor) && scene.participants.include?(enactor))
+      return { error: t('soul.permission_denied') } unless authorized
 
       catalogue = SoulBnbApi.get_catalogue_entry(request.args['reference'])
       matches = scene.participants.map do |character|

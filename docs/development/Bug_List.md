@@ -8,6 +8,29 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### BUG-022: SOUL Scene Tools was visible/usable to every scene participant, not just GMs
+
+**Status:** ✅ Done (`webportal/components/soul-scene-tools.js`, `webportal/templates/components/soul-scene-tools.hbs`,
+`plugin/web/soul_bnb_web_handler.rb`, spec)
+
+**Requested:** 2026-07-26, live testing: "Using SOUL tools on the play screen, if searching for a BNB that no
+one has, it tells you you're not an active participant -- but SOUL tools should be gated to GMs, not every
+participant."
+
+**Root cause:** `live-scene-custom-play.snippet.hbs` invokes `{{soul-scene-tools}}` unconditionally for every
+scene viewer (matching `{{soul-roll}}`, which really is for every player). The component's own `canViewSheets`
+flag already correctly gated the "View Participant Sheet" sub-section to GMs
+(`soul_can_manage_soul` OR `soul_can_review_rolls` AND a participant, matching
+`custom_scene_data.rb`/`SoulRollApi.can_review_pending?`'s scoping) - but nothing gated the "Find a Boon or
+Bane Here" section or the nav item itself, so any ordinary participant could open the panel and hit the
+server's `here()` check, which only required scene participation, not GM status - producing a confusing
+"not an active participant" error for a feature that was never meant for them.
+
+**Fix:** Added a `canUseTools` flag (`soul_can_manage_soul || soul_can_review_rolls`, no participant
+requirement - full staff shouldn't need to be a participant) and wrapped the whole nav item + modal in it.
+Updated `SoulBnbWebHandler#here` to require the same manage_soul/(review_rolls AND participant) combo instead
+of a bare participant check, so the server-side authorization actually matches what the UI now implies.
+
 ### FR-040: `+bnb/catalogue` alignment, color, and descriptions; matching web admin browse fix
 
 **Status:** ✅ Done (`plugin/commands/soul_bnb_cmd.rb`, `plugin/commands/soul_sheet_cmd.rb`, `plugin/soul.rb`,
