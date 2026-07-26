@@ -30,6 +30,52 @@ module AresMUSH
       end
     end
 
+    describe ".description" do
+      it "falls back to DEFAULT_DESCRIPTION when unconfigured" do
+        allow(Global).to receive(:read_config).with("soul", "resonance", "description").and_return(nil)
+        expect(SoulResonanceApi.description).to eq(SoulResonanceApi::DEFAULT_DESCRIPTION)
+      end
+
+      it "uses the configured description when present (2026-07-26: made configurable at the " \
+        "project owner's request)" do
+        allow(Global).to receive(:read_config).with("soul", "resonance", "description")
+          .and_return("Custom flavor text.")
+        expect(SoulResonanceApi.description).to eq("Custom flavor text.")
+      end
+    end
+
+    describe ".warning_label (2026-07-26: non-blocking +app review heads-up)" do
+      it "returns nil for a value inside the configured range" do
+        expect(SoulResonanceApi.warning_label(1)).to be_nil
+      end
+
+      it "returns 'Very High!' at or above warn_high_at (defaults to .max)" do
+        expect(SoulResonanceApi.warning_label(3)).to eq("Very High!")
+      end
+
+      it "returns 'Very Low!' at or below warn_low_at (defaults to .min)" do
+        expect(SoulResonanceApi.warning_label(-3)).to eq("Very Low!")
+      end
+
+      it "returns nil for a nil value (never chosen yet)" do
+        expect(SoulResonanceApi.warning_label(nil)).to be_nil
+      end
+
+      it "honors configured warn_high_at/warn_low_at overrides" do
+        allow(Global).to receive(:read_config).with("soul", "resonance", "warn_high_at").and_return(2)
+        allow(Global).to receive(:read_config).with("soul", "resonance", "warn_low_at").and_return(-2)
+        expect(SoulResonanceApi.warning_label(2)).to eq("Very High!")
+        expect(SoulResonanceApi.warning_label(-2)).to eq("Very Low!")
+      end
+
+      it "returns nil regardless of value when review_flag_at_extremes is false" do
+        allow(Global).to receive(:read_config).with("soul", "resonance", "review_flag_at_extremes")
+          .and_return(false)
+        expect(SoulResonanceApi.warning_label(3)).to be_nil
+        expect(SoulResonanceApi.warning_label(-3)).to be_nil
+      end
+    end
+
     describe ".get_resonance" do
       it "returns nil when never chosen, not 0" do
         expect(SoulResonanceApi.get_resonance(character)).to be_nil

@@ -87,8 +87,15 @@ module AresMUSH
 
       lines = []
       if status[:resonance_enabled]
-        lines << Chargen.format_review_status("Checking SOUL Resonance.",
-          status[:resonance].nil? ? t('chargen.not_set') : "R#{status[:resonance]}")
+        resonance_display = status[:resonance].nil? ? t('chargen.not_set') : "R#{status[:resonance]}"
+        # Non-blocking heads-up for an extreme Resonance value (2026-07-25
+        # live testing: "I'd like to default add a 'warn' on R3 and R-3
+        # on the 'app <name>' view... Not a block to applying") - this
+        # checklist is purely informational either way, so there's
+        # nothing further to gate.
+        warning = SoulResonanceApi.warning_label(status[:resonance])
+        resonance_display = "#{resonance_display} %xy<  #{warning}  >%xn" if warning
+        lines << Chargen.format_review_status("Checking SOUL Resonance.", resonance_display)
       end
       lines << Chargen.format_review_status("Checking SOUL Skill points.",
         "#{status[:points_spent]}/#{status[:skill_points]} " +

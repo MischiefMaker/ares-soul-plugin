@@ -35,7 +35,7 @@
           <span class="badge bg-primary">Current: {{this.status.resonance_label}}</span>
         </div>
         <div class="card-body">
-          <p class="cg-tip">Resonance determines your starting Skill-point allowance and starting cap.</p>
+          <p class="cg-tip">{{this.status.resonance_description}}</p>
           <div class="btn-group flex-wrap" role="group" aria-label="Select Resonance">
             {{#each this.status.resonance_options as |value|}}
               <button type="button" class="btn btn-outline-primary"

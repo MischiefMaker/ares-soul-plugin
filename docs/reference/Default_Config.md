@@ -109,6 +109,15 @@ soul:
     positive_starting_cap_per_level: 1
     negative_starting_cap_per_level: 1
     review_flag_at_extremes: true
+    warn_high_at: 3
+    warn_low_at: -3
+    description: >-
+      Resonance is a measure of your character's connection to this world.
+      Characters with higher Resonance start with more Skill points and a
+      higher starting cap in chargen, but advancing further later costs
+      more XP. Characters with negative Resonance start with fewer Skill
+      points and a lower starting cap, but advancing later costs less XP.
+      Especially high or low Resonance may require staff approval.
 
   # ============================================================================
   # XP

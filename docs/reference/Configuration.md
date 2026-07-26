@@ -54,7 +54,10 @@ CP-03 invariant: equivalent Skill investment SHALL matter substantially more tha
 | `resonance.negative_skill_points_per_level` | int | `2` | Reduced chargen points per negative Resonance level |
 | `resonance.positive_starting_cap_per_level` | int | `1` | Additional starting cap per positive Resonance level |
 | `resonance.negative_starting_cap_per_level` | int | `1` | Reduced starting cap per negative Resonance level |
-| `resonance.review_flag_at_extremes` | bool | `true` | R3/R-3 require strong justification and heightened review |
+| `resonance.review_flag_at_extremes` | bool | `true` | R3/R-3 require strong justification and heightened review - shown as a non-blocking warning on the `+app` review checklist. `false` turns the warning off entirely |
+| `resonance.warn_high_at` | int | `resonance.max` | Value at or above which the `+app` review checklist shows a "Very High!" warning |
+| `resonance.warn_low_at` | int | `resonance.min` | Value at or below which the `+app` review checklist shows a "Very Low!" warning |
+| `resonance.description` | string | see `SoulResonanceApi::DEFAULT_DESCRIPTION` | Player-facing explanation of Resonance shown in chargen |
 
 Canonical symmetric table (REQ-012):
 

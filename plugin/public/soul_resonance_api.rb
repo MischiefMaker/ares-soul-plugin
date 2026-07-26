@@ -30,6 +30,51 @@ module AresMUSH
       Global.read_config("soul", "resonance", "max") || 3
     end
 
+    # Player-facing flavor/explanation text shown in chargen - configurable
+    # per game (2026-07-26 live testing: "I also want to expand the
+    # explanation of resonance in chargen" -> "Let's make that
+    # configurable, actually."), with the expanded wording the project
+    # owner supplied as the default so games that never touch the config
+    # still get it.
+    DEFAULT_DESCRIPTION = "Resonance is a measure of your character's connection to this world. " \
+      "Characters with higher Resonance start with more Skill points and a higher starting cap in " \
+      "chargen, but advancing further later costs more XP. Characters with negative Resonance start " \
+      "with fewer Skill points and a lower starting cap, but advancing later costs less XP. Especially " \
+      "high or low Resonance may require staff approval.".freeze
+
+    def self.description
+      Global.read_config("soul", "resonance", "description").presence || DEFAULT_DESCRIPTION
+    end
+
+    # Thresholds for the non-blocking "Very High!"/"Very Low!" heads-up on
+    # the +app review checklist (2026-07-26 live testing: "I'd like to
+    # default add a 'warn' on R3 and R-3 on the 'app <name>' view... but
+    # let's make those levels configurable too. Not a block to applying").
+    # Default to the configured extremes (.max/.min) rather than a
+    # hardcoded 3/-3, so a game that changes its Resonance range still
+    # warns at its own new extremes unless it overrides these explicitly.
+    def self.warn_high_at
+      Global.read_config("soul", "resonance", "warn_high_at") || max
+    end
+
+    def self.warn_low_at
+      Global.read_config("soul", "resonance", "warn_low_at") || min
+    end
+
+    # nil means no warning - most Resonance values don't warrant one.
+    # Purely informational (the +app review checklist never blocks
+    # approval on anything it prints). Gated on review_flag_at_extremes -
+    # a config key that has existed since Phase 2 ("R3/R-3 require strong
+    # justification and heightened review") but was never actually wired
+    # to anything until now.
+    def self.warning_label(value)
+      return nil if value.nil?
+      return nil if Global.read_config("soul", "resonance", "review_flag_at_extremes") == false
+      return "Very High!" if value >= warn_high_at
+      return "Very Low!" if value <= warn_low_at
+      nil
+    end
+
     # Chargen Skill point allowance, starting cap, and Aspect point
     # allowance for a given Resonance value (FINAL REQ-012 formula, Aspect
     # point-buy added at the project owner's direction 2026-07-24 -

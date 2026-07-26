@@ -46,6 +46,24 @@ module AresMUSH
         expect(Soul.app_review(character)).to match(/SOUL Resonance.*R1/)
       end
 
+      it "shows a non-blocking warning for an extreme Resonance value (2026-07-26 live testing: " \
+        "\"I'd like to default add a 'warn' on R3 and R-3 on the 'app <name>' view\")" do
+        allow(Global).to receive(:read_config).with("soul", "enabled").and_return(true)
+        allow(Global).to receive(:read_config).with("soul", "resonance", "review_flag_at_extremes")
+          .and_return(true)
+        allow(Global).to receive(:read_config).with("soul", "resonance", "warn_high_at").and_return(nil)
+        allow(Global).to receive(:read_config).with("soul", "resonance", "max").and_return(3)
+        allow(SoulChargenWebHandler).to receive(:status).with(character).and_return(
+          resonance: 3, resonance_enabled: true,
+          points_spent: 15, skill_points: 15, skill_points_fully_spent: true,
+          aspect_points_spent: 5, aspect_points: 5, aspect_points_fully_spent: true,
+          bnb_ratio_satisfied: true, has_selected_bnb: false
+        )
+
+        result = Soul.app_review(character)
+        expect(result).to match(/SOUL Resonance.*R3.*Very High!/)
+      end
+
       it "returns nil for a nil character" do
         expect(Soul.app_review(nil)).to be_nil
       end

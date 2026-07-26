@@ -111,7 +111,23 @@ soul:
     negative_skill_points_per_level: 2
     positive_starting_cap_per_level: 1
     negative_starting_cap_per_level: 1
+    # R3/R-3 require strong justification and heightened review - shown as
+    # a non-blocking "Very High!"/"Very Low!" warning on the +app review
+    # checklist. Set false to turn the warning off entirely.
     review_flag_at_extremes: true
+    # Thresholds for that warning - default to min/max above (the
+    # configured extremes) unless overridden here.
+    warn_high_at: 3
+    warn_low_at: -3
+    # Player-facing explanation shown in chargen. Optional - falls back to
+    # SoulResonanceApi::DEFAULT_DESCRIPTION if omitted.
+    description: >-
+      Resonance is a measure of your character's connection to this world.
+      Characters with higher Resonance start with more Skill points and a
+      higher starting cap in chargen, but advancing further later costs
+      more XP. Characters with negative Resonance start with fewer Skill
+      points and a lower starting cap, but advancing later costs less XP.
+      Especially high or low Resonance may require staff approval.
 
   # ==========================================================================
   # XP

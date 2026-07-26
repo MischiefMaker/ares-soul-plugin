@@ -44,6 +44,7 @@ module AresMUSH
       aspect_spent = aspects.sum { |aspect| aspect[:rating].to_i }
       {
         resonance_enabled: SoulResonanceApi.enabled?, resonance: resonance,
+        resonance_description: SoulResonanceApi.description,
         resonance_label: resonance.nil? ? t('soul.unset') : "R#{resonance}",
         resonance_min: SoulResonanceApi.min, resonance_max: SoulResonanceApi.max,
         resonance_options: (SoulResonanceApi.min..SoulResonanceApi.max).to_a,

@@ -8,6 +8,33 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-043: Configurable Resonance chargen explanation; non-blocking extreme-Resonance warning on `+app`
+
+**Status:** ✅ Done (`plugin/public/soul_resonance_api.rb`, `plugin/web/soul_chargen_web_handler.rb`,
+`plugin/soul.rb`, `webportal/templates/components/soul-chargen.hbs`, `game/config/soul.yml`,
+`docs/reference/Configuration.md`, `docs/reference/Default_Config.md`, spec)
+
+**Requested:** 2026-07-26, live testing, in sequence:
+- "I also want to expand the explanation of resonance in chargen: ... [expanded wording provided]"
+- "Let's make that configurable, actually."
+- "Along with -- I'd like to default add a 'warn' on R3 and R-3 on the 'app <name>' view -- but let's make
+  those levels configurable too. Not a block to applying, but would show like: Checking SOUL Resonance.
+  R3 (yellow text) < Very High! >"
+
+**Fix:**
+- `SoulResonanceApi.description` reads `soul.resonance.description` from config, falling back to a new
+  `DEFAULT_DESCRIPTION` constant with the project owner's expanded wording. The web chargen tip
+  (`soul-chargen.hbs`, previously a hardcoded `<p>`) now renders this instead.
+- `SoulResonanceApi.warn_high_at`/`.warn_low_at` (new config keys, defaulting to `.max`/`.min`) and
+  `.warning_label(value)` (returns `"Very High!"`/`"Very Low!"`/`nil`) power a non-blocking annotation on the
+  `+app <name>` review checklist (`Soul.app_review`, shared by the MUSH command and the web portal's app-review
+  view): `%xy<  Very High! >%xn` appended after the `R#` value. Purely informational, like every other line in
+  that checklist - nothing in `app_review` ever blocks approval.
+- Along the way, found that `resonance.review_flag_at_extremes` ("R3/R-3 require strong justification and
+  heightened review") has existed in the default config since Phase 2 but was never actually read anywhere -
+  a dead config key. `.warning_label` is its first real implementation; set it `false` to turn the warning off
+  entirely.
+
 ### FR-042: Dropped the scene-sharer XP bonus - CI-01/REQ-013 deviation
 
 **Status:** ✅ Done (`plugin/events/soul_scene_shared_event_handler.rb`, `game/config/soul.yml`,
