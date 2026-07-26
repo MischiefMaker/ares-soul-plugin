@@ -21,9 +21,9 @@ four times the equivalent Skill increase.
 
 `+culmination [character]` — View Culminations.
 
-Before approval, see `help soul_chargen` for Resonance, Skill, and starting
-Boon/Bane choices.
+Before approval, see `help soul_chargen_resonance` for Resonance and Skill
+choices, then `help soul_chargen_bnb` for starting Boon/Bane choices.
 
 See `help soul_bnb` for Boons and Banes, `help soul_rolls` for rolls,
-`help soul_chargen` for character generation, and `help manage soul` for
-staff tools.
+`help soul_chargen_resonance`/`help soul_chargen_bnb` for character
+generation, and `help manage soul` for staff tools.

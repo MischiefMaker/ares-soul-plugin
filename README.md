@@ -144,20 +144,23 @@ The complete annotated example is
 [`custom-install/custom_approval.snippet.rb`](custom-install/custom_approval.snippet.rb).
 Both calls are idempotent and safe on re-approval.
 
-### Step 4: Add the MUSH Chargen Stage
+### Step 4: Add the MUSH Chargen Stages
 
-The `+soul/cg` command family works once the plugin is installed, but adding a stage
-introduces it at the correct point in the normal character-generation flow.
+The `+soul/cg` command family works once the plugin is installed, but adding the
+stages introduces them at the correct point in the normal character-generation
+flow - as two separate steps, so a player sets Resonance and spends their
+Skill/Aspect points before moving on to Boons and Banes.
 
 1. In **aresmush**, open `game/config/chargen.yml`.
-2. Under the existing `stages:` section, add the entry from
-   [`custom-install/chargen_stage.snippet.yml`](custom-install/chargen_stage.snippet.yml)
-   at the desired point in the stage order.
+2. Under the existing `stages:` section, add both entries from
+   [`custom-install/chargen_stage.snippet.yml`](custom-install/chargen_stage.snippet.yml),
+   in order, at the desired point in the stage order.
 3. Keep the indentation consistent with the surrounding stages.
 4. Run `load chargen`.
 
-The stage points players to `help soul_chargen`, which documents Resonance, Skill,
-and starting Boon/Bane selection.
+The first stage points players to `help soul_chargen_resonance` (Resonance, Skill,
+and Aspect points); the second to `help soul_chargen_bnb` (starting Boon/Bane
+selection).
 
 **Recommended: show SOUL data during app review.** Two separate, easily-confused
 commands exist: bare `+app <character>` (shows the demographics/background/hooks

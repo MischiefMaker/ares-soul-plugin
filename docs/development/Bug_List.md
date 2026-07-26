@@ -8,6 +8,29 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-045: Split the MUSH chargen stage into two (Resonance & Skills, then Boons & Banes)
+
+**Status:** ✅ Done (`plugin/help/en/soul_chargen_resonance.md`, `plugin/help/en/soul_chargen_bnb.md`,
+`custom-install/chargen_stage.snippet.yml`, `README.md`, `plugin/help/en/soul.md`,
+`plugin/help/en/soul_commands.md`, `docs/reference/Commands.md`)
+
+**Requested:** 2026-07-26, live testing: "For the MUSH chargen, I am thinking we break it into two: ... Two
+stages: First, setting Resonance and then Aspects skills. Here we add the explanation of resonance. Then the
+move to the next and set their bnbs, and here we add the explanation of bnbs to the top." Clarified: the
+`+soul/cg` command itself is unchanged - this is entirely about splitting the single core-AresMUSH chargen
+*stage* (`game/config/chargen.yml`'s `stages:` wizard, navigated with `cg/next`/`cg/prev`) into two, each with
+its own help topic.
+
+**Fix:** Replaced the single `soul_chargen.md` help topic (and its one-entry stage snippet) with two:
+`soul_chargen_resonance` (Resonance explanation up top, then `+soul/cg`/`+soul/cg/resonance`/`+soul/cg/skill`/
+`+soul/cg/aspect`) and `soul_chargen_bnb` (B&B explanation up top, then `+soul/cg/catalogue`/`+soul/cg/bnb`/
+`+soul/cg/drop`) - both explanation paragraphs match FR-043/FR-044's configurable defaults
+(`SoulResonanceApi.description`/`SoulBnbApi.chargen_description`), with a note to staff that the wording can
+be customized via config. `custom-install/chargen_stage.snippet.yml` now defines two ordered stage entries
+(`soul_resonance` then `soul_bnb`) instead of one. **Manual-merge step required**: anyone who already installed
+the old single `soul:` stage entry in their live game's `game/config/chargen.yml` needs to replace it with
+both new entries (in order) and run `load chargen`.
+
 ### FR-044: Configurable Boons & Banes chargen explanation
 
 **Status:** ✅ Done (`plugin/public/soul_bnb_api.rb`, `plugin/web/soul_chargen_web_handler.rb`,

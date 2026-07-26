@@ -159,7 +159,8 @@ Staff tools SHALL NOT require direct database manipulation (REQ-036). `+soul/aud
 - `help soul_commands` — This reference
 - `help soul_rolls` — Roll mechanics and GM-assisted workflow
 - `help soul_bnb` — Boons and Banes
-- `help soul_chargen` — Character generation (Resonance, Skills, starting B&Bs)
+- `help soul_chargen_resonance` — Character generation, stage 1 (Resonance, Skills)
+- `help soul_chargen_bnb` — Character generation, stage 2 (starting B&Bs)
 - `help manage soul` — Staff/admin help topic (CI-08 exact naming)
 
 ## Notes

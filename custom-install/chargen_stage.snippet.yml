@@ -1,5 +1,14 @@
-# Add this entry at the desired point under stages: in game/config/chargen.yml.
-# Keep your existing stages and indentation.
-soul:
-  title: SOUL
-  help: soul_chargen
+# Add these two entries at the desired point under stages: in
+# game/config/chargen.yml, in this order. Keep your existing stages and
+# indentation.
+#
+# Split into two stages (2026-07-26, project owner's direction) so a
+# player sets Resonance and spends their Skill/Aspect points before
+# moving on to Boons and Banes, each stage showing its own explanation
+# at the top of its help topic.
+soul_resonance:
+  title: "SOUL: Resonance & Skills"
+  help: soul_chargen_resonance
+soul_bnb:
+  title: "SOUL: Boons & Banes"
+  help: soul_chargen_bnb
