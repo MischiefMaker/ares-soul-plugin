@@ -11,8 +11,7 @@ aliases:
 Boons and Banes are special qualities, circumstances, possessions, or
 connections that help define your character. They may affect SOUL rolls,
 attract GM attention, provide plot hooks, or simply add depth to your
-character. (Staff: this wording is the default - see `soul.bnb.description`
-in the game's SOUL configuration if it's been customized.)
+character.
 
 `+soul/cg/catalogue` - List every active Boon and Bane available during
 character generation, including the ID and tag used by `+soul/cg/bnb`.

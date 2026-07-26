@@ -11,9 +11,7 @@ Characters with higher Resonance start with more Skill points and a higher
 starting cap in chargen, but advancing further later costs more XP.
 Characters with negative Resonance start with fewer Skill points and a lower
 starting cap, but advancing later costs less XP. Especially high or low
-Resonance may require staff approval. (Staff: this wording is the default -
-see `soul.resonance.description` in the game's SOUL configuration if it's
-been customized.)
+Resonance may require staff approval.
 
 `+soul/cg` - Review your current choices and remaining Skill/Aspect points.
 
