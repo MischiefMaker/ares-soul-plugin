@@ -50,15 +50,15 @@
       {{#each this.status.aspects as |aspect|}}
         <div class="col-lg-4 col-md-6 mb-3">
           <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <strong>{{aspect.name}}</strong>
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+              <strong class="fs-5">{{aspect.name}}</strong>
               <div class="d-flex align-items-center gap-2" role="group"
                 aria-label="Set {{aspect.name}} rating">
-                <button type="button" class="btn btn-sm btn-outline-secondary"
+                <button type="button" class="btn btn-sm btn-light"
                   disabled={{eq aspect.rating this.status.aspect_min_rating}}
                   onclick={{action "adjustAspect" aspect -1}} aria-label="Decrease {{aspect.name}}">−</button>
-                <span class="badge bg-primary fs-6">{{aspect.rating}}</span>
-                <button type="button" class="btn btn-sm btn-outline-secondary"
+                <span class="badge bg-light text-primary fs-6">{{aspect.rating}}</span>
+                <button type="button" class="btn btn-sm btn-light"
                   disabled={{eq aspect.rating this.status.aspect_max_rating}}
                   onclick={{action "adjustAspect" aspect 1}} aria-label="Increase {{aspect.name}}">+</button>
               </div>

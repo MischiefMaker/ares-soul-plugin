@@ -8,6 +8,19 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-047: Web chargen Aspect cards didn't visually stand out from their Skill rows
+
+**Status:** ✅ Done (`webportal/templates/components/soul-chargen.hbs`)
+
+**Requested:** 2026-07-26, live testing: "let's make Body, Mind and Spirit stand out better against the
+Skills, so it's clear they are different." (screenshot: Aspect card headers and Skill rows used the same dark
+background/text weight, distinguished only by a border.)
+
+**Fix:** Aspect card headers now use `bg-primary text-white` (the same accent color already used for the
+rating badges) with a larger name (`fs-5`), and their +/- buttons/rating badge switched to a light variant for
+contrast against the new colored header - Skill rows underneath are untouched, so the two now read as clearly
+distinct tiers instead of blending together.
+
 ### FR-046: Admin page tab polish - reorder, headers, Skill/Aspect correction, form resets
 
 **Status:** ✅ Done (`webportal/controllers/admin-soul.js`, `webportal/templates/admin-soul.hbs`)
