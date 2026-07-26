@@ -6,8 +6,9 @@ module AresMUSH
       enactor = request.enactor
 
       staff_commands = %w[soulBnbCreate soulBnbSetSkills soulBnbGrant soulBnbProgress soulBnbAdjustLevel
-                          soulBnbDelete soulBnbResolve soulBnbRestore soulBnbRequestApprove soulBnbRequestDeny
-                          soulBnbRequestsList]
+                          soulBnbSetEntrySkills soulBnbDelete soulBnbResolve soulBnbRestore
+                          soulBnbRequestApprove soulBnbRequestDeny soulBnbRequestsList
+                          soulBnbCharactersWithEntry]
       if staff_commands.include?(request.cmd)
         return { error: t('soul.permission_denied') } unless Soul.can_manage_soul?(enactor)
       elsif !Soul.can_play?(enactor)
@@ -28,6 +29,10 @@ module AresMUSH
           entries: result[:entries].map { |entry| serialize_catalogue(entry) },
           available_skills: SoulFrameworkApi.get_skills.map { |skill| { key: skill[:key], name: skill[:name] } }
         )
+      when "soulBnbCharactersWithEntry"
+        result = SoulBnbApi.get_characters_with_entry(request.args['catalogue_ref'], enactor: enactor)
+        result[:error] ? result : { success: true,
+          entries: result[:entries].map { |entry| serialize_character_entry(entry, true) } }
       when "soulBnbList"
         # Profile widget (2026-07-25 rework, FR-015) - character defaults to
         # the caller, but staff viewing another character's profile pass
@@ -92,6 +97,11 @@ module AresMUSH
       when "soulBnbAdjustLevel"
         result = SoulBnbApi.progress_direction(request.args['entry_id'], request.args['direction'],
           source: "admin", explanation: request.args['explanation'], enactor: enactor)
+        result[:error] ? result : { success: true, entry: serialize_character_entry(result[:entry], true) }
+      when "soulBnbSetEntrySkills"
+        result = SoulBnbApi.set_character_entry_skills(
+          request.args['entry_id'], request.args['skill_associations'] || [], enactor: enactor
+        )
         result[:error] ? result : { success: true, entry: serialize_character_entry(result[:entry], true) }
       when "soulBnbDelete"
         SoulBnbApi.delete(request.args['entry_id'], enactor: enactor,

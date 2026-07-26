@@ -93,6 +93,63 @@ module AresMUSH
       end
     end
 
+    describe ".get_characters_with_entry" do
+      it "requires manage_soul permission" do
+        boon = create_boon("lucky")
+        result = SoulBnbApi.get_characters_with_entry(boon.tag, enactor: character)
+        expect(result[:error]).to match(/permission/i)
+      end
+
+      it "returns every character holding the entry, sorted by name" do
+        boon = create_boon("lucky")
+        other = Fabricate(:character, name: "Zeta")
+        SoulBnbApi.grant(character, boon, level_state: "minor", source: "admin")
+        SoulBnbApi.grant(other, boon, level_state: "major", source: "admin")
+        result = SoulBnbApi.get_characters_with_entry(boon.tag, enactor: staff)
+        expect(result[:success]).to be true
+        expect(result[:entries].map { |e| e.character }).to eq([character, other].sort_by(&:name))
+      end
+
+      it "rejects an unknown catalogue entry" do
+        result = SoulBnbApi.get_characters_with_entry("nonexistent", enactor: staff)
+        expect(result[:error]).to match(/unknown/i)
+      end
+    end
+
+    describe ".set_character_entry_skills" do
+      it "requires manage_soul permission" do
+        boon = create_boon("lucky")
+        entry = SoulBnbApi.grant(character, boon, level_state: "minor", source: "admin")[:entry]
+        result = SoulBnbApi.set_character_entry_skills(entry.id, ["blade"], enactor: character)
+        expect(result[:error]).to match(/permission/i)
+      end
+
+      it "updates a granted entry's associated Skills without touching the catalogue default" do
+        boon = create_boon("lucky")
+        entry = SoulBnbApi.grant(character, boon, level_state: "minor", source: "admin",
+          associated_skills: ["blade"])[:entry]
+        allow(Global).to receive(:read_config).with("soul", "framework", "skills").and_return(
+          "blade" => { "name" => "Blade", "aspect" => "body" }, "spirit" => { "name" => "Spirit", "aspect" => "mind" }
+        )
+        result = SoulBnbApi.set_character_entry_skills(entry.id, ["spirit"], enactor: staff)
+        expect(result[:success]).to be true
+        expect(entry.reload.associated_skills).to eq(["spirit"])
+        expect(boon.reload.skill_associations).to eq(["blade"])
+      end
+
+      it "rejects an empty list" do
+        boon = create_boon("lucky")
+        entry = SoulBnbApi.grant(character, boon, level_state: "minor", source: "admin")[:entry]
+        result = SoulBnbApi.set_character_entry_skills(entry.id, [], enactor: staff)
+        expect(result[:error]).to match(/associated Skill/i)
+      end
+
+      it "rejects an unknown entry id" do
+        result = SoulBnbApi.set_character_entry_skills(999_999, ["blade"], enactor: staff)
+        expect(result[:error]).to match(/not found/i)
+      end
+    end
+
     describe "chargen B&B ratio (Addendum §5.1)" do
       it "blocks a 2nd Boon grant with no Banes" do
         boon = create_boon("lucky")

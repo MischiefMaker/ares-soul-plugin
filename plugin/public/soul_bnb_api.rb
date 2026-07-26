@@ -276,6 +276,25 @@ module AresMUSH
       { success: true, entry: entry }
     end
 
+    # Updates the Skill(s) THIS granted instance affects - distinct from
+    # .set_skill_associations above, which edits the catalogue's own fixed
+    # default. Most B&Bs are configurable per instance and only ever got
+    # their Skill(s) set once, at .grant time - staff had no way to
+    # change them afterward short of deleting and re-granting the entry
+    # (2026-07-26 live testing: "Managing a player's boons and banes
+    # should also have a way of changing/removing/adding a skill").
+    def self.set_character_entry_skills(entry_id, skill_associations, enactor:)
+      return { error: "You don't have permission to do that." } unless Soul.can_manage_soul?(enactor)
+      entry = CharacterBnbEntry[entry_id]
+      return { error: "Boon/Bane entry not found" } unless entry
+      return { error: "At least one associated Skill is required." } if (skill_associations || []).empty?
+      unknown_skills = skill_associations.reject { |key| SoulFrameworkApi.valid_skill_key?(key) }
+      return { error: "Unknown Skill(s): #{unknown_skills.join(', ')}" } if unknown_skills.any?
+
+      entry.update(associated_skills: skill_associations)
+      { success: true, entry: entry }
+    end
+
     # Undo for a pre-approval chargen B&B pick (FINAL REQ-011 rule 6:
     # "Permit correction without losing editable work"). Deliberately
     # distinct from the destructive, staff-only .delete (2 confirmations,
@@ -484,6 +503,22 @@ module AresMUSH
     def self.get_character_entries(character)
       return [] unless character
       character.character_bnb_entries.to_a.sort_by { |e| e.catalogue_entry ? e.catalogue_entry.name.to_s : "" }
+    end
+
+    # The reverse lookup of .get_character_entries (catalogue entry ->
+    # every character who holds it, not character -> their entries) -
+    # staff-only, for the admin page (2026-07-26 live testing: "let's add
+    # to the admin page a way to search for players with specific bnbs").
+    # Uses BnbCatalogueEntry#character_entries (the collection side of
+    # CharacterBnbEntry's reference), same relation .get_catalogue_entry's
+    # callers already navigate the other direction.
+    def self.get_characters_with_entry(catalogue_ref, enactor:)
+      return { error: "You don't have permission to do that." } unless Soul.can_manage_soul?(enactor)
+      catalogue = catalogue_ref.kind_of?(BnbCatalogueEntry) ? catalogue_ref : get_catalogue_entry(catalogue_ref)
+      return { error: "Unknown Boon/Bane: #{catalogue_ref}" } unless catalogue
+
+      entries = catalogue.character_entries.to_a.sort_by { |entry| entry.character ? entry.character.name.to_s : "" }
+      { success: true, entries: entries }
     end
 
     # Public-safe view: no character_explanation or gm_notes (FINAL REQ-018).

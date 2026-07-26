@@ -7,275 +7,383 @@
   {{#if this.error}}<div class="alert alert-danger">{{this.error}}</div>{{/if}}
   {{#if this.successMessage}}<div class="alert alert-success">{{this.successMessage}}</div>{{/if}}
 
-  <section class="card card-body mb-3">
-    <h4>Pending Boon/Bane Requests</h4>
-    {{#if this.model.requests.length}}
-      <table class="table table-sm">
-        <thead>
-          <tr>
-            <th scope="col">Character</th><th scope="col">Entry</th><th scope="col">Level</th>
-            <th scope="col">Explanation</th><th scope="col">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{#each this.model.requests as |req|}}
-            <tr>
-              <td>{{req.character}}</td>
-              <td>[{{req.tag}}] {{req.name}}</td>
-              <td>{{req.level_state}}</td>
-              <td>{{req.explanation}}</td>
-              <td>
-                <button type="button" class="btn btn-sm btn-success" onclick={{action "approveRequest" req.id}}>Approve</button>
-                <button type="button" class="btn btn-sm btn-danger" onclick={{action "denyRequest" req.id}}>Deny</button>
-              </td>
-            </tr>
-          {{/each}}
-        </tbody>
-      </table>
-      <Input @value={{this.denyReason}} class="form-control" placeholder="Reason (required to deny)" />
-    {{else}}
-      <p class="text-muted mb-0">None</p>
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+      <button type="button" class="nav-link {{if (eq this.activeTab "requests") "active"}}"
+        onclick={{action "selectTab" "requests"}}>Pending Requests</button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link {{if (eq this.activeTab "xp") "active"}}"
+        onclick={{action "selectTab" "xp"}}>XP</button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link {{if (eq this.activeTab "bnbs") "active"}}"
+        onclick={{action "selectTab" "bnbs"}}>BNBs</button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link {{if (eq this.activeTab "skills") "active"}}"
+        onclick={{action "selectTab" "skills"}}>Skills</button>
+    </li>
+    {{#if this.model.resonanceConfig.resonance_enabled}}
+      <li class="nav-item">
+        <button type="button" class="nav-link {{if (eq this.activeTab "resonance") "active"}}"
+          onclick={{action "selectTab" "resonance"}}>Resonance</button>
+      </li>
     {{/if}}
-  </section>
+  </ul>
 
-  {{#if this.model.resonanceConfig.resonance_enabled}}
+  {{#if (eq this.activeTab "requests")}}
     <section class="card card-body mb-3">
-      <h4>Adjust Resonance</h4>
+      <h4>Pending Boon/Bane Requests</h4>
+      {{#if this.model.requests.length}}
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th scope="col">Character</th><th scope="col">Entry</th><th scope="col">Level</th>
+              <th scope="col">Explanation</th><th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each this.model.requests as |req|}}
+              <tr>
+                <td>{{req.character}}</td>
+                <td>[{{req.tag}}] {{req.name}}</td>
+                <td>{{req.level_state}}</td>
+                <td>{{req.explanation}}</td>
+                <td>
+                  <button type="button" class="btn btn-sm btn-success" onclick={{action "approveRequest" req.id}}>Approve</button>
+                  <button type="button" class="btn btn-sm btn-danger" onclick={{action "denyRequest" req.id}}>Deny</button>
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+        <Input @value={{this.denyReason}} class="form-control" placeholder="Reason (required to deny)" />
+      {{else}}
+        <p class="text-muted mb-0">None</p>
+      {{/if}}
+    </section>
+
+    <section class="card card-body">
+      <h4>Open GM Rolls</h4>
+      {{#if this.model.openRolls.length}}
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Character</th><th scope="col">Skill</th><th scope="col">Difficulty</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each this.model.openRolls as |pending|}}
+              <tr>
+                <td>{{pending.character}}</td>
+                <td>{{pending.skill_key}}</td>
+                <td>{{pending.difficulty}}</td>
+                <td>{{pending.status}}</td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      {{else}}
+        <p class="text-muted mb-0">None</p>
+      {{/if}}
+    </section>
+  {{/if}}
+
+  {{#if (eq this.activeTab "xp")}}
+    <section class="card card-body mb-3">
+      <h4>Award XP to Scene</h4>
+      <Input @type="number" @value={{this.xpAmount}} class="form-control my-2" placeholder="Amount" />
+      <Input @value={{this.xpReason}} class="form-control my-2" placeholder="Reason" />
+      <PowerSelect @selected={{this.xpScene}} @options={{this.model.scenes}}
+        @searchField="title" @searchEnabled=true @placeholder="Select a scene..."
+        @onChange={{action "selectXpScene"}} as |scene|>
+        {{scene.title}}
+      </PowerSelect>
+      <div class="form-text mb-0">Only already-shared scenes appear here (the Scenes plugin keeps unshared
+        scenes private to their participants) - share the scene first if it's missing.</div>
+      <div class="d-flex gap-2 flex-wrap mt-2">
+        <button class="btn btn-secondary" type="button" onclick={{action "xpScene" false}}>Preview/Confirm Scene</button>
+        <button class="btn btn-secondary" type="button" onclick={{action "xpScene" true}}>Preview/Confirm Scene + Catch-up</button>
+      </div>
+      {{#if this.scenePreview.recipients}}<p>Recipients: {{this.scenePreview.recipients}}</p>{{/if}}
+    </section>
+
+    <section class="card card-body">
+      <h4>Award XP to Players</h4>
       <div class="mb-2">
-        <label for="soul-admin-resonance-player" class="form-label">Player</label>
+        <label for="soul-admin-xp-player" class="form-label">Player</label>
         <PowerSelect
-          @selected={{this.resonancePlayer}}
+          @selected={{this.xpPlayer}}
           @options={{this.model.characters}}
           @searchField="name"
           @searchEnabled=true
           @placeholder="Select a player..."
-          @onChange={{action "selectResonancePlayer"}}
+          @onChange={{action "selectXpPlayer"}}
           as |char|
         >
           {{char.name}}
         </PowerSelect>
       </div>
-      <PowerSelect @selected={{this.resonanceValue}} @options={{this.model.resonanceConfig.resonance_options}}
-        @placeholder="New Resonance..." @onChange={{action "selectResonanceValue"}} as |value|>
-        R{{value}}
-      </PowerSelect>
-      <Input @value={{this.resonanceReason}} class="form-control my-2" placeholder="Reason" />
-      <button class="btn btn-warning" type="button"
-        disabled={{or (not this.resonancePlayer) (not this.resonanceReason)}}
-        onclick={{action "correctResonance"}}>Correct Resonance</button>
+      <Input @type="number" @value={{this.xpPlayerAmount}} class="form-control my-2" placeholder="Amount" />
+      <Input @value={{this.xpPlayerReason}} class="form-control my-2" placeholder="Reason" />
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-primary" type="button" onclick={{action "xpAwardPlayer" false}}>Award</button>
+        <button class="btn btn-primary" type="button" onclick={{action "xpAwardPlayer" true}}>Award + Catch-up</button>
+        <button class="btn btn-warning" type="button" onclick={{action "xpCorrectPlayer" "correction"}}>Add Correction</button>
+        <button class="btn btn-warning" type="button" onclick={{action "xpCorrectPlayer" "reversal"}}>Reverse XP</button>
+      </div>
     </section>
   {{/if}}
 
-  <section class="card card-body mb-3">
-    <h4>View Available Aspects and Skills</h4>
-    <p class="text-muted">Read-only. To add, remove, or rename an Aspect or Skill, edit the Aspects/Skills
-      section of the game's SOUL configuration - this page only shows what's currently configured.</p>
-    <button class="btn btn-secondary m-2" type="button" onclick={{action "loadFramework"}}>View Framework</button>
-    <button class="btn btn-secondary m-2" type="button" onclick={{action "reloadConfig"}}>Validate Configuration</button>
-    {{#if this.framework}}
-      <p>Valid Skill ratings: {{this.framework.min_rating}}–{{this.framework.max_rating}}</p>
-      {{#each this.framework.aspects as |aspect|}}
-        <div class="card card-body mb-2">
-          <h5>{{aspect.name}} [{{aspect.key}}]</h5>
-          {{#if aspect.description}}<p>{{aspect.description}}</p>{{/if}}
-          <ul>
-            {{#each this.framework.skills as |skill|}}
-              {{#if (eq skill.aspect_key aspect.key)}}
-                <li>{{skill.name}} [{{skill.key}}]</li>
-              {{/if}}
+  {{#if (eq this.activeTab "bnbs")}}
+    <section class="card card-body mb-3">
+      <h4>Boon &amp; Bane catalogue</h4>
+      <button type="button" class="btn btn-sm btn-outline-secondary mb-2" onclick={{action "toggleCatalogueBrowser"}}>
+        {{if this.catalogueBrowserOpen "Hide Full Catalogue" "View Full Catalogue"}}
+      </button>
+      {{#if this.catalogueBrowserOpen}}
+        <details class="mb-2">
+          <summary>Boons ({{this.catalogueBoons.length}})</summary>
+          <div class="list-group mt-2">
+            {{#each this.catalogueBoons as |entry|}}
+              <div class="list-group-item">
+                <h6 class="mb-1">[{{entry.tag}}] {{entry.name}}</h6>
+                <p class="mb-0 small text-muted">{{entry.description}}</p>
+              </div>
+            {{else}}
+              <div class="text-muted small p-2">No Boons found.</div>
             {{/each}}
-          </ul>
-        </div>
-      {{/each}}
-    {{/if}}
-    {{#if this.reloadResult.errors}}<ul>{{#each this.reloadResult.errors as |validationError|}}<li>{{validationError}}</li>{{/each}}</ul>{{/if}}
-  </section>
-
-  <section class="card card-body mb-3">
-    <h4>Boon &amp; Bane catalogue</h4>
-    <button type="button" class="btn btn-sm btn-outline-secondary mb-2" onclick={{action "toggleCatalogueBrowser"}}>
-      {{if this.catalogueBrowserOpen "Hide Full Catalogue" "View Full Catalogue"}}
-    </button>
-    {{#if this.catalogueBrowserOpen}}
-      <details class="mb-2">
-        <summary>Boons ({{this.catalogueBoons.length}})</summary>
-        <div class="list-group mt-2">
-          {{#each this.catalogueBoons as |entry|}}
-            <div class="list-group-item">
-              <h6 class="mb-1">[{{entry.tag}}] {{entry.name}}</h6>
-              <p class="mb-0 small text-muted">{{entry.description}}</p>
-            </div>
-          {{else}}
-            <div class="text-muted small p-2">No Boons found.</div>
-          {{/each}}
-        </div>
-      </details>
-      <details class="mb-3">
-        <summary>Banes ({{this.catalogueBanes.length}})</summary>
-        <div class="list-group mt-2">
-          {{#each this.catalogueBanes as |entry|}}
-            <div class="list-group-item">
-              <h6 class="mb-1">[{{entry.tag}}] {{entry.name}}</h6>
-              <p class="mb-0 small text-muted">{{entry.description}}</p>
-            </div>
-          {{else}}
-            <div class="text-muted small p-2">No Banes found.</div>
-          {{/each}}
-        </div>
-      </details>
-    {{/if}}
-    <p class="text-muted">Create a new catalogue entry.</p>
-    <Input @value={{this.bnbName}} class="form-control my-2" placeholder="Name" />
-    <Input @value={{this.bnbTag}} class="form-control my-2" placeholder="Tag" />
-    <select class="form-select my-2" aria-label="Boon or Bane kind"
-      onchange={{action (mut this.bnbKind) value="target.value"}}>
-      <option value="">Kind…</option>
-      <option value="boon">Boon</option>
-      <option value="bane">Bane</option>
-    </select>
-    <Textarea @value={{this.bnbDescription}} class="form-control my-2" placeholder="Description" />
-    <label class="form-label mt-2 mb-0">Fixed associated Skill(s) <span class="text-muted">(optional - leave blank if configurable per instance)</span></label>
-    <PowerSelectMultiple @selected={{this.bnbSkillAssociations}} @options={{this.model.catalogue.available_skills}}
-      @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
-      @onChange={{action "selectBnbCreateSkills"}} as |skill|>
-      {{skill.name}}
-    </PowerSelectMultiple>
-    <button class="btn btn-primary mt-2" type="button" onclick={{action "bnbCreate"}}>Create Catalogue Entry</button>
-    <hr>
-    <p class="text-muted">Edit an existing entry's fixed associated Skill(s).</p>
-    <PowerSelect @selected={{this.bnbSkillsEntry}} @options={{this.model.catalogue.entries}}
-      @searchField="name" @searchEnabled=true @placeholder="Select a catalogue entry..."
-      @onChange={{action "selectBnbSkillsEntry"}} as |entry|>
-      {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
-    </PowerSelect>
-    <PowerSelectMultiple @selected={{this.bnbSkillsValue}} @options={{this.model.catalogue.available_skills}}
-      @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
-      @onChange={{action "selectBnbSkillsValue"}} as |skill|>
-      {{skill.name}}
-    </PowerSelectMultiple>
-    <button class="btn btn-warning mt-2" type="button" onclick={{action "bnbSetSkills"}}>Update Associated Skills</button>
-  </section>
-
-  <section class="card card-body mb-3">
-    <h4>Manage a Player's Boons and Banes</h4>
-    <div class="mb-2">
-      <label for="soul-admin-bnb-player" class="form-label">Player</label>
-      <PowerSelect
-        @selected={{this.bnbPlayer}}
-        @options={{this.model.characters}}
-        @searchField="name"
-        @searchEnabled=true
-        @placeholder="Select a player..."
-        @onChange={{action "selectBnbPlayer"}}
-        as |char|
-      >
-        {{char.name}}
-      </PowerSelect>
-    </div>
-
-    {{#if this.bnbPlayer}}
-      <PowerSelect @selected={{this.bnbEntry}} @options={{this.characterBnbEntries}}
-        @searchField="name" @searchEnabled=true @placeholder="Select an entry..."
-        @onChange={{action "selectBnbEntry"}} as |entry|>
-        {{entry.name}} [{{entry.tag}}] — {{entry.kind}}, {{entry.level_state}}
-        {{if entry.resolved " (resolved)"}}
-      </PowerSelect>
-      <Input @value={{this.bnbReason}} class="form-control my-2" placeholder="Explanation / reason" />
-      <div class="d-flex gap-2 flex-wrap">
-        <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
-          onclick={{action "bnbAdjustLevel" "progress"}}>Progress</button>
-        <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
-          onclick={{action "bnbAdjustLevel" "regress"}}>Regress</button>
-        <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
-          onclick={{action "bnbTransition" "soulBnbResolve"}}>Resolve</button>
-        <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
-          onclick={{action "bnbTransition" "soulBnbRestore"}}>Restore</button>
-      </div>
-      <div class="form-text mb-0">Progress/Regress move a Boon or Bane one step along Minor/Major/Legendary -
-        Progress is always the direction that's good for the character (a Boon strengthens, a Bane weakens).</div>
-      <div class="form-check mt-3">
-        <Input @type="checkbox" @checked={{this.deleteConfirmOne}} class="form-check-input"
-          id="soul-admin-bnb-delete-confirm-one" />
-        <label class="form-check-label" for="soul-admin-bnb-delete-confirm-one">
-          I understand this permanently deletes the record.
-        </label>
-      </div>
-      <div class="form-check">
-        <Input @type="checkbox" @checked={{this.deleteConfirmTwo}} class="form-check-input"
-          id="soul-admin-bnb-delete-confirm-two" />
-        <label class="form-check-label" for="soul-admin-bnb-delete-confirm-two">
-          I confirm again; resolving or negating is not appropriate.
-        </label>
-      </div>
-      <button class="btn btn-danger mt-2" type="button"
-        disabled={{not (and this.bnbEntry this.deleteConfirmOne this.deleteConfirmTwo)}}
-        onclick={{action "bnbTransition" "soulBnbDelete"}}>Permanently Delete</button>
-
+          </div>
+        </details>
+        <details class="mb-3">
+          <summary>Banes ({{this.catalogueBanes.length}})</summary>
+          <div class="list-group mt-2">
+            {{#each this.catalogueBanes as |entry|}}
+              <div class="list-group-item">
+                <h6 class="mb-1">[{{entry.tag}}] {{entry.name}}</h6>
+                <p class="mb-0 small text-muted">{{entry.description}}</p>
+              </div>
+            {{else}}
+              <div class="text-muted small p-2">No Banes found.</div>
+            {{/each}}
+          </div>
+        </details>
+      {{/if}}
+      <p class="text-muted">Create a new catalogue entry.</p>
+      <Input @value={{this.bnbName}} class="form-control my-2" placeholder="Name" />
+      <Input @value={{this.bnbTag}} class="form-control my-2" placeholder="Tag" />
+      <select class="form-select my-2" aria-label="Boon or Bane kind"
+        onchange={{action (mut this.bnbKind) value="target.value"}}>
+        <option value="">Kind…</option>
+        <option value="boon">Boon</option>
+        <option value="bane">Bane</option>
+      </select>
+      <Textarea @value={{this.bnbDescription}} class="form-control my-2" placeholder="Description" />
+      <label class="form-label mt-2 mb-0">Fixed associated Skill(s) <span class="text-muted">(optional - leave blank if configurable per instance)</span></label>
+      <PowerSelectMultiple @selected={{this.bnbSkillAssociations}} @options={{this.model.catalogue.available_skills}}
+        @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
+        @onChange={{action "selectBnbCreateSkills"}} as |skill|>
+        {{skill.name}}
+      </PowerSelectMultiple>
+      <button class="btn btn-primary mt-2" type="button" onclick={{action "bnbCreate"}}>Create Catalogue Entry</button>
       <hr>
-      <p class="mb-1"><strong>Add/Remove</strong></p>
-      <p class="text-muted mb-1">Grant a new Boon or Bane</p>
-      <PowerSelect @selected={{this.bnbCatalogueEntry}} @options={{this.model.catalogue.entries}}
-        @searchField="name" @searchEnabled=true @placeholder="Select a Boon/Bane..."
-        @onChange={{action "selectBnbGrantCatalogue"}} as |entry|>
+      <p class="text-muted">Edit an existing entry's fixed associated Skill(s).</p>
+      <PowerSelect @selected={{this.bnbSkillsEntry}} @options={{this.model.catalogue.entries}}
+        @searchField="name" @searchEnabled=true @placeholder="Select a catalogue entry..."
+        @onChange={{action "selectBnbSkillsEntry"}} as |entry|>
         {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
       </PowerSelect>
-      <select class="form-select my-2" aria-label="Boon or Bane level"
-        onchange={{action (mut this.bnbLevel) value="target.value"}}>
-        <option value="minor">Minor</option>
-        <option value="major">Major</option>
-        <option value="legendary">Legendary</option>
-      </select>
-      {{#unless this.bnbCatalogueEntry.has_fixed_skills}}
-        <PowerSelectMultiple @selected={{this.bnbSkills}} @options={{this.model.catalogue.available_skills}}
-          @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
-          @onChange={{action "selectBnbGrantSkills"}} as |skill|>
-          {{skill.name}}
-        </PowerSelectMultiple>
-      {{/unless}}
-      <Input @value={{this.bnbExplanation}} class="form-control my-2" placeholder="Explanation" />
-      <button class="btn btn-primary" type="button" onclick={{action "bnbGrant"}}>Grant</button>
-    {{/if}}
-  </section>
+      <PowerSelectMultiple @selected={{this.bnbSkillsValue}} @options={{this.model.catalogue.available_skills}}
+        @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
+        @onChange={{action "selectBnbSkillsValue"}} as |skill|>
+        {{skill.name}}
+      </PowerSelectMultiple>
+      <button class="btn btn-warning mt-2" type="button" onclick={{action "bnbSetSkills"}}>Update Associated Skills</button>
+    </section>
 
-  <section class="card card-body mb-3">
-    <h4>Award XP to Scene</h4>
-    <Input @type="number" @value={{this.xpAmount}} class="form-control my-2" placeholder="Amount" />
-    <Input @value={{this.xpReason}} class="form-control my-2" placeholder="Reason" />
-    <PowerSelect @selected={{this.xpScene}} @options={{this.model.scenes}}
-      @searchField="title" @searchEnabled=true @placeholder="Select a scene..."
-      @onChange={{action "selectXpScene"}} as |scene|>
-      {{scene.title}}
-    </PowerSelect>
-    <div class="d-flex gap-2 flex-wrap mt-2">
-      <button class="btn btn-secondary" type="button" onclick={{action "xpScene" false}}>Preview/Confirm Scene</button>
-      <button class="btn btn-secondary" type="button" onclick={{action "xpScene" true}}>Preview/Confirm Scene + Catch-up</button>
-    </div>
-    {{#if this.scenePreview.recipients}}<p>Recipients: {{this.scenePreview.recipients}}</p>{{/if}}
-  </section>
+    <section class="card card-body mb-3">
+      <h4>Manage a Player's Boons and Banes</h4>
+      <div class="mb-2">
+        <label for="soul-admin-bnb-player" class="form-label">Player</label>
+        <PowerSelect
+          @selected={{this.bnbPlayer}}
+          @options={{this.model.characters}}
+          @searchField="name"
+          @searchEnabled=true
+          @placeholder="Select a player..."
+          @onChange={{action "selectBnbPlayer"}}
+          as |char|
+        >
+          {{char.name}}
+        </PowerSelect>
+      </div>
 
-  <section class="card card-body">
-    <h4>Award XP to Players</h4>
-    <div class="mb-2">
-      <label for="soul-admin-xp-player" class="form-label">Player</label>
-      <PowerSelect
-        @selected={{this.xpPlayer}}
-        @options={{this.model.characters}}
-        @searchField="name"
-        @searchEnabled=true
-        @placeholder="Select a player..."
-        @onChange={{action "selectXpPlayer"}}
-        as |char|
-      >
-        {{char.name}}
+      {{#if this.bnbPlayer}}
+        <PowerSelect @selected={{this.bnbEntry}} @options={{this.characterBnbEntries}}
+          @searchField="name" @searchEnabled=true @placeholder="Select an entry..."
+          @onChange={{action "selectBnbEntry"}} as |entry|>
+          {{entry.name}} [{{entry.tag}}] — {{entry.kind}}, {{entry.level_state}}
+          {{if entry.resolved " (resolved)"}}
+        </PowerSelect>
+        {{#if this.bnbEntry}}
+          <label class="form-label mt-2 mb-0">Change Associated Skill(s)</label>
+          <div class="d-flex gap-2 align-items-start flex-wrap">
+            <div class="flex-grow-1">
+              <PowerSelectMultiple @selected={{this.bnbEntrySkills}} @options={{this.model.catalogue.available_skills}}
+                @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
+                @onChange={{action "selectBnbEntrySkills"}} as |skill|>
+                {{skill.name}}
+              </PowerSelectMultiple>
+            </div>
+            <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntrySkills.length}}
+              onclick={{action "bnbSetEntrySkills"}}>Update Skills</button>
+          </div>
+        {{/if}}
+        <Input @value={{this.bnbReason}} class="form-control my-2" placeholder="Explanation / reason" />
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
+            onclick={{action "bnbAdjustLevel" "progress"}}>Progress</button>
+          <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
+            onclick={{action "bnbAdjustLevel" "regress"}}>Regress</button>
+          <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
+            onclick={{action "bnbTransition" "soulBnbResolve"}}>Resolve</button>
+          <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}
+            onclick={{action "bnbTransition" "soulBnbRestore"}}>Restore</button>
+        </div>
+        <div class="form-text mb-0">Progress/Regress move a Boon or Bane one step along Minor/Major/Legendary -
+          Progress is always the direction that's good for the character (a Boon strengthens, a Bane weakens).</div>
+        <div class="form-check mt-3">
+          <Input @type="checkbox" @checked={{this.deleteConfirmOne}} class="form-check-input"
+            id="soul-admin-bnb-delete-confirm-one" />
+          <label class="form-check-label" for="soul-admin-bnb-delete-confirm-one">
+            I understand this permanently deletes the record.
+          </label>
+        </div>
+        <div class="form-check">
+          <Input @type="checkbox" @checked={{this.deleteConfirmTwo}} class="form-check-input"
+            id="soul-admin-bnb-delete-confirm-two" />
+          <label class="form-check-label" for="soul-admin-bnb-delete-confirm-two">
+            I confirm again; resolving or negating is not appropriate.
+          </label>
+        </div>
+        <button class="btn btn-danger mt-2" type="button"
+          disabled={{not (and this.bnbEntry this.deleteConfirmOne this.deleteConfirmTwo)}}
+          onclick={{action "bnbTransition" "soulBnbDelete"}}>Permanently Delete</button>
+
+        <hr>
+        <p class="mb-1"><strong>Add/Remove</strong></p>
+        <p class="text-muted mb-1">Grant a new Boon or Bane</p>
+        <PowerSelect @selected={{this.bnbCatalogueEntry}} @options={{this.model.catalogue.entries}}
+          @searchField="name" @searchEnabled=true @placeholder="Select a Boon/Bane..."
+          @onChange={{action "selectBnbGrantCatalogue"}} as |entry|>
+          {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
+        </PowerSelect>
+        <select class="form-select my-2" aria-label="Boon or Bane level"
+          onchange={{action (mut this.bnbLevel) value="target.value"}}>
+          <option value="minor">Minor</option>
+          <option value="major">Major</option>
+          <option value="legendary">Legendary</option>
+        </select>
+        {{#unless this.bnbCatalogueEntry.has_fixed_skills}}
+          <PowerSelectMultiple @selected={{this.bnbSkills}} @options={{this.model.catalogue.available_skills}}
+            @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
+            @onChange={{action "selectBnbGrantSkills"}} as |skill|>
+            {{skill.name}}
+          </PowerSelectMultiple>
+        {{/unless}}
+        <Input @value={{this.bnbExplanation}} class="form-control my-2" placeholder="Explanation" />
+        <button class="btn btn-primary" type="button" onclick={{action "bnbGrant"}}>Grant</button>
+      {{/if}}
+    </section>
+
+    <section class="card card-body">
+      <h4>Find Players with a Boon/Bane</h4>
+      <PowerSelect @selected={{this.bnbSearchEntry}} @options={{this.model.catalogue.entries}}
+        @searchField="name" @searchEnabled=true @placeholder="Select a Boon/Bane..."
+        @onChange={{action "selectBnbSearchEntry"}} as |entry|>
+        {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
       </PowerSelect>
-    </div>
-    <Input @type="number" @value={{this.xpPlayerAmount}} class="form-control my-2" placeholder="Amount" />
-    <Input @value={{this.xpPlayerReason}} class="form-control my-2" placeholder="Reason" />
-    <div class="d-flex gap-2 flex-wrap">
-      <button class="btn btn-primary" type="button" onclick={{action "xpAwardPlayer" false}}>Award</button>
-      <button class="btn btn-primary" type="button" onclick={{action "xpAwardPlayer" true}}>Award + Catch-up</button>
-      <button class="btn btn-warning" type="button" onclick={{action "xpCorrectPlayer" "correction"}}>Add Correction</button>
-      <button class="btn btn-warning" type="button" onclick={{action "xpCorrectPlayer" "reversal"}}>Reverse XP</button>
-    </div>
-  </section>
+      <button class="btn btn-secondary mt-2" type="button" disabled={{not this.bnbSearchEntry}}
+        onclick={{action "bnbSearchByEntry"}}>Search</button>
+      {{#if this.bnbSearchResults}}
+        {{#if this.bnbSearchResults.entries.length}}
+          <table class="table table-sm mt-2 mb-0">
+            <thead>
+              <tr><th scope="col">Character</th><th scope="col">Level</th><th scope="col">State</th></tr>
+            </thead>
+            <tbody>
+              {{#each this.bnbSearchResults.entries as |entry|}}
+                <tr>
+                  <td>{{entry.character}}</td>
+                  <td>{{entry.level_state}}</td>
+                  <td>{{if entry.resolved "Resolved" "Active"}}</td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        {{else}}
+          <p class="text-muted mb-0 mt-2">None</p>
+        {{/if}}
+      {{/if}}
+    </section>
+  {{/if}}
+
+  {{#if (eq this.activeTab "skills")}}
+    <section class="card card-body">
+      <h4>View Available Aspects and Skills</h4>
+      <p class="text-muted">Read-only. To add, remove, or rename an Aspect or Skill, edit the Aspects/Skills
+        section of the game's SOUL configuration - this page only shows what's currently configured.</p>
+      <button class="btn btn-secondary m-2" type="button" onclick={{action "loadFramework"}}>View Framework</button>
+      <button class="btn btn-secondary m-2" type="button" onclick={{action "reloadConfig"}}>Validate Configuration</button>
+      {{#if this.framework}}
+        <p>Valid Skill ratings: {{this.framework.min_rating}}–{{this.framework.max_rating}}</p>
+        {{#each this.framework.aspects as |aspect|}}
+          <div class="card card-body mb-2">
+            <h5>{{aspect.name}} [{{aspect.key}}]</h5>
+            {{#if aspect.description}}<p>{{aspect.description}}</p>{{/if}}
+            <ul>
+              {{#each this.framework.skills as |skill|}}
+                {{#if (eq skill.aspect_key aspect.key)}}
+                  <li>{{skill.name}} [{{skill.key}}]</li>
+                {{/if}}
+              {{/each}}
+            </ul>
+          </div>
+        {{/each}}
+      {{/if}}
+      {{#if this.reloadResult.errors}}<ul>{{#each this.reloadResult.errors as |validationError|}}<li>{{validationError}}</li>{{/each}}</ul>{{/if}}
+    </section>
+  {{/if}}
+
+  {{#if (eq this.activeTab "resonance")}}
+    {{#if this.model.resonanceConfig.resonance_enabled}}
+      <section class="card card-body">
+        <h4>Adjust Resonance</h4>
+        <div class="mb-2">
+          <label for="soul-admin-resonance-player" class="form-label">Player</label>
+          <PowerSelect
+            @selected={{this.resonancePlayer}}
+            @options={{this.model.characters}}
+            @searchField="name"
+            @searchEnabled=true
+            @placeholder="Select a player..."
+            @onChange={{action "selectResonancePlayer"}}
+            as |char|
+          >
+            {{char.name}}
+          </PowerSelect>
+        </div>
+        <PowerSelect @selected={{this.resonanceValue}} @options={{this.model.resonanceConfig.resonance_options}}
+          @placeholder="New Resonance..." @onChange={{action "selectResonanceValue"}} as |value|>
+          R{{value}}
+        </PowerSelect>
+        <Input @value={{this.resonanceReason}} class="form-control my-2" placeholder="Reason" />
+        <button class="btn btn-warning" type="button"
+          disabled={{or (not this.resonancePlayer) (not this.resonanceReason)}}
+          onclick={{action "correctResonance"}}>Correct Resonance</button>
+      </section>
+    {{/if}}
+  {{/if}}
 </div>

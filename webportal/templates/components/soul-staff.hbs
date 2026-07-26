@@ -41,6 +41,20 @@
       {{entry.name}} [{{entry.tag}}] — {{entry.kind}}, {{entry.level_state}}
       {{if entry.resolved " (resolved)"}}
     </PowerSelect>
+    {{#if this.bnbEntry}}
+      <label class="form-label mt-2 mb-0">Change Associated Skill(s)</label>
+      <div class="d-flex gap-2 align-items-start flex-wrap">
+        <div class="flex-grow-1">
+          <PowerSelectMultiple @selected={{this.bnbEntrySkills}} @options={{this.availableSkills}}
+            @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
+            @onChange={{action "selectBnbEntrySkills"}} as |skill|>
+            {{skill.name}}
+          </PowerSelectMultiple>
+        </div>
+        <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntrySkills.length}}
+          onclick={{action "bnbSetEntrySkills"}}>Update Skills</button>
+      </div>
+    {{/if}}
     <Input @value={{this.bnbReason}} class="form-control my-2" placeholder="Explanation / reason" />
     <div class="d-flex gap-2 flex-wrap">
       <button class="btn btn-secondary" type="button" disabled={{not this.bnbEntry}}

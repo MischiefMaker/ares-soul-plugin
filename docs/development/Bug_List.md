@@ -8,6 +8,42 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-041: Admin page - edit a granted B&B's Skills, find players by B&B, tabbed layout with Open GM Rolls
+
+**Status:** ✅ Done (`plugin/public/soul_bnb_api.rb`, `plugin/web/soul_bnb_web_handler.rb`, `plugin/soul.rb`,
+`webportal/components/soul-staff.js`, `webportal/templates/components/soul-staff.hbs`,
+`webportal/controllers/admin-soul.js`, `webportal/routes/admin-soul.js`, `webportal/templates/admin-soul.hbs`, spec)
+
+**Requested:** 2026-07-26, live testing, in sequence:
+- "Managing a player's boons and banes should also have a way of changing/removing/adding a skill."
+- "Let's add to the admin page a way to search for players with specific bnbs."
+- "Let's use tabs on the admin page to make it cleaner. Pending requests as the top default tab, then XP,
+  then BNBs, Skills, Resonance"
+- "Under the Pending Requests, along with BNBs, let's also list open GM rolls."
+- (also reported, addressed with a UI hint rather than a code fix) "Award XP to scene in the admin panel --
+  no scenes show in the drop down even though one exists."
+
+**Fix:**
+- Added `SoulBnbApi.set_character_entry_skills(entry_id, skills, enactor:)` - a granted `CharacterBnbEntry`'s
+  `associated_skills` was previously only ever settable once, at `.grant` time; staff had to delete and
+  re-grant to change it. New "Change Associated Skill(s)" control next to the entry picker on both the
+  profile staff panel and the admin page, wired through a new `soulBnbSetEntrySkills` web command.
+- Added `SoulBnbApi.get_characters_with_entry(catalogue_ref, enactor:)` - the reverse of
+  `.get_character_entries` (catalogue entry -> every character who holds it, via
+  `BnbCatalogueEntry#character_entries`), staff-only. New "Find Players with a Boon/Bane" admin section
+  (`soulBnbCharactersWithEntry`).
+- Admin page restructured into five tabs (plain conditional rendering + `nav-tabs` styling, not Bootstrap's
+  `data-bs-toggle="tab"` JS - nothing in this codebase initializes Bootstrap's JS bundle, per the Culmination
+  tooltip lesson): **Pending Requests** (default - the existing B&B request queue plus a new read-only "Open
+  GM Rolls" listing, reusing the same `soulRollOpenForReview` endpoint the roll widget's Force-Abort dropdown
+  already uses), **XP**, **BNBs**, **Skills**, **Resonance**.
+- The "Award XP to Scene" dropdown only ever lists already-*shared* scenes (`scenes` command's `Recent`/`All`
+  filters both resolve to `Scene.shared_scenes` in the real Scenes plugin - there's no site-wide "every scene,
+  shared or not" query, by design, since unshared scenes are private to their participants). `soulXpScene`
+  itself has no such restriction. Rather than guess at loosening scene privacy, added a `form-text` hint under
+  the dropdown explaining the scope, since the most likely explanation is simply that the scene in question
+  hasn't been shared yet.
+
 ### BUG-022: SOUL Scene Tools was visible/usable to every scene participant, not just GMs
 
 **Status:** ✅ Done (`webportal/components/soul-scene-tools.js`, `webportal/templates/components/soul-scene-tools.hbs`,

@@ -136,7 +136,27 @@ export default Component.extend({
       }
     },
     selectBnbEntry(entry) {
-      this.set('bnbEntry', entry);
+      this.setProperties({ bnbEntry: entry, bnbEntrySkills: [] });
+    },
+    selectBnbEntrySkills(skills) {
+      this.set('bnbEntrySkills', skills);
+    },
+    // Changes the Skill(s) an already-granted entry affects, rather than
+    // only being settable once at grant time (2026-07-26 live testing:
+    // "Managing a player's boons and banes should also have a way of
+    // changing/removing/adding a skill").
+    async bnbSetEntrySkills() {
+      if (!this.bnbEntry || !(this.bnbEntrySkills || []).length) {
+        return;
+      }
+      let skills = this.bnbEntrySkills.map((skill) => skill.key);
+      let result = await this.mutate('soulBnbSetEntrySkills', {
+        entry_id: this.bnbEntry.id, skill_associations: skills
+      }, (updated) => `${updated.entry.name}'s associated Skills updated.`);
+      if (!result.error) {
+        this.set('bnbEntry', null);
+        await this.loadBnbEntries();
+      }
     },
     async bnbAdjustLevel(direction) {
       if (!this.bnbEntry) {

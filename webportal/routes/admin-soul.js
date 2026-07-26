@@ -19,6 +19,13 @@ export default Route.extend({
     return RSVP.hash({
       requests: this.gameApi.requestOne('soulBnbRequestsList', { status: 'pending' }, 'home')
         .then((response) => response.requests || []),
+      // Same open-roll listing the roll widget's Force-Abort dropdown
+      // already uses (SoulRollApi.get_open_pending_rolls_for_reviewer) -
+      // manage_soul staff see every open roll site-wide, not scoped to
+      // one scene (2026-07-26 live testing: "Under the Pending Requests,
+      // along with BNBs, let's also list open GM rolls").
+      openRolls: this.gameApi.requestOne('soulRollOpenForReview', {}, 'home')
+        .then((response) => response.pending_rolls || []),
       // Every character, not just approved ones - matches Jobs'/Inklings'
       // own "characters" fetch for an admin character-picker dropdown
       // (select: 'all').

@@ -20,6 +20,13 @@ import { inject as service } from '@ember/service';
 export default Controller.extend({
   gameApi: service(),
   isLoading: false,
+  // Tabbed layout (2026-07-26 live testing: "let's use tabs on the admin
+  // page to make it cleaner. Pending requests as the top default tab,
+  // then XP, then BNBs, Skills, Resonance") - plain conditional
+  // rendering rather than Bootstrap's data-bs-toggle="tab" JS behavior,
+  // since nothing in this codebase initializes Bootstrap's JS bundle
+  // (see soul-culmination.js's own tooltip-vs-button lesson).
+  activeTab: 'requests',
 
   async call(cmd, args, resultProperty, successMessage) {
     this.set('isLoading', true);
@@ -59,6 +66,9 @@ export default Controller.extend({
   },
 
   actions: {
+    selectTab(tab) {
+      this.set('activeTab', tab);
+    },
     async approveRequest(id) {
       let result = await this.call('soulBnbRequestApprove', { request_id: id }, null, 'Request approved.');
       if (!result.error) {
@@ -143,12 +153,48 @@ export default Controller.extend({
           `${result.old_value === null ? 'Unset' : `R${result.old_value}`} to R${result.new_value}.`
       );
     },
+    // Reverse lookup - which characters hold a given catalogue entry
+    // (2026-07-26 live testing: "let's add to the admin page a way to
+    // search for players with specific bnbs").
+    selectBnbSearchEntry(entry) {
+      this.setProperties({ bnbSearchEntry: entry, bnbSearchResults: null });
+    },
+    bnbSearchByEntry() {
+      if (!this.bnbSearchEntry) {
+        return;
+      }
+      return this.call('soulBnbCharactersWithEntry', {
+        catalogue_ref: this.bnbSearchEntry.id
+      }, 'bnbSearchResults', (result) =>
+        `${result.entries.length} character(s) found with ${this.bnbSearchEntry.name}.`
+      );
+    },
     selectBnbPlayer(player) {
       this.setProperties({ bnbPlayer: player, bnbEntry: null, characterBnbEntries: [] });
       return this.loadBnbEntriesForPlayer();
     },
     selectBnbEntry(entry) {
-      this.set('bnbEntry', entry);
+      this.setProperties({ bnbEntry: entry, bnbEntrySkills: [] });
+    },
+    selectBnbEntrySkills(skills) {
+      this.set('bnbEntrySkills', skills);
+    },
+    // Changes the Skill(s) an already-granted entry affects, rather than
+    // only being settable once at grant time (2026-07-26 live testing:
+    // "Managing a player's boons and banes should also have a way of
+    // changing/removing/adding a skill").
+    async bnbSetEntrySkills() {
+      if (!this.bnbEntry || !(this.bnbEntrySkills || []).length) {
+        return;
+      }
+      let skills = this.bnbEntrySkills.map((skill) => skill.key);
+      let result = await this.call('soulBnbSetEntrySkills', {
+        entry_id: this.bnbEntry.id, skill_associations: skills
+      }, null, (result) => `${result.entry.name}'s associated Skills updated.`);
+      if (!result.error) {
+        this.set('bnbEntry', null);
+        await this.loadBnbEntriesForPlayer();
+      }
     },
     selectBnbGrantCatalogue(entry) {
       this.setProperties({ bnbCatalogueEntry: entry, bnbSkills: [] });

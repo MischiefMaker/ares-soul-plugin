@@ -173,9 +173,9 @@ module AresMUSH
       when "soulSheet"
         SoulSheetWebHandler
       when "soulBnb", "soulBnbHere", "soulBnbCatalogue", "soulBnbCreate", "soulBnbSetSkills",
-           "soulBnbGrant", "soulBnbProgress", "soulBnbAdjustLevel", "soulBnbDelete", "soulBnbResolve",
-           "soulBnbRestore", "soulBnbList", "soulBnbRequest", "soulBnbRequestsList", "soulBnbRequestApprove",
-           "soulBnbRequestDeny"
+           "soulBnbGrant", "soulBnbProgress", "soulBnbAdjustLevel", "soulBnbSetEntrySkills", "soulBnbDelete",
+           "soulBnbResolve", "soulBnbRestore", "soulBnbList", "soulBnbRequest", "soulBnbRequestsList",
+           "soulBnbRequestApprove", "soulBnbRequestDeny", "soulBnbCharactersWithEntry"
         SoulBnbWebHandler
       when "soulXp", "soulXpSpend", "soulXpAward", "soulXpScene", "soulXpCorrect"
         SoulXpWebHandler
