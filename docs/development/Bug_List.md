@@ -8,6 +8,43 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### BUG-024: Staff running chargen for another character via `/chargen/:id` were silently editing their own SOUL sheet instead
+
+**Status:** ✅ Done (`plugin/web/soul_chargen_web_handler.rb`, `webportal/components/soul-chargen.js`,
+`webportal/templates/components/soul-chargen.hbs`, `custom-install/chargen-custom.snippet.hbs`)
+
+**Requested:** 2026-07-31, live testing, reported as an app-review inconsistency that took several rounds to
+pin down: "Checking SOUL Resonance. R0 ... 13/15 <Not set!>" on `+app`/`+soul/cg` for a character the reporter
+insisted was R-1. Ruled out a display bug (both read the exact same live `SoulChargenWebHandler.status`, no
+caching anywhere in that path) before the reporter clarified: "It seems to be if an admin is running a
+character through chargen? Which should be supported," then confirmed the actual workflow: "Admin are able to
+do chargen for other characters using an URL that passes their character ID, like:
+http://.../chargen/8."
+
+**Root cause:** AresMUSH core's `/chargen/:id` admin page (`ares-webportal`'s `chargen-char` route) loads the
+*target* character (by id, permission-checked staff-vs-self in
+`plugins/chargen/web/chargen_char_request_handler.rb`) and passes it down through its `ChargenCustom` /
+`chargen-custom-tabs` extension points as `@char` - this is the real, core-supported mechanism for staff to run
+chargen for another character, and it's how every other plugin's custom chargen tab (e.g. Inklings' own
+Secret/Goal fields) gets the right target. SOUL's own `chargen-custom.snippet.hbs` mounted `{{soul-chargen}}`
+with no arguments at all, so the component had no way to know which character the page was even showing, and
+`SoulChargenWebHandler` always operated on `request.enactor` - whoever was actually logged into the web
+session. An admin visiting `/chargen/8` to help an applicant would see the SOUL tab and interact with it
+normally, with no indication anything was wrong, while every change actually landed on the admin's own
+character.
+
+**Fix:** `soul-chargen.js` now accepts an optional `char` argument and includes `character_id: this.char.id` on
+every `soulChargenStatus`/`soulChargenResonance`/`soulChargenSkill`/`soulChargenAspect`/`soulChargenBnb`/
+`soulChargenDrop` call. `chargen-custom.snippet.hbs` was updated to actually pass it: `{{soul-chargen
+char=this.char}}` (existing installs need to re-paste this file). Server-side,
+`SoulChargenWebHandler.resolve_character` mirrors AresMUSH core's own targeting/permission split exactly
+(`chargen_char_request_handler.rb`: staff may load any character by id, everyone else only themselves) -
+`can_manage_soul?` staff may target any character via `character_id`; anyone else is restricted to targeting
+themselves, and an unresolvable or unauthorized target returns a permission error rather than silently falling
+back to the enactor. `status` now also returns `character_name`, shown as a small "Character: X" label at the
+top of the page so it's immediately obvious whose sheet is on screen - directly addressing how this bug went
+unnoticed in the first place.
+
 ### FR-053: Recent XP History formatting
 
 **Status:** ✅ Done (`webportal/components/soul-xp.js`, `webportal/templates/components/soul-xp.hbs`)

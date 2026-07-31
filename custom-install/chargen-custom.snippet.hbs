@@ -4,9 +4,13 @@
   chargen-custom-tabs.snippet.hbs. Do not add active/show unless you want
   SOUL to replace the game's existing default chargen tab on page load.
 
-  If you already pasted an older version using {{soul/chargen}} or
-  <Soul::Chargen /> syntax, replace it with the version below.
+  If you already pasted an older version using {{soul/chargen}},
+  <Soul::Chargen />, or a bare {{soul-chargen}} with no char= argument,
+  replace it with the version below - char=this.char is required so staff
+  running chargen for another character via the game's own /chargen/:id
+  page (this tab) affects that character instead of silently editing the
+  staff member's own Resonance/Skills/B&Bs (2026-07-31 live testing bug).
 -->
 <div class="tab-pane fade" id="soul-chargen-tab" role="tabpanel">
-  {{soul-chargen}}
+  {{soul-chargen char=this.char}}
 </div>

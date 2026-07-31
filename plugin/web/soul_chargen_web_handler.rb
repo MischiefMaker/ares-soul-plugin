@@ -3,13 +3,14 @@ module AresMUSH
     def handle(request)
       error = Website.check_login(request)
       return error if error
-      character = request.enactor
+      character = self.class.resolve_character(request)
+      return { error: t('soul.permission_denied') } unless character
 
       case request.cmd
       when "soulChargenStatus"
         self.class.status(character)
       when "soulChargenResonance"
-        result = SoulResonanceApi.set_resonance(character, request.args['value'], character)
+        result = SoulResonanceApi.set_resonance(character, request.args['value'], request.enactor)
         result[:error] ? result : self.class.status(character)
       when "soulChargenSkill"
         result = self.class.set_skill(character, request.args['skill_key'], request.args['rating'].to_i)
@@ -29,6 +30,39 @@ module AresMUSH
       end
     end
 
+    # Which character this request operates on. Mirrors the real targeting/
+    # permission pattern AresMUSH core itself uses for admin-run chargen
+    # (plugins/chargen/web/chargen_char_request_handler.rb: staff who
+    # can_approve? may load any character by id; everyone else only
+    # themselves) - staff run chargen for an applicant through the game's
+    # own /chargen/:id page (the SOUL tab installed via chargen-custom.
+    # snippet.hbs), not a SOUL-specific URL. Without this, the SOUL tab had
+    # no way to know which character that page was showing and always fell
+    # back to request.enactor - the logged-in staff member's own character
+    # (2026-07-31 live testing: an admin walking an applicant through
+    # chargen via /chargen/8 was silently editing their own Resonance/
+    # Skills/B&Bs instead of the applicant's).
+    #
+    # request.args['character_id'] is only present when the web component
+    # was handed a target character (see soul-chargen.js) - a normal
+    # player's own chargen page never sends it, so this is a no-op for the
+    # overwhelmingly common case. `Character.find_one_by_name` tries a
+    # direct Ohm id lookup before falling back to a name search (engine/
+    # aresmush/models/character.rb), so the numeric :char_id straight from
+    # the URL resolves correctly.
+    def self.resolve_character(request)
+      enactor = request.enactor
+      return nil unless enactor
+      target_id = request.args['character_id']
+      return enactor if target_id.blank?
+
+      target = Character.find_one_by_name(target_id.to_s)
+      return nil unless target
+      return target if target.id == enactor.id
+      return target if Soul.can_manage_soul?(enactor)
+      nil
+    end
+
     def self.status(character)
       SoulResonanceApi.default_at_chargen(character)
       resonance = SoulResonanceApi.get_resonance(character)
@@ -43,6 +77,7 @@ module AresMUSH
       spent = skills.sum { |skill| skill[:rating].to_i }
       aspect_spent = aspects.sum { |aspect| aspect[:rating].to_i }
       {
+        character_name: character.name,
         resonance_enabled: SoulResonanceApi.enabled?, resonance: resonance,
         resonance_description: SoulResonanceApi.description,
         resonance_label: resonance.nil? ? t('soul.unset') : "R#{resonance}",

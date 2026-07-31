@@ -12,8 +12,24 @@ export default Component.extend({
     this.refreshStatus();
   },
 
+  // Runs chargen for whichever character this component was handed - see
+  // chargen-custom.snippet.hbs. Staff visiting the game's own /chargen/:id
+  // admin page (the SOUL tab) get @char set to the applicant being
+  // reviewed; a player's own chargen page (which redirects to
+  // /chargen/<their own id>) gets @char set to themselves either way. No
+  // @char at all (an older installed snippet that hasn't been updated to
+  // pass it) falls back to the server defaulting to the logged-in
+  // character - the only thing this component could see before this fix.
+  targetArgs(extra) {
+    let args = Object.assign({}, extra || {});
+    if (this.char && this.char.id) {
+      args.character_id = this.char.id;
+    }
+    return args;
+  },
+
   async refreshStatus() {
-    let result = await this.api.requestOne('soulChargenStatus', {}, null);
+    let result = await this.api.requestOne('soulChargenStatus', this.targetArgs(), null);
     if (result.error) {
       this.setProperties({ status: null, error: result.error });
       return;
@@ -24,7 +40,7 @@ export default Component.extend({
   async request(cmd, args) {
     this.set('isLoading', true);
     try {
-      let result = await this.api.requestOne(cmd, args || {}, null);
+      let result = await this.api.requestOne(cmd, this.targetArgs(args), null);
       if (result.error) {
         // Reload from the server so a rejected Skill/Resonance/B&B change
         // (e.g. over budget) doesn't leave a stale, never-actually-saved

@@ -1,5 +1,8 @@
 <section class="soul-chargen">
   <h3>SOUL Character Framework</h3>
+  {{#if this.status.character_name}}
+    <p class="text-muted">Character: <strong>{{this.status.character_name}}</strong></p>
+  {{/if}}
   {{#if this.isLoading}}<p class="text-muted">Saving…</p>{{/if}}
   {{#if this.error}}<div class="alert alert-danger">{{this.error}}</div>{{/if}}
   {{#if this.warning}}<div class="alert alert-warning">{{this.warning}}</div>{{/if}}

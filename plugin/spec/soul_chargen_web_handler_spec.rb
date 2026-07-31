@@ -8,6 +8,59 @@ module AresMUSH
       allow(Website).to receive(:check_login).and_return(nil)
     end
 
+    describe ".resolve_character" do
+      let(:staff) { Fabricate(:character) }
+      let(:applicant) { Fabricate(:character) }
+
+      it "targets the enactor when no character_id is given (the overwhelmingly common case)" do
+        request = double(enactor: applicant, args: {})
+        expect(SoulChargenWebHandler.resolve_character(request)).to eq(applicant)
+      end
+
+      # 2026-07-31 live testing: an admin walking an applicant through
+      # chargen via the game's own /chargen/:id page (the SOUL tab) was
+      # silently editing their own Resonance/Skills/B&Bs instead of the
+      # applicant's, because this method didn't exist yet and the handler
+      # always used request.enactor.
+      it "lets manage_soul staff target another character by id" do
+        allow(Soul).to receive(:can_manage_soul?).with(staff).and_return(true)
+        allow(Character).to receive(:find_one_by_name).with(applicant.id.to_s).and_return(applicant)
+        request = double(enactor: staff, args: { 'character_id' => applicant.id.to_s })
+        expect(SoulChargenWebHandler.resolve_character(request)).to eq(applicant)
+      end
+
+      it "denies a non-staff character trying to target someone else" do
+        allow(Soul).to receive(:can_manage_soul?).with(applicant).and_return(false)
+        other = Fabricate(:character)
+        allow(Character).to receive(:find_one_by_name).with(other.id.to_s).and_return(other)
+        request = double(enactor: applicant, args: { 'character_id' => other.id.to_s })
+        expect(SoulChargenWebHandler.resolve_character(request)).to be_nil
+      end
+
+      it "allows targeting yourself by id even without manage_soul (a no-op, not a privilege check)" do
+        allow(Character).to receive(:find_one_by_name).with(applicant.id.to_s).and_return(applicant)
+        request = double(enactor: applicant, args: { 'character_id' => applicant.id.to_s })
+        expect(SoulChargenWebHandler.resolve_character(request)).to eq(applicant)
+      end
+
+      it "returns nil for an unknown character_id" do
+        allow(Character).to receive(:find_one_by_name).with("99999").and_return(nil)
+        request = double(enactor: staff, args: { 'character_id' => "99999" })
+        expect(SoulChargenWebHandler.resolve_character(request)).to be_nil
+      end
+
+      it "returns nil when there is no enactor" do
+        request = double(enactor: nil, args: {})
+        expect(SoulChargenWebHandler.resolve_character(request)).to be_nil
+      end
+    end
+
+    it "returns a permission error from handle when resolve_character denies the request" do
+      request = double(cmd: "soulChargenStatus", enactor: character, args: { 'character_id' => "99999" })
+      allow(Character).to receive(:find_one_by_name).with("99999").and_return(nil)
+      expect(subject.handle(request)[:error]).to match(/permission/i)
+    end
+
     it "allows an already-approved character (web chargen intentionally has no is_approved? gate)" do
       allow(character).to receive(:is_approved?).and_return(true)
       allow(SoulResonanceApi).to receive(:enabled?).and_return(false)
@@ -137,6 +190,7 @@ module AresMUSH
       allow(SoulBnbApi).to receive(:get_catalogue).and_return([])
 
       status = SoulChargenWebHandler.status(character)
+      expect(status[:character_name]).to eq(character.name)
       expect(status[:resonance_label]).to eq("R1")
       expect(status[:has_selected_bnb]).to be false
       expect(status[:aspect_points]).to eq(6)
