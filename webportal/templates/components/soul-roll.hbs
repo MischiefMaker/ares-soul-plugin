@@ -271,16 +271,15 @@
       {{#if this.gmPendingRolls}}
         <div class="list-group">
           {{#each this.gmPendingRolls as |pending|}}
-            <button
-              type="button"
-              class="list-group-item list-group-item-action"
-              onclick={{action "loadGmCandidates" pending}}
-            >
-              Roll #{{pending.id}} — {{pending.character}} —
-              {{pending.skill_key}}
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-danger ms-2"
-              onclick={{action "forceAbortRoll" pending}}>Force Abort</button>
+            <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <span>Roll #{{pending.id}} — {{pending.character}} — {{pending.skill_key}}</span>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-primary"
+                  onclick={{action "loadGmCandidates" pending}}>Review</button>
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                  onclick={{action "forceAbortRoll" pending}}>Force Abort</button>
+              </div>
+            </div>
           {{/each}}
         </div>
       {{else}}

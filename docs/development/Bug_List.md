@@ -8,6 +8,25 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-050: Scene GM Review list's "respond" action wasn't obviously clickable
+
+**Status:** ✅ Done (`webportal/templates/components/soul-roll.hbs`)
+
+**Requested:** 2026-07-26, live testing: "There also doesn't seem to be a way for a GM to respond from within
+the scene -- Manage SOUL rolls only allows an abort." Then, on investigation: "Oh wait, I see, you have to
+click it. Make that more obvious."
+
+**Root cause:** The GM Review modal's per-scene pending-roll list rendered the roll's own summary text
+(`Roll #id — character — skill`) as the clickable element (a plain `list-group-item-action` button with no
+label describing what clicking it does), sitting next to a clearly-labeled "Force Abort" button - easy to miss
+as an action at all next to the one button that actually says what it does. The two buttons per row also
+weren't wrapped in a shared row container, so "Force Abort" rendered as a loose inline button beside the
+full-width list item rather than a clean pair.
+
+**Fix:** Each row is now a flex row with the roll summary as plain text plus two explicitly-labeled buttons,
+"Review" (the actual GM-response action, `loadGmCandidates`) and "Force Abort" - matching the same
+info-plus-labeled-buttons row pattern FR-049 just used for the admin page's own Open GM Rolls list.
+
 ### FR-049: Admin page's Open GM Rolls can now actually do the GM review
 
 **Status:** ✅ Done (`webportal/controllers/admin-soul.js`, `webportal/templates/admin-soul.hbs`)
