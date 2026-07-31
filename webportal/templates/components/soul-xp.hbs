@@ -87,7 +87,7 @@
       <h4>Recent XP History</h4>
       <ul class="list-group soul-xp-history">
         {{#each this.xp.history as |entry|}}
-          <li class="list-group-item">{{entry.direction}} {{entry.base_amount}} — {{entry.source}}</li>
+          <li class="list-group-item">{{entry.base_amount}} XP {{entry.directionLabel}} — {{entry.sourceLabel}}</li>
         {{/each}}
       </ul>
     {{/if}}

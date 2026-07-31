@@ -59,7 +59,16 @@ module AresMUSH
     # idempotency_key, when given, makes repeated delivery of the same
     # logical award (a re-fired cron tick, a re-processed scene share) a
     # no-op rather than a double-award (FINAL REQ-013).
-    def self.award(character, amount, source:, idempotency_key: nil, apply_catchup: true)
+    # notify: character-facing notification (2026-07-26 live testing: "We
+    # need to add a notification when a player is awarded XP either
+    # individually or to a scene. Look to how Inklings did it.") - opt-in,
+    # not the default, since .award is also the engine behind the weekly
+    # cron, forum reconciliation, automatic scene-share XP, and the
+    # Inklings integration hook, none of which were part of that request
+    # and would turn into notification spam if this defaulted on. Only the
+    # staff-initiated individual (+xp/award, soulXpAward) and scene
+    # (+xp/scene, soulXpScene) award paths pass notify: true.
+    def self.award(character, amount, source:, idempotency_key: nil, apply_catchup: true, notify: false)
       return { error: "Character not found" } unless character
       return { error: "Amount must be positive" } if amount.to_i <= 0
 
@@ -86,7 +95,7 @@ module AresMUSH
         soul_catchup_xp_earned: get_catchup_xp_earned(character) + catchup_portion
       )
 
-      SoulXpLedgerEntry.create(
+      entry = SoulXpLedgerEntry.create(
         character: character,
         direction: "award",
         source: source,
@@ -95,6 +104,14 @@ module AresMUSH
         catchup_amount: catchup_portion,
         created_at: Time.now
       )
+
+      if notify
+        catchup_note = catchup_portion > 0 ? " (including #{catchup_portion} catch-up)" : ""
+        Soul.notify_player(
+          character, "<SOUL> You were awarded #{total_awarded} XP#{catchup_note}. Use +soul to view your total.",
+          type: "soul_xp", reference_id: entry.id
+        )
+      end
 
       { success: true, awarded: total_awarded, base_award: base_award, catchup_portion: catchup_portion }
     end

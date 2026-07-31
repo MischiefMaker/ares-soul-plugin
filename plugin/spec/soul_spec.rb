@@ -69,6 +69,40 @@ module AresMUSH
       end
     end
 
+    describe ".notify_player" do
+      let(:character) { Fabricate(:character) }
+
+      it "does nothing for a nil character" do
+        expect(Login).not_to receive(:emit_ooc_if_logged_in)
+        Soul.notify_player(nil, "test", type: "soul_xp")
+      end
+
+      it "emits an immediate OOC message and a persistent notice by default" do
+        allow(Global).to receive(:read_config).with("soul", "notifications", "character_facing_success")
+          .and_return(nil)
+        allow(Login).to receive(:respond_to?).with(:notify).and_return(true)
+        expect(Login).to receive(:emit_ooc_if_logged_in).with(character, "You got XP")
+        expect(Login).to receive(:notify).with(character, "soul_xp", "You got XP", 42)
+        Soul.notify_player(character, "You got XP", type: "soul_xp", reference_id: 42)
+      end
+
+      it "skips the persistent notice when no reference_id is given" do
+        allow(Global).to receive(:read_config).with("soul", "notifications", "character_facing_success")
+          .and_return(nil)
+        expect(Login).to receive(:emit_ooc_if_logged_in)
+        expect(Login).not_to receive(:notify)
+        Soul.notify_player(character, "You got XP", type: "soul_xp")
+      end
+
+      it "does nothing when character_facing_success is disabled (REQ-044)" do
+        allow(Global).to receive(:read_config).with("soul", "notifications", "character_facing_success")
+          .and_return(false)
+        expect(Login).not_to receive(:emit_ooc_if_logged_in)
+        expect(Login).not_to receive(:notify)
+        Soul.notify_player(character, "You got XP", type: "soul_xp", reference_id: 42)
+      end
+    end
+
     describe ".get_web_request_handler" do
       # Regression test for a real bug (2026-07-25): SoulBnbWebHandler's own
       # `case request.cmd` grew several new commands (the B&B request

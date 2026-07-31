@@ -111,11 +111,6 @@ module AresMUSH
       lines.join("\n")
     end
 
-    # Called once at plugin load and whenever staff reload game config
-    # (see plugins/manage/commands/game/load_config_cmd.rb in AresMUSH
-    # core) - same convention every bundled plugin uses (e.g.
-    # Jobs.check_config, Chargen.check_config). Returns an array of
-    # human-readable error strings; an empty array means config is valid.
     # Shared MUSH-only display helper (2026-07-26 live testing: "wherever
     # boons and banes are displayed, like on the soul sheet, let's use red
     # for banes and green for boons") - a plain ANSI color code, not
@@ -128,6 +123,32 @@ module AresMUSH
       ""
     end
 
+    # Character-facing notification, mirroring Inklings.notify_player
+    # (ares-inklings-plugin/plugin/inklings.rb) exactly: an immediate OOC
+    # message if the character is currently connected
+    # (Login.emit_ooc_if_logged_in), plus a persistent "bell" notice
+    # (Login.notify) keyed to reference_id so it's still there to read
+    # later even if they weren't online - guarded by
+    # Login.respond_to?(:notify) the same way Inklings guards it, in case
+    # an older AresMUSH core predates that API. Gated on
+    # soul.notifications.character_facing_success (added in Phase 2,
+    # documented since as REQ-044's "Notify players of awards, purchases,
+    # corrections" - never actually wired to anything until now; this is
+    # its first real caller, currently only for XP awards - see
+    # SoulXpApi.award's notify: parameter).
+    def self.notify_player(char, message, type:, reference_id: nil)
+      return unless char
+      return if Global.read_config("soul", "notifications", "character_facing_success") == false
+
+      Login.emit_ooc_if_logged_in(char, message)
+      Login.notify(char, type, message, reference_id) if reference_id && Login.respond_to?(:notify)
+    end
+
+    # Called once at plugin load and whenever staff reload game config
+    # (see plugins/manage/commands/game/load_config_cmd.rb in AresMUSH
+    # core) - same convention every bundled plugin uses (e.g.
+    # Jobs.check_config, Chargen.check_config). Returns an array of
+    # human-readable error strings; an empty array means config is valid.
     def self.check_config
       validator = SoulConfigValidator.new
       validator.validate

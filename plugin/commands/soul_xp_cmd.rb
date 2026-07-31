@@ -132,7 +132,7 @@ module AresMUSH
             actor: enactor, direction: direction)
         else
           result = SoulXpApi.award(character, self.amount, source: self.reason,
-            apply_catchup: cmd.switch == "award/catchup")
+            apply_catchup: cmd.switch == "award/catchup", notify: true)
         end
         emit_result result, 'soul.xp_awarded'
       end
@@ -153,7 +153,7 @@ module AresMUSH
         results = participants.map do |character|
           SoulXpApi.award(character, self.amount, source: "scene:#{scene.id}:#{self.reason}",
             idempotency_key: "scene:#{scene.id}:#{character.id}:#{self.reason}",
-            apply_catchup: cmd.switch == "scene/catchup")
+            apply_catchup: cmd.switch == "scene/catchup", notify: true)
         end
         error = results.find { |result| result[:error] }
         emit_result(error || { success: true }, 'soul.xp_awarded')

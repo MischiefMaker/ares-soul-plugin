@@ -20,7 +20,7 @@ module AresMUSH
       when "soulXpAward"
         character = Character.find_one_by_name(request.args['character'])
         SoulXpApi.award(character, request.args['amount'], source: request.args['reason'],
-          apply_catchup: request.args['apply_catchup'].to_s == "true")
+          apply_catchup: request.args['apply_catchup'].to_s == "true", notify: true)
       when "soulXpScene"
         scene = Scene[request.args['scene_id']]
         return { error: t('soul.no_active_scene') } unless scene
@@ -30,7 +30,7 @@ module AresMUSH
           SoulXpApi.award(character, request.args['amount'],
             source: "scene:#{scene.id}:#{request.args['reason']}",
             idempotency_key: "scene:#{scene.id}:#{character.id}:#{request.args['reason']}",
-            apply_catchup: request.args['apply_catchup'].to_s == "true")
+            apply_catchup: request.args['apply_catchup'].to_s == "true", notify: true)
         end
         error = results.find { |result| result[:error] }
         error || { success: true, results: results }

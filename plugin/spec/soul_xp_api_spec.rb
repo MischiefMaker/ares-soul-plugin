@@ -88,6 +88,31 @@ module AresMUSH
         result = SoulXpApi.award(character, 2, source: "weekly", apply_catchup: true)
         expect(result[:awarded]).to eq(3)   # 2 base + 1 capped catch-up, not 4
       end
+
+      # notify: character-facing notification (2026-07-26 live testing:
+      # "We need to add a notification when a player is awarded XP either
+      # individually or to a scene. Look to how Inklings did it.") - opt-in,
+      # see the comment on .award itself for why it defaults to false.
+      it "does not notify by default" do
+        expect(Soul).not_to receive(:notify_player)
+        SoulXpApi.award(character, 10, source: "admin", apply_catchup: false)
+      end
+
+      it "notifies the character with the total awarded when notify: true" do
+        expect(Soul).to receive(:notify_player).with(
+          character, match(/10 XP/), type: "soul_xp", reference_id: anything
+        )
+        SoulXpApi.award(character, 10, source: "admin", apply_catchup: false, notify: true)
+      end
+
+      it "mentions the catch-up portion in the notification when present" do
+        allow(SoulXpApi).to receive(:catchup_eligible?).and_return(true)
+        allow(SoulXpApi).to receive(:median_earned_xp).and_return(100)
+        expect(Soul).to receive(:notify_player).with(
+          character, match(/catch-up/), type: "soul_xp", reference_id: anything
+        )
+        SoulXpApi.award(character, 2, source: "weekly", apply_catchup: true, notify: true)
+      end
     end
 
     describe ".spend" do

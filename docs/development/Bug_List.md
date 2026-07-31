@@ -8,6 +8,44 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-053: Recent XP History formatting
+
+**Status:** ✅ Done (`webportal/components/soul-xp.js`, `webportal/templates/components/soul-xp.hbs`)
+
+**Requested:** 2026-07-31, live testing: "On the recent XP history of the profile tab, I would like things to
+be capitalized -- 'Spend 12 -- Aspect: Mind' -- and a space after the colon. I'd also reword a little: 12 XP
+Awarded / 12 XP Spent"
+
+**Fix:** Each history line was rendering the raw ledger fields verbatim - `entry.direction` (lowercase
+`"spend"`/`"award"`/`"correction"`/`"reversal"`) and `entry.source` (a raw internal key like `"aspect:mind"`,
+colon-joined with no space). Added `formatXpDirection` (a lookup to "Awarded"/"Spent"/"Corrected"/"Reversed")
+and `formatXpSource` (splits on `:`, capitalizes each segment, rejoins with `": "`) in `soul-xp.js`, applied
+when `loadXp` sets `xp.history`. The line now reads `{{entry.base_amount}} XP {{entry.directionLabel}} —
+{{entry.sourceLabel}}`, e.g. "12 XP Spent — Aspect: Mind".
+
+### FR-052: Character-facing notification when a player is awarded XP
+
+**Status:** ✅ Done (`plugin/soul.rb`, `plugin/public/soul_xp_api.rb`, `plugin/web/soul_xp_web_handler.rb`,
+`plugin/commands/soul_xp_cmd.rb`)
+
+**Requested:** 2026-07-26, live testing: "We need to add a notification when a player is awarded XP either
+individually or to a scene. Look to how Inklings did it."
+
+**Fix:** Added `Soul.notify_player(char, message, type:, reference_id: nil)`, mirroring
+`Inklings.notify_player` (`ares-inklings-plugin/plugin/inklings.rb`) exactly: an immediate OOC message if the
+character is currently connected (`Login.emit_ooc_if_logged_in`), plus a persistent "bell" notice
+(`Login.notify`, guarded by `Login.respond_to?(:notify)`) so it's still there to read later even if they
+weren't online. Gated on `soul.notifications.character_facing_success` - a config key that has existed since
+Phase 2 (documented as REQ-044's "Notify players of awards, purchases, corrections") but was never actually
+wired to anything until now.
+
+`SoulXpApi.award` gained an opt-in `notify: false` keyword; when `true`, it calls `Soul.notify_player` with
+the total XP awarded (noting any catch-up portion) after the ledger entry is created, using the entry's `id`
+as `reference_id`. Only the two staff-initiated award paths - individual (`+xp/award`, `soulXpAward`) and
+scene (`+xp/scene`, `soulXpScene`) - pass `notify: true`. Deliberately left off: the weekly XP cron, forum
+reconciliation, automatic scene-share XP, and the Inklings integration hook, none of which were part of this
+request and would turn into notification spam if `.award` defaulted to notifying on every call site.
+
 ### FR-051: Player's roll widget didn't notice a GM had already responded
 
 **Status:** ✅ Done (`webportal/components/soul-roll.js`)
