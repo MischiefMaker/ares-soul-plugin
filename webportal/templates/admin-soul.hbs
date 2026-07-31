@@ -66,12 +66,53 @@
 
     <section class="card card-body">
       <h4>Open GM Rolls</h4>
-      {{#if this.model.openRolls.length}}
+      {{#if this.gmReviewIsLoading}}
+        <p class="text-muted mb-0">Loading…</p>
+      {{else if this.gmReviewRoll}}
+        <h5>
+          Roll #{{this.gmReviewRoll.id}} — {{this.gmReviewRoll.character}} —
+          {{this.gmReviewRoll.skill_key}}
+        </h5>
+        <p class="text-muted">Mark each candidate mandatory, optional, or leave both boxes clear to exclude it.</p>
+        {{#if this.gmCandidates.length}}
+          <div class="list-group mb-3">
+            {{#each this.gmCandidates as |candidate|}}
+              <div class="list-group-item">
+                <div><strong>{{candidate.name}}</strong> [{{candidate.tag}}]</div>
+                {{#if candidate.public_description}}<p class="mb-1">{{candidate.public_description}}</p>{{/if}}
+                {{#if candidate.mechanical_effect}}
+                  <p class="mb-1">Mechanical effect: {{candidate.mechanical_effect}}</p>
+                {{/if}}
+                {{#if candidate.character_explanation}}
+                  <p class="mb-1">Character explanation: {{candidate.character_explanation}}</p>
+                {{/if}}
+                {{#if candidate.gm_notes}}<p class="mb-1">GM notes: {{candidate.gm_notes}}</p>{{/if}}
+                <label class="me-3">
+                  <input type="checkbox" class="form-check-input me-1" checked={{candidate.mandatory}}
+                    onchange={{action "toggleGmMandatory" candidate}}>
+                  Mandatory
+                </label>
+                <label>
+                  <input type="checkbox" class="form-check-input me-1" checked={{candidate.optional}}
+                    onchange={{action "toggleGmOptional" candidate}}>
+                  Optional
+                </label>
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <p class="text-muted">No matching Boons or Banes were found for this roll.</p>
+        {{/if}}
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-primary" onclick={{action "submitGmSelections"}}>Submit Selections</button>
+          <button type="button" class="btn btn-secondary" onclick={{action "backToOpenRolls"}}>Back</button>
+        </div>
+      {{else if this.model.openRolls.length}}
         <table class="table table-sm mb-0">
           <thead>
             <tr>
               <th scope="col">Character</th><th scope="col">Skill</th><th scope="col">Difficulty</th>
-              <th scope="col">Status</th>
+              <th scope="col">Status</th><th scope="col"></th>
             </tr>
           </thead>
           <tbody>
@@ -81,6 +122,12 @@
                 <td>{{pending.skill_key}}</td>
                 <td>{{pending.difficulty}}</td>
                 <td>{{pending.status}}</td>
+                <td>
+                  {{#if (eq pending.status "awaiting_gm")}}
+                    <button type="button" class="btn btn-sm btn-primary"
+                      onclick={{action "selectGmRoll" pending}}>Review</button>
+                  {{/if}}
+                </td>
               </tr>
             {{/each}}
           </tbody>

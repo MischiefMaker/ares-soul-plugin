@@ -8,6 +8,22 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-049: Admin page's Open GM Rolls can now actually do the GM review
+
+**Status:** ✅ Done (`webportal/controllers/admin-soul.js`, `webportal/templates/admin-soul.hbs`)
+
+**Requested:** 2026-07-26, live testing: "The GM rolls list on the admin page should allow the admin to do the
+GM part of the roll."
+
+**Fix:** The Open GM Rolls table's `awaiting_gm` rows now get a "Review" button that loads that roll's
+system-suggested Boon/Bane candidates (`soulRollReview`) and lets the admin mark each mandatory/optional/
+excluded, then submit (`soulRollMark`) - the exact same pair of commands and UI pattern the scene roll
+widget's own GM Review panel already uses (`soul-roll.js`'s `loadGmCandidates`/`submitGmSelections`). No
+backend changes were needed: `SoulRollApi.can_review_pending?` already lets `manage_soul` staff review any
+open roll regardless of scene participation, matching what the "Open GM Rolls" list itself already shows
+site-wide. `awaiting_selection` rows (already past GM review, waiting on the player) show no Review button -
+there's nothing left for a GM to do on those.
+
 ### BUG-023: "Find Players with a Boon/Bane" raised Ohm::IndexNotFound on every search
 
 **Status:** ✅ Done (`plugin/models/bnb_catalogue_entry.rb`)

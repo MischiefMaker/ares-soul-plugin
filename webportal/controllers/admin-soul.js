@@ -15,6 +15,7 @@
 // request queue (see the route) - reload() re-fetches it after every
 // approve/deny so the list never shows a stale, already-resolved request.
 import Controller from '@ember/controller';
+import { set } from '@ember/object';
 import { inject as service } from '@ember/service';
 
 export default Controller.extend({
@@ -51,6 +52,13 @@ export default Controller.extend({
     let result = await this.gameApi.requestOne('soulBnbRequestsList', { status: 'pending' }, null);
     if (!result.error) {
       this.set('model.requests', result.requests);
+    }
+  },
+
+  async reloadOpenRolls() {
+    let result = await this.gameApi.requestOne('soulRollOpenForReview', {}, null);
+    if (!result.error) {
+      this.set('model.openRolls', result.pending_rolls || []);
     }
   },
 
@@ -96,6 +104,65 @@ export default Controller.extend({
       if (!result.error) {
         this.set('denyReason', '');
         await this.reloadRequests();
+      }
+    },
+    // Do the GM part of an open roll straight from the admin page (2026-07-26
+    // live testing: "The GM rolls list on the admin page should allow the
+    // admin to do the GM part of the roll") - marks each system-suggested
+    // Boon/Bane candidate mandatory/optional, same soulRollReview/
+    // soulRollMark pair the scene roll widget's own GM Review panel uses.
+    // can_review_pending? (SoulRollApi) always allows manage_soul staff
+    // regardless of scene participation, so this works for any open roll
+    // site-wide, matching the list itself.
+    async selectGmRoll(pending) {
+      this.set('gmReviewIsLoading', true);
+      try {
+        let response = await this.gameApi.requestOne(
+          'soulRollReview', { pending_roll_id: pending.id }, null
+        );
+        if (!response.error) {
+          let candidates = (response.candidates || []).map((candidate) =>
+            Object.assign({}, candidate, { mandatory: false, optional: false })
+          );
+          this.setProperties({ gmReviewRoll: pending, gmCandidates: candidates });
+        }
+      } finally {
+        this.set('gmReviewIsLoading', false);
+      }
+    },
+    backToOpenRolls() {
+      this.setProperties({ gmReviewRoll: null, gmCandidates: [] });
+    },
+    toggleGmMandatory(candidate, event) {
+      set(candidate, 'mandatory', event.target.checked);
+      if (event.target.checked) {
+        set(candidate, 'optional', false);
+      }
+    },
+    toggleGmOptional(candidate, event) {
+      set(candidate, 'optional', event.target.checked);
+      if (event.target.checked) {
+        set(candidate, 'mandatory', false);
+      }
+    },
+    async submitGmSelections() {
+      if (!this.gmReviewRoll) {
+        return;
+      }
+      let mandatoryTags = (this.gmCandidates || [])
+        .filter((candidate) => candidate.mandatory)
+        .map((candidate) => candidate.tag);
+      let optionalTags = (this.gmCandidates || [])
+        .filter((candidate) => candidate.optional)
+        .map((candidate) => candidate.tag);
+
+      let result = await this.call('soulRollMark', {
+        pending_roll_id: this.gmReviewRoll.id,
+        mandatory_tags: mandatoryTags, optional_tags: optionalTags
+      }, null, 'SOUL roll selections submitted.');
+      if (!result.error) {
+        this.setProperties({ gmReviewRoll: null, gmCandidates: [] });
+        await this.reloadOpenRolls();
       }
     },
     loadFramework() {
