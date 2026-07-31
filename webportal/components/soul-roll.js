@@ -36,6 +36,13 @@ export default Component.extend({
   },
 
   async loadRollData() {
+    // Cancel any previous poll up front and only reschedule once we know
+    // the freshly-loaded stage still needs one - see schedulePoll's own
+    // comment for why this waits on the GM specifically (2026-07-26 live
+    // testing: "Even after submitting a GM roll, the player's roll screen
+    // still shows that as a pending roll they can abort. That should
+    // refresh.").
+    this.cancelPoll();
     this.set('isLoading', true);
     try {
       let [sheet, difficultyResponse, pendingResponse] = await Promise.all([
@@ -88,7 +95,38 @@ export default Component.extend({
       }
     } finally {
       this.set('isLoading', false);
+      if (this.rollStage === 'awaiting_gm' && this.rollOpen) {
+        this.schedulePoll();
+      }
     }
+  },
+
+  // While waiting on a GM, nothing pushes the player an update when the GM
+  // finishes - re-poll status every 15s so the screen advances to Select
+  // Candidates on its own instead of silently staying on "Waiting for GM
+  // Review" (with its Abort button) until the player manually hits Refresh.
+  // Cancelled as soon as the stage moves on (or the roll disappears
+  // entirely - see loadRollData's own reschedule check) or the modal closes.
+  schedulePoll() {
+    this.cancelPoll();
+    this.pollTimer = setTimeout(async () => {
+      if (this.isDestroying || this.isDestroyed) {
+        return;
+      }
+      await this.loadRollData();
+    }, 15000);
+  },
+
+  cancelPoll() {
+    if (this.pollTimer) {
+      clearTimeout(this.pollTimer);
+      this.pollTimer = null;
+    }
+  },
+
+  willDestroyElement() {
+    this.cancelPoll();
+    this._super(...arguments);
   },
 
   async loadPendingAndHistory() {
@@ -305,6 +343,7 @@ export default Component.extend({
 
     closeRoll() {
       this.set('rollOpen', false);
+      this.cancelPoll();
     },
 
     selectSkill(skill) {

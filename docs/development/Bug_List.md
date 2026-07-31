@@ -8,6 +8,24 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### FR-051: Player's roll widget didn't notice a GM had already responded
+
+**Status:** ✅ Done (`webportal/components/soul-roll.js`)
+
+**Requested:** 2026-07-26, live testing: "Even after submitting a GM roll, the player's roll screen still
+shows that as a pending roll they can abort. That should refresh."
+
+**Root cause:** The web portal has no push/websocket channel - the "Waiting for GM Review" stage already had a
+manual Refresh button, but nothing re-checked status on its own, so a player who left the widget open while
+waiting (rather than closing and reopening it, which does re-fetch via `openRoll` -> `loadRollData`) would
+keep seeing the stale "waiting, you can abort" view indefinitely after the GM actually finished.
+
+**Fix:** While `rollStage` is `"awaiting_gm"` and the roll modal is open, `loadRollData` now reschedules
+itself via a 15s `setTimeout` poll, cancelled and re-evaluated on every load so it stops automatically the
+moment the stage moves on (GM responds, the roll disappears/gets force-aborted, `cancelGmRequest` bypasses the
+GM, etc.) or the modal closes (`closeRoll`) or the component is destroyed (`willDestroyElement`) - nothing
+polls in the background once it's no longer needed.
+
 ### FR-050: Scene GM Review list's "respond" action wasn't obviously clickable
 
 **Status:** ✅ Done (`webportal/templates/components/soul-roll.hbs`)
