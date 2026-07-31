@@ -50,7 +50,17 @@ module AresMUSH
     # never deleted, preserving history for characters who already hold them.
     attribute :active, :default => "true"
 
-    collection :character_entries, "AresMUSH::CharacterBnbEntry"
+    # Ohm's collection macro defaults its reference lookup to this class's
+    # own snake-cased name ("bnb_catalogue_entry") when no third argument
+    # is given - CharacterBnbEntry's actual reference attribute is named
+    # `catalogue_entry` (see below), not `bnb_catalogue_entry`, so the
+    # default silently queried a nonexistent index and raised on every
+    # call (found 2026-07-26 live testing: "Find Players with a Boon/Bane"
+    # errored with "Oops! Something went wrong..." on every search - see
+    # the real convention in AresMUSH::Vehicle#passengers/Combatant#riding_in,
+    # AresMUSH::JobsChar#jobs/Job#author, AresMUSH::Area#children/#parent -
+    # every one of them passes this third argument explicitly).
+    collection :character_entries, "AresMUSH::CharacterBnbEntry", :catalogue_entry
 
     index :tag_upcase
     index :kind

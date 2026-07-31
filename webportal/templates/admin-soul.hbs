@@ -196,6 +196,9 @@
         @onChange={{action "selectBnbSkillsEntry"}} as |entry|>
         {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
       </PowerSelect>
+      {{#if this.bnbSkillsEntry.description}}
+        <p class="cg-tip mt-2">{{this.bnbSkillsEntry.description}}</p>
+      {{/if}}
       <PowerSelectMultiple @selected={{this.bnbSkillsValue}} @options={{this.model.catalogue.available_skills}}
         @searchField="name" @searchEnabled=true @placeholder="Select Skill(s)..."
         @onChange={{action "selectBnbSkillsValue"}} as |skill|>
@@ -281,6 +284,9 @@
           @onChange={{action "selectBnbGrantCatalogue"}} as |entry|>
           {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
         </PowerSelect>
+        {{#if this.bnbCatalogueEntry.description}}
+          <p class="cg-tip mt-2">{{this.bnbCatalogueEntry.description}}</p>
+        {{/if}}
         <select class="form-select my-2" aria-label="Boon or Bane level" value={{this.bnbLevel}}
           onchange={{action (mut this.bnbLevel) value="target.value"}}>
           <option value="minor">Minor</option>
@@ -306,6 +312,9 @@
         @onChange={{action "selectBnbSearchEntry"}} as |entry|>
         {{entry.name}} [{{entry.tag}}] — {{entry.kind}}
       </PowerSelect>
+      {{#if this.bnbSearchEntry.description}}
+        <p class="cg-tip mt-2">{{this.bnbSearchEntry.description}}</p>
+      {{/if}}
       <button class="btn btn-secondary mt-2" type="button" disabled={{not this.bnbSearchEntry}}
         onclick={{action "bnbSearchByEntry"}}>Search</button>
       {{#if this.bnbSearchResults}}
@@ -325,7 +334,7 @@
             </tbody>
           </table>
         {{else}}
-          <p class="text-muted mb-0 mt-2">None</p>
+          <p class="text-muted mb-0 mt-2">None found.</p>
         {{/if}}
       {{/if}}
     </section>

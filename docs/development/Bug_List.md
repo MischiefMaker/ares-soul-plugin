@@ -8,6 +8,46 @@ Running log of issues found during internal testing (non-live game install, star
 
 ## Feature Requests (from testing)
 
+### BUG-023: "Find Players with a Boon/Bane" raised Ohm::IndexNotFound on every search
+
+**Status:** ✅ Done (`plugin/models/bnb_catalogue_entry.rb`)
+
+**Requested:** 2026-07-26, live testing: "The search for a specific BNB on the admin page doesn't return any
+players, even when there are some that have it." Then, after the description-display fix below shipped: "Wait,
+actually trying to search gives the error message: Oops! Something went wrong when the website talked to the
+game." Confirmed by the actual server log: `Ohm::IndexNotFound` from `soul_bnb_api.rb:534` in
+`get_characters_with_entry`, called via `soulBnbCharactersWithEntry`.
+
+**Root cause:** `BnbCatalogueEntry`'s `collection :character_entries, "AresMUSH::CharacterBnbEntry"` (FR-041)
+omitted Ohm's third `collection` argument - the reference attribute name to filter the other model by. Without
+it, Ohm defaults to the *owning* class's own snake-cased name (`bnb_catalogue_entry`), and queries
+`CharacterBnbEntry.find(bnb_catalogue_entry_id: id)`. But `CharacterBnbEntry`'s actual reference is
+`reference :catalogue_entry, "AresMUSH::BnbCatalogueEntry"` - there is no `bnb_catalogue_entry_id` index at
+all, so every call raised `Ohm::IndexNotFound` rather than returning (wrongly) empty results. Verified against
+three real examples in the AresMUSH engine that all pass this third argument explicitly:
+`AresMUSH::Vehicle#passengers` (`:riding_in`, matching `Combatant#riding_in`), `Job#author` (matching
+`JobsChar#jobs`), and `Area#children`/`#parent`.
+
+**Fix:** `collection :character_entries, "AresMUSH::CharacterBnbEntry", :catalogue_entry` - explicitly names
+the reference. `.get_characters_with_entry`'s existing spec coverage exercises this real Ohm relationship
+end-to-end (unlike a mocked collection), so it would have caught this had the suite ever been executed against
+a real backend (see `docs/development/Testing.md`'s note on why this repo's specs are never run standalone).
+
+
+### FR-048: Admin BNB catalogue pickers now show each entry's public description
+
+**Status:** ✅ Done (`webportal/templates/admin-soul.hbs`)
+
+**Requested:** 2026-07-26, live testing: "In the SOUL admin page, the BNB catalogue should show the public
+description of each BNB."
+
+**Fix:** The "Edit BNB Skills," "Grant a new Boon or Bane," and "Find Players with a Boon/Bane" catalogue-entry
+pickers each show a `cg-tip` paragraph with the selected entry's description underneath, matching the pattern
+the web chargen page already uses for its own catalogue picker (`selectedCatalogue.description`). The "View
+Full Catalogue" browser already showed descriptions per-entry (FR-039/FR-040) - this covers the remaining
+single-entry pickers. Also changed the "Find Players" empty-result text from "None" to "None found." to match
+the specific live-testing request, distinct from the generic "None" convention used for other empty lists.
+
 ### FR-047: Web chargen Aspect cards didn't visually stand out from their Skill rows
 
 **Status:** ✅ Done (`webportal/templates/components/soul-chargen.hbs`)
